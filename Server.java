@@ -5,57 +5,79 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+class Client {
+    Socket socket;
+    PrintWriter out;
+    BufferedReader in;
+
+    public Client(Socket socket, PrintWriter out, BufferedReader in) {
+        this.socket = socket;
+        this.in = in;
+        this.out = out;
+    }
+}
+
 public class Server {
     public static void main(String[] args) {
         ServerSocket serverSocket = null;
-        PrintWriter out = null;
-        BufferedReader in = null;
+        Client client = null;
 
-        try {
-            serverSocket = new ServerSocket(4444);
-            Socket clientSocket = connectClientToServerSocket(serverSocket);
-            out = new PrintWriter(clientSocket.getOutputStream(), false);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String response = null;
-
-            // out.println("Welcome " + clientSocket.getInetAddress().getHostAddress());
-
-            while (true) {
-                response = in.readLine();
-                System.out.println("Received: " + response);
-                if (response.equalsIgnoreCase("exit")) {
-                    break;
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        } finally {
+        while (true) {
             try {
-                if (serverSocket != null) {
-                    serverSocket.close();
+                serverSocket = new ServerSocket(4444);
+                client = connectClientToServerSocket(serverSocket);
+                String response = null;
+
+                while (true) {
+                    response = client.in.readLine();
+                    System.out.println("Received: " + response);
+                    if (response.equalsIgnoreCase("exit")) {
+                        break;
+                    }
                 }
-                if (out != null) {
-                    out.close();
-                }
-                if (in != null) {
-                    in.close();
-                }
+
             } catch (IOException e) {
                 System.err.println(e.getMessage());
+                break;
+            } finally {
+                try {
+                    if (serverSocket != null) {
+                        serverSocket.close();
+                    }
+                    if (client.out != null) {
+                        client.out.close();
+                    }
+                    if (client.in != null) {
+                        client.in.close();
+                    }
+                    if (client.socket != null) {
+                        client.socket.close();
+                    }
+                } catch (IOException e) {
+                    System.err.println(e.getMessage());
+                    break;
+                }
             }
         }
     }
 
-    public static Socket connectClientToServerSocket(ServerSocket serverSocket) {
-        Socket clientSocket = null;
+    public static Client connectClientToServerSocket(ServerSocket serverSocket) {
+        Client client = null;
+        PrintWriter out = null;
+        BufferedReader in = null;
+
         try {
-            clientSocket = serverSocket.accept();
-            System.out.println("Client connected: " + clientSocket.getInetAddress());
+            Socket clientSocket = serverSocket.accept();
+            out = new PrintWriter(clientSocket.getOutputStream(), false);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            client = new Client(clientSocket, out, in);
+            System.out.println("Client connected: " + clientSocket.getInetAddress().getHostName());
+
         } catch (IOException error) {
             System.err.println("Accept failed with error: " + error.getMessage());
             System.exit(1);
         }
-        return clientSocket;
+        return client;
     }
 }

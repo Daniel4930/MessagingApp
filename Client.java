@@ -12,17 +12,20 @@ public class Client {
         BufferedReader in = null;
 
         try {
-            clientSocket = new Socket("localhost", 4444);
+            String message = "";
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter your name: ");
+            String name = scanner.nextLine();
+
+            clientSocket = new Socket("name", 4444);
             System.out.println("Connected to server.");
             System.out.println("Type \"exit\" to stop the connection.");
 
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String message = "";
-            Scanner scanner = new Scanner(System.in);
 
             while (true) {
-                // System.out.print("Enter a message: ");
+                System.out.print("Enter a message: ");
                 message = scanner.nextLine();
                 out.write(message);
                 out.println();
