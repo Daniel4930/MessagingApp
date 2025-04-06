@@ -1,2 +1,5 @@
 #Vscode setting
 .vscode
+
+#Java class files
+*.class
