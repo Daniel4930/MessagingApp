@@ -6,19 +6,11 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct DirectMessageView: View {
-    static let dateHeaderFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM dd, yyyy"
-        return formatter
-    }()
-    
-    static let messageTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d/yy, hh:mm"
-        return formatter
-    }()
+    @State var message: String = ""
+    @State var navBarHeight: CGFloat = 0.0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -28,25 +20,12 @@ struct DirectMessageView: View {
                 .ignoresSafeArea(edges: .horizontal)
                 .padding(.top, 10)
             ScrollViewReader { proxy in
-                let lastId = Message.mockMessage.max(by: { $0.date < $1.date })?.id
                 ScrollView {
                     let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
                     ForEach(sortedMessage, id: \.0) { date, messages in
                         VStack(alignment: .leading) {
-                            HStack {
-                                Rectangle()
-                                    .fill(.gray)
-                                    .frame(height: 0.5)
-                                Text(DirectMessageView.dateHeaderFormatter.string(from: date))
-                                    .foregroundStyle(.gray)
-                                    .fontWeight(.bold)
-                                    .font(.footnote)
-                                    .padding(.horizontal, 8)
-                                Rectangle()
-                                    .fill(.gray)
-                                    .frame(height: 0.5)
-                            }
-                            .padding(.horizontal, 13)
+                            DirectMessageDate(date: date)
+                                .padding(.horizontal, 13)
                             
                             let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
                             ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
@@ -54,53 +33,42 @@ struct DirectMessageView: View {
                                 let sortedMessagesByUser = sortMessagesByUser(messages: messages)
                                 ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
                                     if let user = searchUser(id: userId) {
-                                        HStack(alignment: .top) {
-                                            Image(user.icon)
-                                                .resizable()
-                                                .frame(width: 45, height: 45)
-                                                .clipShape(.circle)
-                                            VStack(alignment: .leading) {
-                                                HStack {
-                                                    Text(user.name)
-                                                        .font(.title3)
-                                                        .bold()
-                                                    Text(DirectMessageView.messageTimeFormatter.string(from: time))
-                                                        .font(.footnote)
-                                                        .foregroundStyle(.gray)
-                                                }
-                                                ForEach(messages) { message in
-                                                    VStack {
-                                                        Text(String(data: message.data, encoding: .utf8) ?? "Invalid message")
-                                                            .id(message.id)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        .padding(.horizontal, 13)
-                                        .padding(.bottom)
+                                        DirectMessage(user: user, time: time, messages: messages)
+                                            .padding(.horizontal, 13)
+                                            .padding(.bottom, sortedMessagesByUser.last?.0 == userId ? 0 : 16)
                                     }
                                 }
                             }
                         }
                     }
+                    Color.clear
+                        .frame(height: 1)
+                        .id("BOTTOM")
                 }
                 .onAppear {
-                    if let lastId = lastId {
-                        proxy.scrollTo(lastId, anchor: .bottom)
-                    }
+                    proxy.scrollTo("BOTTOM", anchor: .bottom)
+                }
+                .onChange(of: navBarHeight) { _ in
+                    proxy.scrollTo("BOTTOM", anchor: .bottom)
                 }
             }
+            Rectangle()
+                .fill(.gray)
+                .frame(height: 0.5)
+                .ignoresSafeArea(edges: .horizontal)
+            
+            DirectMessageNavBar(message: $message, navBarHeight: $navBarHeight)
+                .padding(.horizontal, 13)
+                .padding(.top, 10)
+                .padding(.bottom, 23)
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarLeading) {
-                DirectMessageNavbar(data: User.mockUser[0])
-            }
+            DirectMessageTopBar(data: User.mockUser[0])
         }
         .tint(.white)
     }
 }
-
 extension DirectMessageView {
     func sortMessagesByDate(messages: [Message]) -> [(Date, [Message])] {
         var result: [Date:[Message]] = [:]
@@ -171,53 +139,82 @@ extension DirectMessageView {
     }
 }
 
-struct DirectMessageNavbar: View {
-    let data: User
-    let backButtonWidth: CGFloat = 19
-    let iconDimension: (width: CGFloat, height: CGFloat) = (40, 40)
-    let statusCircleOffset: (x: CGFloat, y: CGFloat) = (2, 2)
-    let outterCircleDimension: (width: CGFloat, height: CGFloat) = (18, 18)
-    let innerCircleDimension: (width: CGFloat, height: CGFloat) = (11, 11)
-    @Environment(\.dismiss) var dismiss
+struct DirectMessageDate: View {
+    let date: Date
+    let dividerLineThickness: CGFloat = 0.5
+    
+    static let dateHeaderFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM dd, yyyy"
+        return formatter
+    }()
     
     var body: some View {
-        Button {
-            dismiss()
-        } label: {
-            Image(systemName: "arrow.left")
-                .resizable()
-                .frame(width: backButtonWidth)
-                .bold()
-        }
         HStack {
-            Image(data.icon)
-                .resizable()
-                .frame(width: iconDimension.width, height: iconDimension.height)
-                .clipShape(.circle)
-                .overlay(alignment: .bottomTrailing) {
-                    Circle()
-                        .offset(x: statusCircleOffset.x, y: statusCircleOffset.y)
-                        .fill(.black)
-                        .frame(width: outterCircleDimension.width, height: outterCircleDimension.height)
-                        .overlay {
-                            Circle()
-                                .offset(x: statusCircleOffset.x, y: statusCircleOffset.y)
-                                .fill(.green)
-                                .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
-                        }
-                }
-                .padding(.trailing, 7)
-            
-            Text(data.name)
-                .font(.title3)
-                .bold()
-            Image(systemName: "chevron.right")
-                .resizable()
-                .frame(width: 5, height: 10)
-                .bold()
+            Rectangle()
+                .fill(.gray)
+                .frame(height: dividerLineThickness)
+            Text(DirectMessageDate.dateHeaderFormatter.string(from: date))
+                .foregroundStyle(.gray)
+                .fontWeight(.bold)
+                .font(.footnote)
+                .padding(.horizontal, 8)
+            Rectangle()
+                .fill(.gray)
+                .frame(height: dividerLineThickness)
         }
     }
 }
+
+struct DirectMessage: View {
+    let user: User
+    let time: Date
+    let messages: [Message]
+    let iconDimension: (width: CGFloat, height: CGFloat) = (45, 45)
+    let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
+    let exampleLink = "https://google.com/search=3232/dsds?"
+    
+    static let messageTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d/yy, hh:mm a"
+        return formatter
+    }()
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            Image(user.icon)
+                .resizable()
+                .frame(width: iconDimension.width, height: iconDimension.height)
+                .clipShape(.circle)
+            VStack(alignment: .leading) {
+                HStack {
+                    Text(user.name)
+                        .font(.title3)
+                        .bold()
+                    Text(DirectMessage.messageTimeFormatter.string(from: time))
+                        .font(.footnote)
+                        .foregroundStyle(.gray)
+                }
+                ForEach(messages) { message in
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let text = message.text {
+                            Text(text)
+                        }
+                        if let imageData = message.imageData, let uiImage = UIImage(data: imageData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .frame(maxWidth: .infinity, maxHeight: 100, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            Text(exampleLink.contains(linkRegexPattern) ? "True" : "False")
+        }
+    }
+}
+
 
 #Preview {
     DirectMessageView()

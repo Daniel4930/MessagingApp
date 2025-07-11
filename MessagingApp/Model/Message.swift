@@ -5,12 +5,19 @@
 //  Created by Daniel Le on 7/9/25.
 //
 import Foundation
+import UIKit
+
+enum MessageLocation {
+    case channel
+    case dm
+}
 
 struct Message: Hashable, Identifiable {
     let id = UUID()
     let userId: UUID
     let date: Date
-    let data: Data
+    let text: String?
+    let imageData: Data?
     let location: MessageLocation
     let react: String?
     let replyMessageId: UUID?
@@ -22,14 +29,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 2, month: 5, year: 2024, hour: 9, minute: 15),
-            data: Data("Morning! Did you finish the report?".utf8),
+            text: "Morning! Did you finish the report?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 2, month: 5, year: 2024, hour: 9, minute: 15),
-            data: Data("Hey! Almost done, should have it ready by lunch.".utf8),
+            text: "Hey! Almost done, should have it ready by lunch.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -38,14 +47,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 2, month: 5, year: 2024, hour: 9, minute: 16),
-            data: Data("Also, I updated the budget sheet.".utf8),
+            text: "Also, I updated the budget sheet.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 2, month: 5, year: 2024, hour: 9, minute: 16),
-            data: Data("Check if you agree with the new numbers.".utf8),
+            text: "Check if you agree with the new numbers.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -54,14 +65,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 3, month: 5, year: 2024, hour: 14, minute: 8),
-            data: Data("Hey, free for a quick call later?".utf8),
+            text: "Hey, free for a quick call later?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 3, month: 5, year: 2024, hour: 14, minute: 8),
-            data: Data("Sure, what time were you thinking?".utf8),
+            text: "Sure, what time were you thinking?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -70,14 +83,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 3, month: 5, year: 2024, hour: 14, minute: 9),
-            data: Data("Also, I reviewed your notes.".utf8),
+            text: "Also, I reviewed your notes.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 3, month: 5, year: 2024, hour: 14, minute: 9),
-            data: Data("Looks good, no major changes needed.".utf8),
+            text: "Looks good, no major changes needed.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -86,14 +101,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 4, month: 5, year: 2024, hour: 9, minute: 10),
-            data: Data("Morning! It went really well. Thanks for setting it up.".utf8),
+            text: "Morning! It went really well. Thanks for setting it up.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 4, month: 5, year: 2024, hour: 9, minute: 10),
-            data: Data("Of course. Glad to hear it.".utf8),
+            text: "Of course. Glad to hear it.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -102,14 +119,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 4, month: 5, year: 2024, hour: 9, minute: 11),
-            data: Data("Are you coming to the team lunch?".utf8),
+            text: "Are you coming to the team lunch?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 4, month: 5, year: 2024, hour: 9, minute: 11),
-            data: Data("It's at noon.".utf8),
+            text: "It's at noon.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -118,14 +137,16 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 5, month: 5, year: 2024, hour: 16, minute: 45),
-            data: Data("Did you see the email about the new project?".utf8),
+            text: "Did you see the email about the new project?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 5, month: 5, year: 2024, hour: 16, minute: 45),
-            data: Data("Yeah, looks interesting! We should discuss tomorrow.".utf8),
+            text: "Yeah, looks interesting! We should discuss tomorrow.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -134,21 +155,24 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 6, month: 5, year: 2024, hour: 11, minute: 30),
-            data: Data("Can you review my draft?".utf8),
+            text: "Can you review my draft?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 6, month: 5, year: 2024, hour: 11, minute: 32),
-            data: Data("Sure thing, sending feedback soon.".utf8),
+            text: "Sure thing, sending feedback soon.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 6, month: 5, year: 2024, hour: 11, minute: 35),
-            data: Data("Thanks! Appreciate it.".utf8),
+            text: "Thanks! Appreciate it.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
@@ -157,28 +181,40 @@ struct Message: Hashable, Identifiable {
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 7, month: 5, year: 2024, hour: 20, minute: 0),
-            data: Data("Are you coming to the meeting tomorrow?".utf8),
+            text: "Are you coming to the meeting tomorrow?",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[0].id,
             date: createDate(day: 7, month: 5, year: 2024, hour: 20, minute: 0),
-            data: Data("Yes, I’ll be there.".utf8),
+            text: "Yes, I’ll be there.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 7, month: 5, year: 2024, hour: 20, minute: 1),
-            data: Data("Great! Looking forward to it.".utf8),
+            text: "Great! Looking forward to it.",
+            imageData: nil,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 7, month: 5, year: 2024, hour: 20, minute: 1),
-            data: Data("Great! Looking forward to it.".utf8),
+            text: "Great! Looking forward to",
+            imageData: nil,
+            location: MessageLocation.dm,
+            react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
+        ),
+        Message(
+            userId: User.mockUser[1].id,
+            date: createDate(day: 7, month: 5, year: 2024, hour: 20, minute: 1),
+            text: "This is my icon",
+            imageData: UIImage(named: "userIcon")!.pngData()!,
             location: MessageLocation.dm,
             react: nil, replyMessageId: nil, fowardMessageId: nil, edited: false
         )
@@ -199,9 +235,4 @@ struct Message: Hashable, Identifiable {
         
         return Date()
     }
-}
-
-enum MessageLocation {
-    case channel
-    case dm
 }

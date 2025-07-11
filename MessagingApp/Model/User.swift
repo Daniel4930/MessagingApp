@@ -17,7 +17,7 @@ struct User: Hashable, Identifiable {
     
     static let mockUser = [
         User(name: "Clyde", icon: "icon", bannerColor: .red, onlineStaus: .online, registeredDate: Date()),
-        User(name: "Phu", icon: "icon", bannerColor: .red, onlineStaus: .online, registeredDate: Date())
+        User(name: "Phu", icon: "userIcon", bannerColor: .red, onlineStaus: .online, registeredDate: Date())
     ]
 }
 
