@@ -9,10 +9,10 @@ import SwiftUI
 
 struct DirectMessageNavBar: View {
     @Binding var message: String
-    @Binding var navBarHeight: CGFloat
+    @Binding var updateScrolling: Bool
+    @State private var navBarHeight: CGFloat = 0
     
     let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
-    let iconBackgroundColor = Color(cgColor: .init(red: 15/255, green: 15/255, blue: 15/255, alpha: 1))
     let paddingSpace: CGFloat = 10
     
     var body: some View {
@@ -21,14 +21,14 @@ struct DirectMessageNavBar: View {
                 .resizable()
                 .frame(width: iconDimension.width, height: iconDimension.height)
                 .padding(paddingSpace)
-                .background(iconBackgroundColor)
+                .background(Color("SecondaryBackgroundColor"))
                 .clipShape(.circle)
                 .foregroundStyle(.white)
             
             ZStack(alignment: .leading) {
                 if message == "" {
                     Text("Message @Clyde")
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal)
                         .foregroundStyle(.gray)
                 }
                 HStack {
@@ -46,7 +46,7 @@ struct DirectMessageNavBar: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, paddingSpace)
             }
-            .background(iconBackgroundColor)
+            .background(Color("SecondaryBackgroundColor"))
             .clipShape(RoundedRectangle(cornerRadius: 20))
             
             Image(systemName: "paperplane.fill")
@@ -56,20 +56,14 @@ struct DirectMessageNavBar: View {
         .background(
             GeometryReader { proxy in
                 Color.clear
-                    .onAppear {
-                        navBarHeight = proxy.size.height
-                    }
                     .onChange(of: message) { newValue in
                         DispatchQueue.main.async {
                             navBarHeight = proxy.size.height
+                            updateScrolling = true
                         }
                     }
                 
             }
         )
     }
-}
-
-#Preview {
-    DirectMessageView()
 }
