@@ -8,86 +8,60 @@
 import SwiftUI
 
 struct DirectMessageView: View {
-    @State var message: String = ""
     @State var updateScrolling: Bool = false
-    
-    let iconDimension: (width: CGFloat, height: CGFloat) = (45, 45)
-    static let messageTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d/yy, hh:mm a"
-        return formatter
-    }()
+    @State var showFileAndImageSelector = false
     
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle()
-                .fill(.gray)
-                .frame(height: 0.4)
-                .ignoresSafeArea(edges: .horizontal)
-                .padding(.top, 10)
-            ScrollViewReader { proxy in
-                ScrollView {
-                    let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
-                    ForEach(sortedMessage, id: \.0) { date, messages in
-                        VStack(alignment: .leading) {
-                            DirectMessageDate(date: date)
-                                .padding(.horizontal, 13)
-                            
-                            let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
-                            ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
+            VStack(spacing: 0) {
+                DividerView(padding: (Edge.Set.top, CGFloat(10)))
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
+                        ForEach(sortedMessage, id: \.0) { date, messages in
+                            VStack(alignment: .leading) {
+                                DirectMessageDate(date: date)
+                                    .padding(.horizontal, 13)
                                 
-                                let sortedMessagesByUser = sortMessagesByUser(messages: messages)
-                                ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                    if let user = searchUser(id: userId) {
-                                        HStack(alignment: .top) {
-                                            Image(user.icon)
-                                                .resizable()
-                                                .frame(width: iconDimension.width, height: iconDimension.height)
-                                                .clipShape(.circle)
-                                            VStack(alignment: .leading) {
-                                                HStack {
-                                                    Text(user.name)
-                                                        .font(.title3)
-                                                        .bold()
-                                                    Text(DirectMessageView.messageTimeFormatter.string(from: time))
-                                                        .font(.footnote)
-                                                        .foregroundStyle(.gray)
-                                                }
-                                                ForEach(messages) { message in
-                                                    MessageView(message: message, updateScrolling: $updateScrolling)
-                                                }
-                                            }
+                                let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
+                                ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
+                                    let sortedMessagesByUser = sortMessagesByUser(messages: messages)
+                                    ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
+                                        if let user = searchUser(id: userId) {
+                                            UserConversationView(updateScrolling: $updateScrolling, user: user, messages: messages, time: time)
                                         }
-                                        .padding(.horizontal, 13)
-                                        .padding(.bottom, sortedMessagesByUser.last?.0 == userId ? 0 : 16)
                                     }
                                 }
                             }
                         }
+                        Color.clear
+                            .frame(height: 1)
+                            .id("BOTTOM")
                     }
-                    Color.clear
-                        .frame(height: 1)
-                        .id("BOTTOM")
+                    .scrollDismissesKeyboard(.immediately)
+                    .onAppear {
+                        proxy.scrollTo("BOTTOM", anchor: .bottom)
+                    }
+                    .onChange(of: updateScrolling) { _ in
+                        proxy.scrollTo("BOTTOM", anchor: .bottom)
+                        updateScrolling = false
+                    }
+                    .modifier(KeyboardStateProvider(updateScrolling: $updateScrolling))
                 }
-                .onAppear {
-                    proxy.scrollTo("BOTTOM", anchor: .bottom)
-                }
-                .onChange(of: updateScrolling) { _ in
-                    proxy.scrollTo("BOTTOM", anchor: .bottom)
-                    updateScrolling = false
-                }
+                DividerView()
             }
-            Rectangle()
-                .fill(.gray)
-                .frame(height: 0.5)
-                .ignoresSafeArea(edges: .horizontal)
-            
-            DirectMessageNavBar(message: $message, updateScrolling: $updateScrolling)
+            MessageInputBar(updateScrolling: $updateScrolling, showFileAndImageSelector: $showFileAndImageSelector)
                 .padding(.horizontal, 13)
-                .padding(.top, 10)
-                .padding(.bottom, 23)
+                .padding(.vertical, 10)
+            
+            if showFileAndImageSelector {
+                SelectorView()
+            }
         }
         .navigationBarBackButtonHidden(true)
+        .onTapGesture {
+            hideKeyboard()
+        }
         .toolbar {
             DirectMessageTopBar(data: User.mockUser[0])
         }
@@ -190,3 +164,4 @@ struct DirectMessageDate: View {
         }
     }
 }
+

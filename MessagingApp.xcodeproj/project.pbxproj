@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		7A3BB8C52E217A4200DEF150 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 7A3BB8C42E217A4200DEF150 /* SwiftSoup */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		7A843DDA2E1E690A003B69F4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -69,7 +65,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A3BB8C52E217A4200DEF150 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +125,6 @@
 			);
 			name = MessagingApp;
 			packageProductDependencies = (
-				7A3BB8C42E217A4200DEF150 /* SwiftSoup */,
 			);
 			productName = MessagingApp;
 			productReference = 7A843DC72E1E6908003B69F4 /* MessagingApp.app */;
@@ -215,7 +209,6 @@
 			mainGroup = 7A843DBE2E1E6908003B69F4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				7A3BB8C32E217A4100DEF150 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7A843DC82E1E6908003B69F4 /* Products */;
@@ -588,25 +581,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		7A3BB8C32E217A4100DEF150 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.9.4;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		7A3BB8C42E217A4200DEF150 /* SwiftSoup */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7A3BB8C32E217A4100DEF150 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
-			productName = SwiftSoup;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7A843DBF2E1E6908003B69F4 /* Project object */;
 }

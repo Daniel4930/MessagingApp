@@ -7,8 +7,6 @@
 
 import SwiftUI
 import UIKit
-import LinkPresentation
-import SafariServices
 
 struct MessageView: View {
     let message: Message
@@ -19,34 +17,43 @@ struct MessageView: View {
     @State private var embededDescription = ""
     @State private var embededImage: UIImage?
     @State private var showEmbeded: Bool = false
-    @State private var leadingBannerWidth: CGFloat = 0
+    @State private var showSafari: Bool = false
     @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
+    @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let text = message.text {
                 if text.contains(linkRegexPattern) {
                     Button {
-                        
+                        showSafari = true
                     } label: {
                         Text(text)
                             .foregroundStyle(.blue)
                     }
                     .padding(.bottom, 5)
+                    .sheet(isPresented: $showSafari) {
+                        if let url = URL(string: text) {
+                            SafariView(url: url)
+                        }
+                    }
                     .task {
                         retrieveMetaDataFromURL(url: text)
                     }
+                    
                     if showEmbeded {
                         organizeEmbededItems()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                             .overlay(alignment: .leading) {
                                 Color.gray
-                                    .frame(width: leadingBannerWidth)
+                                    .frame(width: linkEmbededViewDimension.width * 0.015)
                             }
                             .background(
                                 GeometryReader { proxy in
                                     Color("SecondaryBackgroundColor")
                                         .onAppear {
-                                            leadingBannerWidth = proxy.size.width * 0.015
+                                            linkEmbededViewDimension.width = proxy.size.width
+                                            linkEmbededViewDimension.height = proxy.size.height
                                         }
                                 }
                             )
@@ -59,6 +66,12 @@ struct MessageView: View {
             if !message.imageData.isEmpty {
                 GridImageView(imageData: message.imageData)
                     .padding(.top, 5)
+            }
+            if !message.fileData.isEmpty {
+                ForEach(Array(message.fileData.enumerated()), id: \.offset) { element in
+                    let file = element.element
+                    FileEmbededView(name: file.name, data: file.data)
+                }
             }
         }
     }
@@ -83,11 +96,11 @@ extension MessageView {
     @ViewBuilder func organizeEmbededItems() -> some View {
         if embededImageDimension.width > embededImageDimension.height {
             VStack(alignment: .leading) {
-                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension)
+                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
             }
         } else {
-            HStack(alignment: .top) {
-                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension)
+            HStack(alignment: .center) {
+                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
             }
         }
     }
