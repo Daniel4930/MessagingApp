@@ -43,9 +43,9 @@ extension FileEmbededView {
         let size = data.count
         var sizeUnit = DataSize.byte()
         var result = ""
-        
         var quotient: Float = Float(size)
         var iteration = 0
+        
         while quotient > 1000 {
             quotient = quotient / 1000
             iteration += 1

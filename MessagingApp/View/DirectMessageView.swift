@@ -50,20 +50,20 @@ struct DirectMessageView: View {
                 }
                 DividerView()
             }
+            
             MessageInputBar(updateScrolling: $updateScrolling, showFileAndImageSelector: $showFileAndImageSelector)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 10)
             
             if showFileAndImageSelector {
                 SelectorView()
             }
         }
+        .background(Color("PrimaryBackgroundColor"))
         .navigationBarBackButtonHidden(true)
         .onTapGesture {
             hideKeyboard()
         }
         .toolbar {
-            DirectMessageTopBar(data: User.mockUser[0])
+            NavigationTopBar(data: User.mockUser[0])
         }
         .tint(.white)
     }
@@ -164,4 +164,3 @@ struct DirectMessageDate: View {
         }
     }
 }
-

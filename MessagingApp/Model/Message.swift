@@ -145,30 +145,30 @@ struct Message: Hashable, Identifiable {
             forwardMessageId: nil,
             edited: true
         ),
-        Message(
-            userId: User.mockUser[1].id,
-            date: createDate(day: 12, month: 6, year: 2025, hour: 3, minute: 20),
-            text: "https://youtube.com",
-            imageData: [],
-            fileData: [],
-            location: .dm,
-            react: "❤️",
-            replyMessageId: nil,
-            forwardMessageId: nil,
-            edited: true
-        ),
-        Message(
-            userId: User.mockUser[1].id,
-            date: createDate(day: 12, month: 6, year: 2025, hour: 1, minute: 20),
-            text: "https://youtube.com",
-            imageData: [],
-            fileData: [],
-            location: .dm,
-            react: "❤️",
-            replyMessageId: nil,
-            forwardMessageId: nil,
-            edited: true
-        ),
+//        Message(
+//            userId: User.mockUser[1].id,
+//            date: createDate(day: 12, month: 6, year: 2025, hour: 3, minute: 20),
+//            text: "https://youtube.com",
+//            imageData: [],
+//            fileData: [],
+//            location: .dm,
+//            react: "❤️",
+//            replyMessageId: nil,
+//            forwardMessageId: nil,
+//            edited: true
+//        ),
+//        Message(
+//            userId: User.mockUser[1].id,
+//            date: createDate(day: 12, month: 6, year: 2025, hour: 1, minute: 20),
+//            text: "https://youtube.com",
+//            imageData: [],
+//            fileData: [],
+//            location: .dm,
+//            react: "❤️",
+//            replyMessageId: nil,
+//            forwardMessageId: nil,
+//            edited: true
+//        ),
         Message(
             userId: User.mockUser[1].id,
             date: createDate(day: 12, month: 6, year: 2023, hour: 3, minute: 19),

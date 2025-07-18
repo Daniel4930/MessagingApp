@@ -27,7 +27,7 @@ struct UserConversationView: View {
                 .clipShape(.circle)
             VStack(alignment: .leading) {
                 HStack {
-                    Text(user.name)
+                    Text(user.displayName)
                         .font(.title3)
                         .bold()
                     Text(UserConversationView.messageTimeFormatter.string(from: time))
