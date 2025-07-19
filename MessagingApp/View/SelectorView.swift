@@ -8,14 +8,17 @@
 import SwiftUI
 
 struct SelectorView: View {
-    @State private var keyboardHeight: CGFloat = 216
+    let height: CGFloat
     
     var body: some View {
         VStack {
             
         }
-        .modifier(KeyboardHeightProvider(height: $keyboardHeight))
-        .frame(height: keyboardHeight)
+        .frame(height: height)
         .background(.gray)
     }
+}
+
+#Preview {
+    DirectMessageView()
 }

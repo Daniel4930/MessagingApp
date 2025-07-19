@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		7A64C9842E28EBFD00ED7B56 /* SwiftUIX in Frameworks */ = {isa = PBXBuildFile; productRef = 7A64C9832E28EBFD00ED7B56 /* SwiftUIX */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		7A843DDA2E1E690A003B69F4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -69,7 +65,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A64C9842E28EBFD00ED7B56 /* SwiftUIX in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +125,6 @@
 			);
 			name = MessagingApp;
 			packageProductDependencies = (
-				7A64C9832E28EBFD00ED7B56 /* SwiftUIX */,
 			);
 			productName = MessagingApp;
 			productReference = 7A843DC72E1E6908003B69F4 /* MessagingApp.app */;
@@ -215,7 +209,6 @@
 			mainGroup = 7A843DBE2E1E6908003B69F4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				7A64C9822E28EBFD00ED7B56 /* XCRemoteSwiftPackageReference "SwiftUIX" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7A843DC82E1E6908003B69F4 /* Products */;
@@ -588,25 +581,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		7A64C9822E28EBFD00ED7B56 /* XCRemoteSwiftPackageReference "SwiftUIX" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SwiftUIX/SwiftUIX.git";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		7A64C9832E28EBFD00ED7B56 /* SwiftUIX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7A64C9822E28EBFD00ED7B56 /* XCRemoteSwiftPackageReference "SwiftUIX" */;
-			productName = SwiftUIX;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7A843DBF2E1E6908003B69F4 /* Project object */;
 }

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUIX
 
 enum Field {
     case textEditor
@@ -18,7 +17,6 @@ struct MessageInputBar: View {
     @State private var message = ""
     @State private var showSendButton = false
     @State private var showMention = false
-    @State private var isMentionVisible = false
     @State private var matchUsers: [User] = []
     @FocusState private var focusedField: Field?
     
@@ -38,24 +36,21 @@ struct MessageInputBar: View {
                 HStack {
                     TextEditor(text: $message)
                         .scrollContentBackground(.hidden)
-                        .frame(minHeight: iconDimension.height)
-                        .fixedSize(horizontal: false, vertical: true)
                         .onChange(of: message) { newMessage in
-                            matchUsers = searchUser(users: User.mockUser)
-                            
-                            if !matchUsers.isEmpty {
-                                showMention = true
-                                isMentionVisible = true
-                            } else {
-                                showMention = false
-                            }
+                            updateScrolling = true
                             
                             if newMessage != "" {
                                 showSendButton = true
                             } else {
                                 showSendButton = false
                             }
-                            updateScrolling = true
+                            
+                            matchUsers = searchUser(users: User.mockUser)
+                            if !matchUsers.isEmpty {
+                                showMention = true
+                            } else {
+                                showMention = false
+                            }
                         }
                         .focused($focusedField, equals: .textEditor)
                         .onChange(of: focusedField) { newValue in
@@ -63,12 +58,9 @@ struct MessageInputBar: View {
                                 showFileAndImageSelector = false
                             }
                         }
-                //#TODO: Remove suggestive texts on top of the keyboard when try to mention a user
-                //                        .keyboardType(.alphabet)
-                //                        .autocorrectionDisabled(message.first == "@")
+//                        .keyboardType(.alphabet)
+//                        .autocorrectionDisabled(message.first == "@")
                 }
-                // Instead of using vertical padding (top & bottom),
-                // added it to the frame to prevent the TextEditor from resizing
                 .frame(
                     minHeight: iconDimension.height + (paddingSpace * 2),
                     maxHeight: UIScreen.main.bounds.height / 5
@@ -97,34 +89,41 @@ struct MessageInputBar: View {
         .padding(.horizontal, 13)
         .padding(.vertical, 10)
         .overlay(alignment: .top) {
-            if isMentionVisible {
-                MentionViewAnimation(
-                    numUsersToShow: matchUsers.count,
-                    isMentionVisible: $isMentionVisible,
-                    showMention: showMention
-                ) {
-                    MentionView(showMention: $showMention, users: matchUsers)
-                        .frame(maxWidth: .infinity)
-                }
+            MentionViewAnimation(
+                numUsersToShow: matchUsers.count,
+                showMention: $showMention
+            ) {
+                MentionView(message: $message, showMention: $showMention, users: matchUsers)
+                    .frame(maxWidth: .infinity)
             }
         }
     }
 }
 extension MessageInputBar {
-    func searchUser(users: [User]) ->[User] {
-        if message == "@" {
+    func searchUser(users: [User]) -> [User] {
+        //message = "@"
+        guard let commandIndex = message.lastIndex(of: "@") else { return [] }
+        if commandIndex == message.startIndex {
             return users
         }
         
-        let nameToSearch = message.dropFirst().lowercased()
-
-        let result = users.filter { user in
+        //message = "text@text"
+        guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
+        
+        //message = "text@ " && message = "text @ "
+        guard message.distance(from: spaceIndex, to: commandIndex) == 1 else { return [] }
+        
+        //message = "text @"
+        if message[commandIndex] == message.last {
+            return users
+        }
+        
+        //message = "text @name"
+        let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
+        
+        return users.filter { user in
             user.userName.lowercased().contains(nameToSearch) ||
             user.displayName.lowercased().contains(nameToSearch)
         }
-        
-        return result
     }
 }
-
-

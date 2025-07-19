@@ -10,62 +10,84 @@ import SwiftUI
 struct DirectMessageView: View {
     @State var updateScrolling: Bool = false
     @State var showFileAndImageSelector = false
+    @State var keyboardHeight: CGFloat = 0.0
+    @State var bottomSafeAreaHeight: CGFloat = .zero
+    
+    @State var scrollViewBottomPosition: (x: CGFloat, y: CGFloat) = (0, 0)
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { globalProxy in
             VStack(spacing: 0) {
-                DividerView(padding: (Edge.Set.top, CGFloat(10)))
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
-                        ForEach(sortedMessage, id: \.0) { date, messages in
-                            VStack(alignment: .leading) {
-                                DirectMessageDate(date: date)
-                                    .padding(.horizontal, 13)
-                                
-                                let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
-                                ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
-                                    let sortedMessagesByUser = sortMessagesByUser(messages: messages)
-                                    ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                        if let user = searchUser(id: userId) {
-                                            UserConversationView(updateScrolling: $updateScrolling, user: user, messages: messages, time: time)
+                VStack(spacing: 0) {
+                    DividerView(padding: (Edge.Set.top, CGFloat(10)))
+                    ScrollViewReader { scrollViewProxy in
+                        ScrollView {
+                            let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
+                            ForEach(sortedMessage, id: \.0) { date, messages in
+                                VStack(alignment: .leading) {
+                                    DirectMessageDate(date: date)
+                                        .padding(.horizontal, 13)
+                                    
+                                    let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
+                                    ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
+                                        let sortedMessagesByUser = sortMessagesByUser(messages: messages)
+                                        ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
+                                            if let user = searchUser(id: userId) {
+                                                UserConversationView(updateScrolling: $updateScrolling, user: user, messages: messages, time: time)
+                                            }
                                         }
                                     }
                                 }
                             }
+                            Color.clear
+                                .frame(height: 1)
+                                .id("BOTTOM")
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear
+                                            .onAppear {
+                                                scrollViewBottomPosition.x = geo.frame(in: .global).minX
+                                                scrollViewBottomPosition.y = geo.frame(in: .global).minY
+                                            }
+                                    }
+                                )
                         }
-                        Color.clear
-                            .frame(height: 1)
-                            .id("BOTTOM")
+                        .scrollDismissesKeyboard(.immediately)
+                        .task {
+                            scrollViewProxy.scrollTo("BOTTOM", anchor: .bottom)
+                        }
+                        .onChange(of: updateScrolling) { newValue in
+                            if newValue {
+                                scrollViewProxy.scrollTo("BOTTOM", anchor: .bottom)
+                                updateScrolling = false
+                            }
+                        }
+                        .modifier(KeyboardStateProvider(updateScrolling: $updateScrolling))
                     }
-                    .scrollDismissesKeyboard(.immediately)
-                    .onAppear {
-                        proxy.scrollTo("BOTTOM", anchor: .bottom)
-                    }
-                    .onChange(of: updateScrolling) { _ in
-                        proxy.scrollTo("BOTTOM", anchor: .bottom)
-                        updateScrolling = false
-                    }
-                    .modifier(KeyboardStateProvider(updateScrolling: $updateScrolling))
+                    DividerView()
                 }
-                DividerView()
+                
+                MessageInputBar(updateScrolling: $updateScrolling, showFileAndImageSelector: $showFileAndImageSelector)
+//                    .padding(.bottom, (keyboardHeight < 0 && !showFileAndImageSelector) ? 0 : keyboardHeight - bottomSafeAreaHeight)
+                
+                if showFileAndImageSelector {
+                    SelectorView(height: 346.0)
+                }
             }
-            
-            MessageInputBar(updateScrolling: $updateScrolling, showFileAndImageSelector: $showFileAndImageSelector)
-            
-            if showFileAndImageSelector {
-                SelectorView()
+            .modifier(KeyboardHeightProvider(height: $keyboardHeight))
+            .background(Color("PrimaryBackgroundColor"))
+            .navigationBarBackButtonHidden(true)
+            .task {
+                self.bottomSafeAreaHeight = globalProxy.safeAreaInsets.bottom
             }
+            .onTapGesture {
+                hideKeyboard()
+            }
+            .toolbar {
+                NavigationTopBar(data: User.mockUser[0])
+            }
+            .tint(.white)
         }
-        .background(Color("PrimaryBackgroundColor"))
-        .navigationBarBackButtonHidden(true)
-        .onTapGesture {
-            hideKeyboard()
-        }
-        .toolbar {
-            NavigationTopBar(data: User.mockUser[0])
-        }
-        .tint(.white)
     }
 }
 extension DirectMessageView {

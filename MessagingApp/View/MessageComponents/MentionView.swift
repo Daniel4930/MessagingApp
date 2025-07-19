@@ -7,13 +7,15 @@
 import SwiftUI
 
 struct MentionView: View {
+    @Binding var message: String
     @Binding var showMention: Bool
     let users: [User]
     let clickedBackgroundColor = Color("ButtonClickedBackgroundColor")
     @State private var buttonClicked = false
     
-    func action() {
+    func action(name: String) {
         showMention = false
+        $message.wrappedValue = "@" + name + " "
     }
     
     var body: some View {
@@ -34,58 +36,54 @@ struct MentionView: View {
 
 struct MentionButton: View {
     let user: User
-    let onSelect: () -> Void
+    let onSelect: (String) -> Void
     @State private var isPressed = false
     
+    let animationDuration = 0.1
+    let removeMentionViewDeadline = 0.2
+    
     var body: some View {
-        HStack {
-            IconView(user: user, borderColor: Color("SecondaryBackgroundColor"))
-            
-            Text(user.displayName)
-                .bold()
-            
-            Spacer()
-            
-            Text(user.userName)
-                .font(.footnote)
-                .foregroundStyle(.gray)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(isPressed ? Color("ButtonClickedBackgroundColor") : Color("SecondaryBackgroundColor"))
-        .onTapGesture {
-            isPressed = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                onSelect()
+        Button {
+            withAnimation(.easeInOut(duration: animationDuration)) {
+                isPressed = true
             }
-        }
-        .onLongPressGesture(perform: {
-            isPressed = true
-        }, onPressingChanged: { newValue in
-            if newValue == false {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    onSelect()
-                }
+            DispatchQueue.main.asyncAfter(deadline: .now() + removeMentionViewDeadline) {
+                onSelect(user.displayName)
             }
-        })
-        .animation(.easeOut(duration: 0.2), value: isPressed)
+        } label: {
+            HStack {
+                IconView(user: user, borderColor: Color("SecondaryBackgroundColor"))
+                
+                Text(user.displayName)
+                    .bold()
+                
+                Spacer()
+                
+                Text(user.userName)
+                    .font(.footnote)
+                    .foregroundStyle(.gray)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .background(isPressed ? Color("ButtonClickedBackgroundColor") : Color("SecondaryBackgroundColor"))
+        }
     }
 }
 
 
 struct MentionViewAnimation<Content: View>: View {
     let numUsersToShow: Int
-    var isMentionVisible: Binding<Bool>
-    var showMention: Bool
+    var showMention: Binding<Bool>
     let content: Content
     
     @State private var currentValue: CGFloat = 0
     let maxDisplayUsers: CGFloat = 5
     let maxHeight: CGFloat = 300
+    let springStiffness = 0.5
+    let springDrag = 0.75
     
-    init(numUsersToShow: Int, isMentionVisible: Binding<Bool>, showMention: Bool, content: () -> Content) {
+    init(numUsersToShow: Int, showMention: Binding<Bool>, content: () -> Content) {
         self.numUsersToShow = numUsersToShow
-        self.isMentionVisible = isMentionVisible
         self.showMention = showMention
         self.content = content()
     }
@@ -94,26 +92,13 @@ struct MentionViewAnimation<Content: View>: View {
         content
             .frame(height: currentValue)
             .offset(y: -currentValue)
-            .onAppear {
-                let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(numUsersToShow)
-                withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.75)) {
-                    currentValue = numUsersToShow >= 5 ? maxHeight : targetHeight
-                }
-            }
-            .onChange(of: showMention) { newValue in
-                if newValue == false {
-                    withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.75)) {
-                        currentValue = 0
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.isMentionVisible.wrappedValue = false
-                    }
-                }
-            }
+            .animation(.interactiveSpring(response: springStiffness, dampingFraction: springDrag), value: currentValue)
             .onChange(of: numUsersToShow) { newValue in
-                let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
-                withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.75)) {
+                if showMention.wrappedValue {
+                    let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
                     currentValue = newValue >= 5 ? maxHeight : targetHeight
+                } else {
+                    currentValue = 0
                 }
             }
     }

@@ -12,9 +12,6 @@ extension View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    func showKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
-    }
     
     @ViewBuilder
     func applyPadding(_ padding: (edge: Edge.Set, value: CGFloat)?) -> some View {
@@ -42,7 +39,7 @@ struct KeyboardHeightProvider: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { notification in
                 guard let userInfo = notification.userInfo, let keyboardRect = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
                 self.height.wrappedValue = keyboardRect.height
             }
