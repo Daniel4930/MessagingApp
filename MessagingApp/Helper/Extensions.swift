@@ -23,28 +23,14 @@ extension View {
     }
 }
 
-struct KeyboardStateProvider: ViewModifier {
-    var updateScrolling: Binding<Bool>
-    
-    func body(content: Content) -> some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { notification in
-                self.updateScrolling.wrappedValue = true
-            }
-    }
-}
-
 struct KeyboardHeightProvider: ViewModifier {
     var height: Binding<CGFloat>
     
     func body(content: Content) -> some View {
         content
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { notification in
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
                 guard let userInfo = notification.userInfo, let keyboardRect = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
                 self.height.wrappedValue = keyboardRect.height
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { notification in
-                self.height.wrappedValue = 0
             }
     }
 }

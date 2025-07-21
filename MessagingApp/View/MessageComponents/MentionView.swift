@@ -14,8 +14,16 @@ struct MentionView: View {
     @State private var buttonClicked = false
     
     func action(name: String) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.blue
+        ]
+        let attributedName = NSAttributedString(string: name, attributes: attributes)
+        
+        let combinedString = NSMutableAttributedString(string: message)
+        combinedString.append(attributedName)
+        
+        $message.wrappedValue = combinedString.string + " "
         showMention = false
-        $message.wrappedValue = "@" + name + " "
     }
     
     var body: some View {
@@ -48,18 +56,18 @@ struct MentionButton: View {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + removeMentionViewDeadline) {
-                onSelect(user.displayName)
+                onSelect(user.displayName ?? "")
             }
         } label: {
             HStack {
                 IconView(user: user, borderColor: Color("SecondaryBackgroundColor"))
                 
-                Text(user.displayName)
+                Text(user.displayName ?? "")
                     .bold()
                 
                 Spacer()
                 
-                Text(user.userName)
+                Text(user.userName ?? "")
                     .font(.footnote)
                     .foregroundStyle(.gray)
             }
@@ -84,8 +92,8 @@ struct MentionViewAnimation<Content: View>: View {
     
     init(numUsersToShow: Int, showMention: Binding<Bool>, content: () -> Content) {
         self.numUsersToShow = numUsersToShow
-        self.showMention = showMention
         self.content = content()
+        self.showMention = showMention
     }
     
     var body: some View {
@@ -93,7 +101,7 @@ struct MentionViewAnimation<Content: View>: View {
             .frame(height: currentValue)
             .offset(y: -currentValue)
             .animation(.interactiveSpring(response: springStiffness, dampingFraction: springDrag), value: currentValue)
-            .onChange(of: numUsersToShow) { newValue in
+            .onChange(of: numUsersToShow) { _, newValue in
                 if showMention.wrappedValue {
                     let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
                     currentValue = newValue >= 5 ? maxHeight : targetHeight

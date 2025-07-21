@@ -12,13 +12,12 @@ struct SelectorView: View {
     
     var body: some View {
         VStack {
-            
+            Text("Hello")
         }
         .frame(height: height)
         .background(.gray)
+        .onTapGesture {
+            hideKeyboard()
+        }
     }
-}
-
-#Preview {
-    DirectMessageView()
 }

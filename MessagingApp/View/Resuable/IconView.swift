@@ -22,20 +22,32 @@ struct IconView: View {
             borderColor
                 .frame(width: iconBorderThickness, height: iconBorderThickness)
                 .clipShape(.circle)
-            Image(user.icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: iconDimension.width, height: iconDimension.height)
-                .clipShape(.circle)
-                .overlay(alignment: .bottomTrailing) {
-                    OnlineStatusCircle(status: user.onlineStaus, color: borderColor)
-                }
+            
+            if let data = user.icon, let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconDimension.width, height: iconDimension.height)
+                    .clipShape(.circle)
+                    .overlay(alignment: .bottomTrailing) {
+                        OnlineStatusCircle(status: user.onlineStatus, color: borderColor)
+                    }
+            } else {
+                Image(systemName: "person.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconDimension.width, height: iconDimension.height)
+                    .clipShape(.circle)
+                    .overlay(alignment: .bottomTrailing) {
+                        OnlineStatusCircle(status: user.onlineStatus, color: borderColor)
+                    }
+            }
         }
     }
 }
 
 struct OnlineStatusCircle: View {
-    let status: OnlineStatus
+    let status: String?
     let color: Color
     let outterCircleDimension: (width: CGFloat, height: CGFloat) = (15, 15)
     let innerCircleDimension: (width: CGFloat, height: CGFloat) = (11, 11)
@@ -46,12 +58,12 @@ struct OnlineStatusCircle: View {
                 .fill(color)
                 .frame(width: outterCircleDimension.width, height: outterCircleDimension.height)
                 .overlay {
-                    switch status {
-                    case .online:
+                    if status == "online" {
                         Circle()
                             .fill(.green)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
-                    case .offline:
+                    }
+                    else if status == "offline" {
                         let blackDotDimension: (width: CGFloat, height: CGFloat) = (6, 6)
                         Circle()
                             .fill(.gray)
@@ -61,7 +73,8 @@ struct OnlineStatusCircle: View {
                                     .fill(color)
                                     .frame(width: blackDotDimension.width, height: blackDotDimension.height)
                             }
-                    case .invisible:
+                    }
+                    else if status == "invisible" {
                         let blackDotDimension: (width: CGFloat, height: CGFloat) = (6, 6)
                         Circle()
                             .fill(.gray)
@@ -71,7 +84,8 @@ struct OnlineStatusCircle: View {
                                     .fill(color)
                                     .frame(width: blackDotDimension.width, height: blackDotDimension.height)
                             }
-                    case .doNotDisturb:
+                    }
+                    else if status == "doNotDisturb" {
                         let rectangleDimension: (width: CGFloat, height: CGFloat) = (8, 3)
                         Circle()
                             .fill(.red)
@@ -81,7 +95,8 @@ struct OnlineStatusCircle: View {
                                     .fill(color)
                                     .frame(width: rectangleDimension.width, height: rectangleDimension.height)
                             }
-                    case .idle:
+                    }
+                    else if status == "idle" {
                         let circleOverlayDimension: (width: CGFloat, height: CGFloat) = (8, 8)
                         Circle()
                             .fill(.yellow)

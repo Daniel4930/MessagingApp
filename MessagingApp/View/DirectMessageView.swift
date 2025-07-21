@@ -8,155 +8,30 @@
 import SwiftUI
 
 struct DirectMessageView: View {
-    @State var updateScrolling: Bool = false
+    @State var scrollToBottom: Bool = false
     @State var showFileAndImageSelector = false
     @State var keyboardHeight: CGFloat = 0.0
-    @State var bottomSafeAreaHeight: CGFloat = .zero
-    
-    @State var scrollViewBottomPosition: (x: CGFloat, y: CGFloat) = (0, 0)
     
     var body: some View {
-        GeometryReader { globalProxy in
-            VStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    DividerView(padding: (Edge.Set.top, CGFloat(10)))
-                    ScrollViewReader { scrollViewProxy in
-                        ScrollView {
-                            let sortedMessage = sortMessagesByDate(messages: Message.mockMessage)
-                            ForEach(sortedMessage, id: \.0) { date, messages in
-                                VStack(alignment: .leading) {
-                                    DirectMessageDate(date: date)
-                                        .padding(.horizontal, 13)
-                                    
-                                    let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
-                                    ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
-                                        let sortedMessagesByUser = sortMessagesByUser(messages: messages)
-                                        ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                            if let user = searchUser(id: userId) {
-                                                UserConversationView(updateScrolling: $updateScrolling, user: user, messages: messages, time: time)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            Color.clear
-                                .frame(height: 1)
-                                .id("BOTTOM")
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear
-                                            .onAppear {
-                                                scrollViewBottomPosition.x = geo.frame(in: .global).minX
-                                                scrollViewBottomPosition.y = geo.frame(in: .global).minY
-                                            }
-                                    }
-                                )
-                        }
-                        .scrollDismissesKeyboard(.immediately)
-                        .task {
-                            scrollViewProxy.scrollTo("BOTTOM", anchor: .bottom)
-                        }
-                        .onChange(of: updateScrolling) { newValue in
-                            if newValue {
-                                scrollViewProxy.scrollTo("BOTTOM", anchor: .bottom)
-                                updateScrolling = false
-                            }
-                        }
-                        .modifier(KeyboardStateProvider(updateScrolling: $updateScrolling))
-                    }
-                    DividerView()
-                }
-                
-                MessageInputBar(updateScrolling: $updateScrolling, showFileAndImageSelector: $showFileAndImageSelector)
-//                    .padding(.bottom, (keyboardHeight < 0 && !showFileAndImageSelector) ? 0 : keyboardHeight - bottomSafeAreaHeight)
-                
-                if showFileAndImageSelector {
-                    SelectorView(height: 346.0)
-                }
-            }
-            .modifier(KeyboardHeightProvider(height: $keyboardHeight))
-            .background(Color("PrimaryBackgroundColor"))
-            .navigationBarBackButtonHidden(true)
-            .task {
-                self.bottomSafeAreaHeight = globalProxy.safeAreaInsets.bottom
-            }
-            .onTapGesture {
-                hideKeyboard()
-            }
-            .toolbar {
-                NavigationTopBar(data: User.mockUser[0])
-            }
-            .tint(.white)
-        }
-    }
-}
-extension DirectMessageView {
-    func sortMessagesByDate(messages: [Message]) -> [(Date, [Message])] {
-        var result: [Date:[Message]] = [:]
-        
-        for message in messages {
-            let date = Calendar.current.startOfDay(for: message.date)
-            if result[date] != nil {
-                result[date]!.append(message)
-            } else {
-                result[date] = [message]
-            }
-        }
-        return result.sorted { $0.key < $1.key }
-    }
-    
-    func sortMessagesByHourMinute(messages: [Message]) -> [(Date, [Message])] {
-        var result: [Date: [Message]] = [:]
-        let calendar = Calendar.current
-        
-        for message in messages {
-            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: message.date)
-
-            if let date = calendar.date(from: components) {
-                if result[date] != nil {
-                    result[date]!.append(message)
-                } else {
-                    result[date] = [message]
-                }
-            }
-        }
-        return result.sorted { $0.key < $1.key }
-    }
-    
-    func searchUser(id: UUID) -> User? {
-        return User.mockUser.first { $0.id == id }
-    }
-    
-    func sortMessagesByUser(messages: [Message]) -> [(UUID, [Message])] {
-        var result: [(UUID, [Message])] = []
-        
-        var tempMessages: [Message] = []
-        var prevDate: Date?
-        var prevUserId: UUID?
-        for message in messages {
-            if prevDate == nil {
-                prevDate = message.date
-                prevUserId = message.userId
-                tempMessages.append(message)
-                continue
-            }
+        VStack(spacing: 0) {
+            MessageScrollView(scrollToBottom: $scrollToBottom)
             
-            if prevDate == message.date && prevUserId == message.userId {
-                tempMessages.append(message)
-            } else {
-                if let id = prevUserId {
-                    result.append((id, tempMessages))
-                }
-                tempMessages = [message]
-                prevDate = message.date
-                prevUserId = message.userId
+            MessageInputBar(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom)
+            
+            if showFileAndImageSelector {
+                SelectorView(height: keyboardHeight)
             }
         }
-        if let id = prevUserId {
-            result.append((id, tempMessages))
+        .modifier(KeyboardHeightProvider(height: $keyboardHeight))
+        .background(Color("PrimaryBackgroundColor"))
+        .navigationBarBackButtonHidden(true)
+        .onTapGesture {
+            hideKeyboard()
         }
-        
-        return result
+        .toolbar {
+            NavigationTopBar()
+        }
+        .tint(.white)
     }
 }
 

@@ -10,7 +10,6 @@ import UIKit
 
 struct MessageView: View {
     let message: Message
-    @Binding var updateScrolling: Bool
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     let linkMetadataService = LinkMetadataService()
     @State private var embededTitle = ""
@@ -63,14 +62,16 @@ struct MessageView: View {
                     Text(text)
                 }
             }
-            if !message.imageData.isEmpty {
-                GridImageView(imageData: message.imageData)
+            if let images = message.images?.allObjects as? [ImageData], !images.isEmpty {
+                GridImageView(imageData: images)
                     .padding(.top, 5)
             }
-            if !message.fileData.isEmpty {
-                ForEach(Array(message.fileData.enumerated()), id: \.offset) { element in
-                    let file = element.element
-                    FileEmbededView(name: file.name, data: file.data)
+            if let files = message.files?.allObjects as? [FileData], !files.isEmpty {
+                
+                ForEach(files, id: \.self) { file in
+                    if let name = file.name, let data = file.data {
+                        FileEmbededView(name: name, data: data)
+                    }
                 }
             }
         }
@@ -86,7 +87,6 @@ extension MessageView {
                     embededDescription = response.description ?? ""
                     embededImage = response.image
                     showEmbeded = true
-                    updateScrolling = true
                 case .failure(let error):
                     print("Error: Can't retrieve website meta data \(error)")
                 }
@@ -107,7 +107,7 @@ extension MessageView {
 }
 
 struct GridImageView: View {
-    let imageData: [Data?]
+    let imageData: [ImageData]
     let numImagePerRow = 3
     
     var body: some View {
@@ -119,7 +119,7 @@ struct GridImageView: View {
                 let endIndex = min(startIndex + numImagePerRow, count)
                 GridRow {
                     ForEach(startIndex..<endIndex, id: \.self) { index in
-                        if let data = imageData[index], let uiImage = UIImage(data: data) {
+                        if let data = imageData[index].data, let uiImage = UIImage(data: data) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFit()

@@ -9,10 +9,14 @@ import SwiftUI
 
 @main
 struct MessagingAppApp: App {
+    @StateObject private var userViewModel = UserViewModel()
+    @StateObject private var messageViewModel = MessageViewModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(userViewModel)
+                .environmentObject(messageViewModel)
         }
     }
 }

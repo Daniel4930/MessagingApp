@@ -8,7 +8,8 @@ import SwiftUI
 
 struct DisplaySelectorButton: View {
     @Binding var showFileAndImageSelector: Bool
-    @Binding var updateScrolling: Bool
+    @FocusState.Binding var textEditorFocusedField: Bool
+    
     let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
     let animationDelay: Double = 0.05
     let rotationAngle: Double = 45.0
@@ -17,8 +18,6 @@ struct DisplaySelectorButton: View {
     var body: some View {
         Button {
             showFileAndImageSelector.toggle()
-            updateScrolling = true
-            hideKeyboard()
         } label: {
             Image(systemName: "plus")
                 .resizable()
