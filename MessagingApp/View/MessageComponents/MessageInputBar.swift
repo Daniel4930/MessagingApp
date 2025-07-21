@@ -23,41 +23,20 @@ struct MessageInputBar: View {
     
     let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
     let horizontalPaddingSpace: CGFloat = 10
-    let maxHeight = UIScreen.main.bounds.height / 5
     
     var body: some View {
         HStack(spacing: 10) {
             DisplaySelectorButton(showFileAndImageSelector: $showFileAndImageSelector, textEditorFocusedField: $focusedField)
             
-            ZStack(alignment: .leading) {
-                CustomTextEdior(dynamicHeight: $dynamicHeight, uiTextView: $uiTextView) {
-                    showSendButton = !uiTextView.text.isEmpty
-                    
-                    let matched = searchUser(users: userViewModel.fetchAllUsers())
-                    matchUsers = matched
-                    showMention = !matched.isEmpty
-                }
-                .frame(height: min(dynamicHeight, maxHeight))
-                .padding(.horizontal, horizontalPaddingSpace)
-                .focused($focusedField)
-                .onChange(of: focusedField) { _, newValue in
-                    if focusedField {
-                        showFileAndImageSelector = false
-                    }
-                }
-                
-                if let friends = userViewModel.user?.friends?.allObjects as? [User],
-                   let friend = friends.first,
-                   let displayName = friend.displayName,
-                   uiTextView.text == ""
-                {
-                    Text("Message @\(displayName)")
-                        .padding(.horizontal)
-                        .foregroundStyle(.gray)
-                }
-            }
-            .background(Color("SecondaryBackgroundColor"))
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            CustomTextEditor(
+                uiTextView: $uiTextView,
+                dynamicHeight: $dynamicHeight,
+                showSendButton: $showSendButton,
+                matchUsers: $matchUsers,
+                showMention: $showMention,
+                focusedField: $focusedField,
+                showFileAndImageSelector: $showFileAndImageSelector
+            )
             
             if showSendButton {
                 Button {
@@ -90,90 +69,31 @@ struct MessageInputBar: View {
         .padding(.vertical, 10)
         .overlay(alignment: .top) {
             MentionViewAnimation(numUsersToShow: matchUsers.count, showMention: $showMention) {
-                MentionView(message: $uiTextView.text, showMention: $showMention, users: matchUsers)
-                    .frame(maxWidth: .infinity)
+                MentionView(users: matchUsers) { name in
+                    uiTextView.text.removeLast() // remove "@"
+                    
+                    let mutableAttString = NSMutableAttributedString(attributedString: uiTextView.attributedText)
+                    let attributes: [NSAttributedString.Key: Any] = [
+                        .foregroundColor: UIColor(named: "MentionNameColor") ?? UIColor(Color(hex: "#d4c7ff")),
+                        .font: UIFont.systemFont(ofSize: 16, weight: .bold)
+                    ]
+                    
+                    let attributedString = NSAttributedString(string: "@" + name + " ", attributes: attributes)
+                    mutableAttString.append(attributedString)
+                    
+                    let normalAttributes: [NSAttributedString.Key: Any] = [
+                        .foregroundColor: UIColor.label,
+                        .font: UIFont.systemFont(ofSize: 16)
+                    ]
+                    
+                    uiTextView.attributedText = mutableAttString
+                    uiTextView.typingAttributes = normalAttributes
+                    
+                    showMention = false
+                }
+                .frame(maxWidth: .infinity)
             }
         }
         .background(Color("PrimaryBackgroundColor"))
-    }
-}
-extension MessageInputBar {
-    func searchUser(users: [User]) -> [User] {
-        
-        if let message = uiTextView.text {
-            //message = "@"
-            guard let commandIndex = message.lastIndex(of: "@") else { return [] }
-            if commandIndex == message.startIndex {
-                return users
-            }
-            
-            //message = "text@text"
-            guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
-            
-            //message = "text@ " && message = "text @ "
-            guard message.distance(from: spaceIndex, to: commandIndex) == 1 else { return [] }
-            
-            //message = "text @"
-            if message[commandIndex] == message.last {
-                return users
-            }
-            
-            //message = "text @name"
-            let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
-            
-            return users.filter { user in
-                if let displayName = user.displayName, let userName = user.userName {
-                    return userName.lowercased().contains(nameToSearch) || displayName.lowercased().contains(nameToSearch)
-                }
-                return false
-            }
-        }
-        return []
-    }
-}
-
-struct CustomTextEdior: UIViewRepresentable {
-    @Binding var dynamicHeight: CGFloat
-    @Binding var uiTextView: UITextView
-    var onMessageChange: () -> Void
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
-        textView.delegate = context.coordinator
-        textView.font = UIFont.systemFont(ofSize: 16)
-        textView.backgroundColor = UIColor(named: "SecondaryBackgroundColor")
-        DispatchQueue.main.async {
-            uiTextView = textView
-        }
-        
-        return textView
-    }
-    
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        DispatchQueue.main.async {
-            let fittingSize = CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude)
-            let newSize = uiView.sizeThatFits(fittingSize)
-            dynamicHeight = newSize.height
-        }
-    }
-    
-    class Coordinator: NSObject, UITextViewDelegate {
-        var parent: CustomTextEdior
-        
-        init(_ parent: CustomTextEdior) {
-            self.parent = parent
-        }
-        
-        func textViewDidChange(_ textView: UITextView) {
-            let fittingSize = CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)
-            let newSize = textView.sizeThatFits(fittingSize)
-            parent.dynamicHeight = newSize.height
-            
-            parent.onMessageChange()
-        }
     }
 }

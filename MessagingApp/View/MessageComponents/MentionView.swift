@@ -7,23 +7,14 @@
 import SwiftUI
 
 struct MentionView: View {
-    @Binding var message: String
-    @Binding var showMention: Bool
     let users: [User]
+    let makeNameAttributedString: (String) -> Void
+    
     let clickedBackgroundColor = Color("ButtonClickedBackgroundColor")
     @State private var buttonClicked = false
     
     func action(name: String) {
-        let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.blue
-        ]
-        let attributedName = NSAttributedString(string: name, attributes: attributes)
-        
-        let combinedString = NSMutableAttributedString(string: message)
-        combinedString.append(attributedName)
-        
-        $message.wrappedValue = combinedString.string + " "
-        showMention = false
+        makeNameAttributedString(name)
     }
     
     var body: some View {
@@ -102,10 +93,11 @@ struct MentionViewAnimation<Content: View>: View {
             .offset(y: -currentValue)
             .animation(.interactiveSpring(response: springStiffness, dampingFraction: springDrag), value: currentValue)
             .onChange(of: numUsersToShow) { _, newValue in
-                if showMention.wrappedValue {
-                    let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
-                    currentValue = newValue >= 5 ? maxHeight : targetHeight
-                } else {
+                let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
+                currentValue = newValue >= 5 ? maxHeight : targetHeight
+            }
+            .onChange(of: showMention.wrappedValue) { _, newValue in
+                if newValue == false {
                     currentValue = 0
                 }
             }
