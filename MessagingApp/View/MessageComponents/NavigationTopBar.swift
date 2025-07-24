@@ -14,7 +14,7 @@ struct NavigationTopBar: ToolbarContent {
     let backButtonWidth: CGFloat = 19
     
     var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarLeading) {
+        ToolbarItemGroup(placement: .navigation) {
             Button {
                 dismiss()
             } label: {
@@ -26,6 +26,9 @@ struct NavigationTopBar: ToolbarContent {
             HStack {
                 if let friend = getFriend() {
                     IconView(user: friend)
+                        .overlay(alignment: .bottomTrailing) {
+                            OnlineStatusCircle(status: friend.onlineStatus, color: Color("PrimaryBackgroundColor"))
+                        }
                     
                     Text(friend.displayName ?? "")
                         .font(.title3)
@@ -45,7 +48,7 @@ extension NavigationTopBar {
     func getFriend() -> User? {
         if let friends = userViewModel.user?.friends?.allObjects, let first = friends.first as? User {
             guard let id = first.id else { return nil }
-            return userViewModel.fetchUser(id: id)
+            return userViewModel.fetchUserById(id: id)
         }
         return nil
     }

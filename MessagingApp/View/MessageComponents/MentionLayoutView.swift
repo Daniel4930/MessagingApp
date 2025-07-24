@@ -1,20 +1,20 @@
 //
-//  MentionView.swift
+//  MentionLayoutView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/16/25.
 //
 import SwiftUI
 
-struct MentionView: View {
+struct MentionLayoutView: View {
     let users: [User]
-    let makeNameAttributedString: (String) -> Void
+    let appendNameToText: (String) -> Void
     
     let clickedBackgroundColor = Color("ButtonClickedBackgroundColor")
     @State private var buttonClicked = false
     
     func action(name: String) {
-        makeNameAttributedString(name)
+        appendNameToText(name)
     }
     
     var body: some View {
@@ -47,7 +47,7 @@ struct MentionButton: View {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + removeMentionViewDeadline) {
-                onSelect(user.displayName ?? "")
+                onSelect(user.userName ?? "")
             }
         } label: {
             HStack {
@@ -70,7 +70,7 @@ struct MentionButton: View {
 }
 
 
-struct MentionViewAnimation<Content: View>: View {
+struct MentionLayoutViewAnimation<Content: View>: View {
     let numUsersToShow: Int
     var showMention: Binding<Bool>
     let content: Content

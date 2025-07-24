@@ -1,5 +1,5 @@
 //
-//  MessageView.swift
+//  MessageContentView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/11/25.
@@ -8,8 +8,9 @@
 import SwiftUI
 import UIKit
 
-struct MessageView: View {
+struct MessageContentView: View {
     let message: Message
+    
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     let linkMetadataService = LinkMetadataService()
     @State private var embededTitle = ""
@@ -19,6 +20,9 @@ struct MessageView: View {
     @State private var showSafari: Bool = false
     @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
+    @State private var userToPresent: User?
+    
+    @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -59,7 +63,26 @@ struct MessageView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 } else {
-                    Text(text)
+                    HStack(spacing: 0) {
+                        ForEach(separateMentionedNameAndMessage(text: text), id: \.self) { substr in
+                            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst()))
+                            {
+                                Button {
+                                    userToPresent = user
+                                } label: {
+                                    Text("@" + (user.displayName ?? user.userName ?? "UNKNOWN"))
+                                        .bold()
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color.blue.opacity(0.5))
+                                        )
+                                }
+                                Text(" ")
+                            } else {
+                                Text(substr + " ")
+                            }
+                        }
+                    }
                 }
             }
             if let images = message.images?.allObjects as? [ImageData], !images.isEmpty {
@@ -70,14 +93,18 @@ struct MessageView: View {
                 
                 ForEach(files, id: \.self) { file in
                     if let name = file.name, let data = file.data {
-                        FileEmbededView(name: name, data: data)
+                        EmbededFileLayoutView(name: name, data: data)
                     }
                 }
             }
         }
+        .sheet(item: $userToPresent) { user in
+            ProfileView(user: user)
+                .presentationDetents([.fraction(0.95)])
+        }
     }
 }
-extension MessageView {
+extension MessageContentView {
     func retrieveMetaDataFromURL(url: String) {
         linkMetadataService.getMetaDataFromUrl(urlString: url) { result in
             DispatchQueue.main.async {
@@ -93,41 +120,43 @@ extension MessageView {
             }
         }
     }
+    
     @ViewBuilder func organizeEmbededItems() -> some View {
         if embededImageDimension.width > embededImageDimension.height {
             VStack(alignment: .leading) {
-                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
+                EmbededLinkLayoutView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
             }
         } else {
             HStack(alignment: .center) {
-                LinkEmbededView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
+                EmbededLinkLayoutView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
             }
         }
+    }
+    
+    func separateMentionedNameAndMessage(text: String) -> [String] {
+        var result: [String] = []
+        
+        var string: String = ""
+        for subString in text.components(separatedBy: " ") {
+            if let firstCharacter = subString.first, firstCharacter == "@" {
+                if !string.isEmpty {
+                    result.append(string)
+                    string = ""
+                }
+                result.append(subString)
+            } else {
+                string.append(subString + " ")
+            }
+        }
+        if !string.isEmpty {
+            result.append(string)
+        }
+        
+        //Remove extract space at the end if there is any
+        result = result.map { $0.last == " " ? String($0.dropLast()) : $0 }
+        
+        return result
     }
 }
 
-struct GridImageView: View {
-    let imageData: [ImageData]
-    let numImagePerRow = 3
-    
-    var body: some View {
-        let count = imageData.count
-        let numRow = ceil(Double(count) / Double(numImagePerRow))
-        Grid(horizontalSpacing: 3, verticalSpacing: 3) {
-            ForEach(0..<Int(numRow), id: \.self) { row in
-                let startIndex = row * numImagePerRow
-                let endIndex = min(startIndex + numImagePerRow, count)
-                GridRow {
-                    ForEach(startIndex..<endIndex, id: \.self) { index in
-                        if let data = imageData[index].data, let uiImage = UIImage(data: data) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+

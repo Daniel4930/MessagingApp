@@ -1,5 +1,5 @@
 //
-//  MessageInputBar.swift
+//  MessagingBarLayoutView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/10/25.fdsfsd
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct MessageInputBar: View {
+struct MessagingBarLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
     @Binding var scrollToBottom: Bool
     
@@ -26,7 +26,7 @@ struct MessageInputBar: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            DisplaySelectorButton(showFileAndImageSelector: $showFileAndImageSelector, textEditorFocusedField: $focusedField)
+            SelectorButtonLayoutView(showFileAndImageSelector: $showFileAndImageSelector, textEditorFocusedField: $focusedField)
             
             CustomTextEditor(
                 uiTextView: $uiTextView,
@@ -42,7 +42,7 @@ struct MessageInputBar: View {
                 Button {
                     messageViewModel.addMessage(
                         userId: userViewModel.user!.id!,
-                        text: uiTextView.text,
+                        text: removeExtraEndSpace(),
                         imageData: nil,
                         files: nil,
                         location: .dm,
@@ -53,6 +53,7 @@ struct MessageInputBar: View {
                     )
                     uiTextView.text = ""
                     scrollToBottom = true
+                    showSendButton = false
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .resizable()
@@ -68,8 +69,8 @@ struct MessageInputBar: View {
         .padding(.horizontal, 13)
         .padding(.vertical, 10)
         .overlay(alignment: .top) {
-            MentionViewAnimation(numUsersToShow: matchUsers.count, showMention: $showMention) {
-                MentionView(users: matchUsers) { name in
+            MentionLayoutViewAnimation(numUsersToShow: matchUsers.count, showMention: $showMention) {
+                MentionLayoutView(users: matchUsers) { name in
                     uiTextView.text.removeLast() // remove "@"
                     
                     let mutableAttString = NSMutableAttributedString(attributedString: uiTextView.attributedText)
@@ -95,5 +96,13 @@ struct MessageInputBar: View {
             }
         }
         .background(Color("PrimaryBackgroundColor"))
+    }
+}
+extension MessagingBarLayoutView {
+    func removeExtraEndSpace() -> String {
+        if uiTextView.text.last == " " {
+            return String(uiTextView.text.dropLast())
+        }
+        return uiTextView.text
     }
 }

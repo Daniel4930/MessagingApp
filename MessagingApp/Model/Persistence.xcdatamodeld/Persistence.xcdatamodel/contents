@@ -23,6 +23,7 @@
         <relationship name="images" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ImageData" inverseName="message" inverseEntity="ImageData"/>
     </entity>
     <entity name="User" representedClassName="User" syncable="YES" codeGenerationType="class">
+        <attribute name="aboutMe" optional="YES" attributeType="String"/>
         <attribute name="bannerColor" optional="YES" attributeType="String"/>
         <attribute name="displayName" optional="YES" attributeType="String"/>
         <attribute name="icon" optional="YES" attributeType="Binary"/>

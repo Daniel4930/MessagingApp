@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MessageScrollView: View {
     @Binding var scrollToBottom: Bool
+    
     @State private var height: CGFloat = .zero
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
@@ -29,7 +30,7 @@ struct MessageScrollView: View {
                                 let sortedMessagesByUser = sortMessagesByUser(messages: messages)
                                 ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
                                     if let user = searchUser(id: userId) {
-                                        UserConversationView(user: user, messages: messages, time: time)
+                                        MessageLayoutView(user: user, messages: messages, time: time)
                                     }
                                 }
                             }
@@ -93,7 +94,7 @@ extension MessageScrollView {
     }
     
     func searchUser(id: UUID) -> User? {
-        return userViewModel.fetchUser(id: id)
+        return userViewModel.fetchUserById(id: id)
     }
     
     func sortMessagesByUser(messages: [Message]) -> [(UUID, [Message])] {

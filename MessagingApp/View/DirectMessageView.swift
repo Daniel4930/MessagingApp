@@ -16,7 +16,7 @@ struct DirectMessageView: View {
         VStack(spacing: 0) {
             MessageScrollView(scrollToBottom: $scrollToBottom)
             
-            MessageInputBar(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom)
+            MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom)
             
             if showFileAndImageSelector {
                 SelectorView(height: keyboardHeight)

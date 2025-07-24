@@ -1,12 +1,12 @@
 //
-//  DisplaySelectorButton.swift
+//  SelectorButtonLayoutView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/17/25.
 //
 import SwiftUI
 
-struct DisplaySelectorButton: View {
+struct SelectorButtonLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
     @FocusState.Binding var textEditorFocusedField: Bool
     

@@ -13,7 +13,7 @@ enum DataSize {
     case MB(unit: String = "MB")
 }
 
-struct FileEmbededView: View {
+struct EmbededFileLayoutView: View {
     let name: String
     let data: Data
     
@@ -38,7 +38,7 @@ struct FileEmbededView: View {
         
     }
 }
-extension FileEmbededView {
+extension EmbededFileLayoutView {
     func fileSizeTextFormat() -> String {
         let size = data.count
         var sizeUnit = DataSize.byte()

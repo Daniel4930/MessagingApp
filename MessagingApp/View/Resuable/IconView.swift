@@ -7,13 +7,14 @@
 import SwiftUI
 
 struct IconView: View {
-    let user: User
-    let iconDimension: (width: CGFloat, height: CGFloat) = (37, 37)
+    let user: User?
+    let iconDimension: (width: CGFloat, height: CGFloat)
     let iconBorderThickness: CGFloat = 41
     let borderColor: Color
     
-    init(user: User, borderColor: Color = Color("PrimaryBackgroundColor")) {
+    init(user: User?, iconDimension: (width: CGFloat, height: CGFloat) = (37, 37), borderColor: Color = Color("PrimaryBackgroundColor")) {
         self.user = user
+        self.iconDimension = iconDimension
         self.borderColor = borderColor
     }
     
@@ -23,24 +24,18 @@ struct IconView: View {
                 .frame(width: iconBorderThickness, height: iconBorderThickness)
                 .clipShape(.circle)
             
-            if let data = user.icon, let uiImage = UIImage(data: data) {
+            if let user = user, let data = user.icon, let uiImage = UIImage(data: data) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconDimension.width, height: iconDimension.height)
                     .clipShape(.circle)
-                    .overlay(alignment: .bottomTrailing) {
-                        OnlineStatusCircle(status: user.onlineStatus, color: borderColor)
-                    }
             } else {
                 Image(systemName: "person.fill")
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconDimension.width, height: iconDimension.height)
                     .clipShape(.circle)
-                    .overlay(alignment: .bottomTrailing) {
-                        OnlineStatusCircle(status: user.onlineStatus, color: borderColor)
-                    }
             }
         }
     }
@@ -49,8 +44,15 @@ struct IconView: View {
 struct OnlineStatusCircle: View {
     let status: String?
     let color: Color
-    let outterCircleDimension: (width: CGFloat, height: CGFloat) = (15, 15)
-    let innerCircleDimension: (width: CGFloat, height: CGFloat) = (11, 11)
+    let outterCircleDimension: (width: CGFloat, height: CGFloat)
+    let innerCircleDimension: (width: CGFloat, height: CGFloat)
+    
+    init(status: String?, color: Color, outterDimension: (width: CGFloat, height: CGFloat) = (15, 15), innerDimension: (width: CGFloat, height: CGFloat) = (11, 11)) {
+        self.status = status
+        self.color = color
+        self.outterCircleDimension = outterDimension
+        self.innerCircleDimension = innerDimension
+    }
     
     var body: some View {
         ZStack {
@@ -64,7 +66,7 @@ struct OnlineStatusCircle: View {
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
                     }
                     else if status == "offline" {
-                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (6, 6)
+                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.545, innerCircleDimension.height * 0.545)
                         Circle()
                             .fill(.gray)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -75,7 +77,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "invisible" {
-                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (6, 6)
+                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.545, innerCircleDimension.height * 0.545)
                         Circle()
                             .fill(.gray)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -86,7 +88,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "doNotDisturb" {
-                        let rectangleDimension: (width: CGFloat, height: CGFloat) = (8, 3)
+                        let rectangleDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.727, innerCircleDimension.height * 0.272)
                         Circle()
                             .fill(.red)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -97,7 +99,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "idle" {
-                        let circleOverlayDimension: (width: CGFloat, height: CGFloat) = (8, 8)
+                        let circleOverlayDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.727, innerCircleDimension.height * 0.727)
                         Circle()
                             .fill(.yellow)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)

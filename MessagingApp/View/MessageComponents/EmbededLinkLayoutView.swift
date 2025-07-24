@@ -1,5 +1,5 @@
 //
-//  LinkEmbededView.swift
+//  EmbededLinkLayoutView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/13/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct LinkEmbededView: View {
+struct EmbededLinkLayoutView: View {
     @Binding var embededTitle: String
     @Binding var embededDescription: String
     @Binding var embededImage: UIImage?

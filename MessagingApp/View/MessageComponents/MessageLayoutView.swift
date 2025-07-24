@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct UserConversationView: View {
+struct MessageLayoutView: View {
     let user: User
     let messages: [Message]
     let time: Date
@@ -36,12 +36,12 @@ struct UserConversationView: View {
                     Text(user.displayName ?? "")
                         .font(.title3)
                         .bold()
-                    Text(UserConversationView.messageTimeFormatter.string(from: time))
+                    Text(MessageLayoutView.messageTimeFormatter.string(from: time))
                         .font(.footnote)
                         .foregroundStyle(.gray)
                 }
                 ForEach(messages) { message in
-                    MessageView(message: message)
+                    MessageContentView(message: message)
                 }
             }
         }
