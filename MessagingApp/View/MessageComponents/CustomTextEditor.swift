@@ -12,8 +12,7 @@ struct CustomTextEditor: View {
     @Binding var showSendButton: Bool
     @Binding var matchUsers: [User]
     @Binding var showMention: Bool
-    @FocusState.Binding var focusedField: Bool
-    @Binding var showFileAndImageSelector: Bool
+    @FocusState.Binding var focusedField: Field?
     
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -35,12 +34,7 @@ struct CustomTextEditor: View {
             }
             .frame(height: min(dynamicHeight, maxHeight))
             .padding(.horizontal, horizontalPaddingSpace)
-            .focused($focusedField)
-            .onChange(of: focusedField) { _, newValue in
-                if focusedField {
-                    showFileAndImageSelector = false
-                }
-            }
+            .focused($focusedField, equals: .textView)
             
             if let friends = userViewModel.user?.friends?.allObjects as? [User],
                let friend = friends.first,

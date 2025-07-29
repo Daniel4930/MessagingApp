@@ -9,49 +9,49 @@ import SwiftUI
 
 struct MessageScrollView: View {
     @Binding var scrollToBottom: Bool
+    @FocusState.Binding var focusedField: Field?
     
-    @State private var height: CGFloat = .zero
+    @State private var scrollPosition = ScrollPosition()
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
         VStack(spacing: 0) {
-            DividerView(padding: (Edge.Set.top, CGFloat(10)))
-            ScrollViewReader { proxy in
-                ScrollView {
-                    let sortedMessage = sortMessagesByDate(messages: messageViewModel.messages)
-                    ForEach(sortedMessage, id: \.0) { date, messages in
-                        VStack(alignment: .leading) {
-                            DirectMessageDate(date: date)
-                                .padding(.horizontal, 13)
-                            
-                            let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
-                            ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
-                                let sortedMessagesByUser = sortMessagesByUser(messages: messages)
-                                ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                    if let user = searchUser(id: userId) {
-                                        MessageLayoutView(user: user, messages: messages, time: time)
-                                    }
+            ScrollView {
+                let sortedMessage = sortMessagesByDate(messages: messageViewModel.messages)
+                ForEach(sortedMessage, id: \.0) { date, messages in
+                    VStack(alignment: .leading) {
+                        MessageDateView(date: date)
+                            .padding(.horizontal, 13)
+                        
+                        let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
+                        ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
+                            let sortedMessagesByUser = sortMessagesByUser(messages: messages)
+                            ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
+                                if let user = searchUser(id: userId) {
+                                    MessageLayoutView(user: user, messages: messages, time: time)
                                 }
                             }
                         }
                     }
-                    Color.clear
-                        .frame(height: 1)
-                        .id("BOTTOM")
                 }
-                .onChange(of: scrollToBottom) { _, newValue in
-                    if newValue {
-                        withAnimation(.default) {
-                            proxy.scrollTo("BOTTOM", anchor: .bottom)
-                            scrollToBottom = false
-                        }
-                    }
-                }
-                .scrollDismissesKeyboard(.immediately)
-                .defaultScrollAnchor(.bottom)
             }
-            DividerView()
+            .scrollPosition($scrollPosition)
+            .scrollDismissesKeyboard(.immediately)
+            .defaultScrollAnchor(.bottom)
+            .onScrollPhaseChange { oldPhase, newPhase in
+                if newPhase == .interacting {
+                    focusedField = nil
+                }
+            }
+            .onChange(of: scrollToBottom) { _, newValue in
+                if newValue == true {
+                    withAnimation(.spring(duration: 0.2)) {
+                        scrollPosition.scrollTo(edge: .bottom)
+                    }
+                    scrollToBottom = false
+                }
+            }
         }
     }
 }

@@ -86,13 +86,10 @@ struct ProfileView: View {
                         .contentShape(Rectangle())
                     }
                     .presentationCompactAdaptation(.popover)
-
                 }
             }
             .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color("ButtonColor"))
-                    .frame(width: 40, height: 5)
+                LineIndicator()
             }
             
             VStack(alignment: .leading) {

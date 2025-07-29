@@ -7,25 +7,96 @@
 
 import SwiftUI
 
+enum Field {
+    case textView
+}
+
 struct DirectMessageView: View {
-    @State var scrollToBottom: Bool = false
-    @State var showFileAndImageSelector = false
-    @State var keyboardHeight: CGFloat = 0.0
+    @State private var scrollToBottom: Bool = false
+    @State private var showFileAndImageSelector = false
+    @State private var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)] = []
+    @State private var showPhotoAndFile = false
+
+    @FocusState private var focusedField: Field?
     
+    @EnvironmentObject var keyboardProvider: KeyboardProvider
+
     var body: some View {
-        VStack(spacing: 0) {
-            MessageScrollView(scrollToBottom: $scrollToBottom)
-            
-            MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom)
-            
-            if showFileAndImageSelector {
-                SelectorView(height: keyboardHeight)
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                
+                DividerView()
+                
+                MessageScrollView(scrollToBottom: $scrollToBottom, focusedField: $focusedField)
+                
+                DividerView()
+                
+                if !selectedPhotosAndFiles.isEmpty {
+                    ScrollView([.horizontal]) {
+                        HStack {
+                            ForEach(Array(selectedPhotosAndFiles.enumerated()), id: \.offset) { index, element in
+                                if let uiImage = element.image {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 50, height: 50)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .padding(.top, 14)
+                                        .padding(.trailing, 8)
+                                        .onTapGesture {
+                                            showPhotoAndFile.toggle()
+                                        }
+                                        .overlay(alignment: .topTrailing) {
+                                            Button {
+                                                selectedPhotosAndFiles.remove(at: index)
+                                            } label: {
+                                                Text("x")
+                                                    .bold()
+                                                    .foregroundStyle(.black)
+                                                    .padding(4)
+                                                    .background {
+                                                        Circle()
+                                                            .fill(Color("ButtonColor"))
+                                                    }
+                                            }
+                                        }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.leading)
+                }
+                
+                MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField)
+                    
+            }
+            .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
+            .onChange(of: focusedField) { oldValue, newValue in
+                if newValue == .textView {
+                    showFileAndImageSelector = false
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showFileAndImageSelector {
+                    withAnimation(.spring) {
+                        SelectorView(minHeight: keyboardProvider.height, selectedPhotosAndFiles: $selectedPhotosAndFiles)
+                            .offset(y: proxy.safeAreaInsets.bottom)
+                            .onAppear {
+                                hideKeyboard()
+                            }
+                    }
+                }
+            }
+            .customSheetModifier(isPresented: $showPhotoAndFile) {
+                PhotoAndFileInfoView()
+                    .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
         }
-        .modifier(KeyboardHeightProvider(height: $keyboardHeight))
+        .ignoresSafeArea(.keyboard)
         .background(Color("PrimaryBackgroundColor"))
         .navigationBarBackButtonHidden(true)
         .onTapGesture {
+            showFileAndImageSelector = false
             hideKeyboard()
         }
         .toolbar {
@@ -35,29 +106,9 @@ struct DirectMessageView: View {
     }
 }
 
-struct DirectMessageDate: View {
-    let date: Date
-    let dividerLineThickness: CGFloat = 0.5
-    
-    static let dateHeaderFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM dd, yyyy"
-        return formatter
-    }()
-    
-    var body: some View {
-        HStack {
-            Rectangle()
-                .fill(.gray)
-                .frame(height: dividerLineThickness)
-            Text(DirectMessageDate.dateHeaderFormatter.string(from: date))
-                .foregroundStyle(.gray)
-                .fontWeight(.bold)
-                .font(.footnote)
-                .padding(.horizontal, 8)
-            Rectangle()
-                .fill(.gray)
-                .frame(height: dividerLineThickness)
-        }
-    }
-}
+//#Preview {
+//    DirectMessageView()
+//        .environmentObject(UserViewModel())
+//        .environmentObject(MessageViewModel())
+//        .environmentObject(KeyboardProvider())
+//}

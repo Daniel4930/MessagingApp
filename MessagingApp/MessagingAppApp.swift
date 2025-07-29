@@ -11,12 +11,14 @@ import SwiftUI
 struct MessagingAppApp: App {
     @StateObject private var userViewModel = UserViewModel()
     @StateObject private var messageViewModel = MessageViewModel()
+    @StateObject private var keyboardProvider = KeyboardProvider()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(userViewModel)
                 .environmentObject(messageViewModel)
+                .environmentObject(keyboardProvider)
         }
     }
 }

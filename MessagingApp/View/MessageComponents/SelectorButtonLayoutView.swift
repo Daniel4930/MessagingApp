@@ -8,7 +8,7 @@ import SwiftUI
 
 struct SelectorButtonLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
-    @FocusState.Binding var textEditorFocusedField: Bool
+    @FocusState.Binding var focusedField: Field?
     
     let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
     let animationDelay: Double = 0.05
@@ -18,6 +18,7 @@ struct SelectorButtonLayoutView: View {
     var body: some View {
         Button {
             showFileAndImageSelector.toggle()
+            focusedField = .textView
         } label: {
             Image(systemName: "plus")
                 .resizable()

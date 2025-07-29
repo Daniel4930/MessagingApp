@@ -10,13 +10,13 @@ import SwiftUI
 struct MessagingBarLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
     @Binding var scrollToBottom: Bool
+    @FocusState.Binding var focusedField: Field?
     
     @State private var showSendButton = false
     @State private var showMention = false
     @State private var matchUsers: [User] = []
     @State private var dynamicHeight: CGFloat = UIScreen.main.bounds.height / 20
     @State private var uiTextView: UITextView = UITextView()
-    @FocusState private var focusedField: Bool
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
@@ -26,7 +26,7 @@ struct MessagingBarLayoutView: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            SelectorButtonLayoutView(showFileAndImageSelector: $showFileAndImageSelector, textEditorFocusedField: $focusedField)
+            SelectorButtonLayoutView(showFileAndImageSelector: $showFileAndImageSelector, focusedField: $focusedField)
             
             CustomTextEditor(
                 uiTextView: $uiTextView,
@@ -34,8 +34,7 @@ struct MessagingBarLayoutView: View {
                 showSendButton: $showSendButton,
                 matchUsers: $matchUsers,
                 showMention: $showMention,
-                focusedField: $focusedField,
-                showFileAndImageSelector: $showFileAndImageSelector
+                focusedField: $focusedField
             )
             
             if showSendButton {
