@@ -16,7 +16,6 @@ struct DirectMessageView: View {
     @State private var showFileAndImageSelector = false
     @State private var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)] = []
     @State private var showPhotoAndFile = false
-
     @FocusState private var focusedField: Field?
     
     @EnvironmentObject var keyboardProvider: KeyboardProvider
@@ -32,43 +31,10 @@ struct DirectMessageView: View {
                 DividerView()
                 
                 if !selectedPhotosAndFiles.isEmpty {
-                    ScrollView([.horizontal]) {
-                        HStack {
-                            ForEach(Array(selectedPhotosAndFiles.enumerated()), id: \.offset) { index, element in
-                                if let uiImage = element.image {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 50, height: 50)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                        .padding(.top, 14)
-                                        .padding(.trailing, 8)
-                                        .onTapGesture {
-                                            showPhotoAndFile.toggle()
-                                        }
-                                        .overlay(alignment: .topTrailing) {
-                                            Button {
-                                                selectedPhotosAndFiles.remove(at: index)
-                                            } label: {
-                                                Text("x")
-                                                    .bold()
-                                                    .foregroundStyle(.black)
-                                                    .padding(4)
-                                                    .background {
-                                                        Circle()
-                                                            .fill(Color("ButtonColor"))
-                                                    }
-                                            }
-                                        }
-                                }
-                            }
-                        }
-                    }
-                    .padding(.leading)
+                    PhotoAndFileHoriScrollView(selectedPhotosAndFiles: $selectedPhotosAndFiles, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
                 MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField)
-                    
             }
             .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
             .onChange(of: focusedField) { oldValue, newValue in
@@ -102,13 +68,5 @@ struct DirectMessageView: View {
         .toolbar {
             NavigationTopBar()
         }
-        .tint(.white)
     }
 }
-
-//#Preview {
-//    DirectMessageView()
-//        .environmentObject(UserViewModel())
-//        .environmentObject(MessageViewModel())
-//        .environmentObject(KeyboardProvider())
-//}
