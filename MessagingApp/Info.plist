@@ -8,5 +8,7 @@
 	<string>This app requires microphone access to record audio for videos</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires Photo Library access to manage photos and videos</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
 </dict>
 </plist>
