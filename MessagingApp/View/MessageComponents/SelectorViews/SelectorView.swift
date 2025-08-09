@@ -19,7 +19,7 @@ enum PhotoLibraryAccessStatus {
 
 struct SelectorView: View {
     let minHeight: CGFloat
-    @Binding var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)]
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
     let maxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
     let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     
@@ -27,13 +27,9 @@ struct SelectorView: View {
     @State private var openCamera = false
     @State private var photoLibraryAccessPermissonGranted = false
     @State private var accessStatus: PhotoLibraryAccessStatus?
-
-    //TODO: Combine these two
-    @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var assets: [PHAsset] = []
     
-    
-    @State private var presentLimitedLibraryPicker = false
+    @State private var enableHighPriorityGesture = false
     
     var gesture: some Gesture {
         DragGesture()
@@ -59,11 +55,16 @@ struct SelectorView: View {
     }
     
     var body: some View {
-        VStack {
+        VStack {            
             LineIndicator()
             
-            if height >= maxHeight {
-                SelectorNavTopBar(height: $height, minHeight: minHeight, photoPickerItems: $photoPickerItems)
+            if height >= threshold {
+                SelectorNavTopBar(
+                    height: $height,
+                    minHeight: minHeight,
+                    accessStatus: accessStatus ?? .undetermined,
+                    uploadDataViewModel: uploadDataViewModel
+                )
                     .highPriorityGesture(gesture)
             } else {
                 PollsAndFilesButtonsView()
@@ -74,29 +75,31 @@ struct SelectorView: View {
                 VStack(alignment: .leading) {
                     switch accessStatus {
                     case .fullAccess:
-                        PhotosAndVideosGridView(openCamera: $openCamera, assets: $assets, selectedPhotosAndFiles: $selectedPhotosAndFiles)
+                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, uploadDataViewModel: uploadDataViewModel)
                             .task {
                                 getPhotosAndVideosAssets()
                             }
                         
                     case .limitedAccess:
-                        LimitedLibraryAccessView(presentLimitedLibraryPicker: $presentLimitedLibraryPicker, getAssets: getPhotosAndVideosAssets)
+                        LimitedLibraryAccessMessageView(getAssets: getPhotosAndVideosAssets)
                         
-                        PhotosAndVideosGridView(openCamera: $openCamera, assets: $assets, selectedPhotosAndFiles: $selectedPhotosAndFiles)
+                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, uploadDataViewModel: uploadDataViewModel)
                         
-                        BrowsePhotosAndVideosView(photoPickerItems: $photoPickerItems)
+                        BrowsePhotosAndVideosView(
+                            accessStatus: accessStatus ?? .undetermined,
+                            uploadDataViewModel: uploadDataViewModel,
+                            height: $height,
+                            minHeight: minHeight
+                        )
                         
-                    case .restricted, .denied, .undetermined:
+                    case .restricted, .denied, .undetermined, nil:
                         NoPhotoLibraryMessageView()
-                        
-                    case nil:
-                        Text("Can't use photo library")
                     }
                 }
             }
             .font(.subheadline)
             .padding(.horizontal)
-            .scrollDisabled(height == maxHeight ? false : true)
+            .highPriorityGesture(gesture, isEnabled: height == minHeight)
         }
         .foregroundStyle(Color.button)
         .frame(maxWidth: .infinity)

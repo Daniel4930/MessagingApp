@@ -7,12 +7,14 @@
 
 import SwiftUI
 import Photos
+import PhotosUI
 
 struct PhotosAndVideosGridView: View {
-    @Binding var openCamera: Bool
     @Binding var assets: [PHAsset]
-    @Binding var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)]
+    let refreshAssets: () -> Void
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
     
+    @State private var openCamera = false
     let gridColums = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
     
     var body: some View {
@@ -30,13 +32,11 @@ struct PhotosAndVideosGridView: View {
                     openCamera.toggle()
                 }
                 .fullScreenCover(isPresented: $openCamera) {
-                    ImagePickerView()
+                    CameraView(refreshAssets: refreshAssets)
                 }
             
             ForEach(assets, id: \.localIdentifier) { asset in
-                //TODO: change item to accept UIImage instead of PhotoPickerItem
-                
-                PhotoThumbnailView(asset: asset, item: nil, selectedPhotosAndFiles: $selectedPhotosAndFiles)
+                PhotoThumbnailView(asset: asset, uploadDataViewModel: uploadDataViewModel)
             }
         }
         .padding(.vertical)

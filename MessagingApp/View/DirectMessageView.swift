@@ -14,8 +14,8 @@ enum Field {
 struct DirectMessageView: View {
     @State private var scrollToBottom: Bool = false
     @State private var showFileAndImageSelector = false
-    @State private var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)] = []
     @State private var showPhotoAndFile = false
+    @StateObject private var uploadDataViewModel = UploadDataViewModel()
     @FocusState private var focusedField: Field?
     
     @EnvironmentObject var keyboardProvider: KeyboardProvider
@@ -27,11 +27,15 @@ struct DirectMessageView: View {
                 DividerView()
                 
                 MessageScrollView(scrollToBottom: $scrollToBottom, focusedField: $focusedField)
+                    .onTapGesture {
+                        showFileAndImageSelector = false
+                        hideKeyboard()
+                    }
                 
                 DividerView()
                 
-                if !selectedPhotosAndFiles.isEmpty {
-                    PhotoAndFileHoriScrollView(selectedPhotosAndFiles: $selectedPhotosAndFiles, showPhotoAndFile: $showPhotoAndFile)
+                if !uploadDataViewModel.selectionData.isEmpty {
+                    PhotoAndFileHoriScrollView(uploadDataViewModel: uploadDataViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
                 MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField)
@@ -44,13 +48,11 @@ struct DirectMessageView: View {
             }
             .overlay(alignment: .bottom) {
                 if showFileAndImageSelector {
-                    withAnimation(.spring) {
-                        SelectorView(minHeight: keyboardProvider.height, selectedPhotosAndFiles: $selectedPhotosAndFiles)
-                            .offset(y: proxy.safeAreaInsets.bottom)
-                            .onAppear {
-                                hideKeyboard()
-                            }
-                    }
+                    SelectorView(minHeight: keyboardProvider.height, uploadDataViewModel: uploadDataViewModel)
+                        .offset(y: proxy.safeAreaInsets.bottom)
+                        .onAppear {
+                            hideKeyboard()
+                        }
                 }
             }
             .customSheetModifier(isPresented: $showPhotoAndFile) {
@@ -61,10 +63,6 @@ struct DirectMessageView: View {
         .ignoresSafeArea(.keyboard)
         .background(Color("PrimaryBackgroundColor"))
         .navigationBarBackButtonHidden(true)
-        .onTapGesture {
-            showFileAndImageSelector = false
-            hideKeyboard()
-        }
         .toolbar {
             NavigationTopBar()
         }

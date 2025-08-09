@@ -11,7 +11,7 @@ struct SelectorButtonLayoutView: View {
     @FocusState.Binding var focusedField: Field?
     
     let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
-    let animationDelay: Double = 0.05
+    let animationDuration: Double = 0.2
     let rotationAngle: Double = 45.0
     let paddingSpace: CGFloat = 10
     
@@ -28,7 +28,7 @@ struct SelectorButtonLayoutView: View {
                 .background(Color("SecondaryBackgroundColor"))
                 .clipShape(.circle)
                 .foregroundStyle(showFileAndImageSelector ? .blue : .white)
-                .animation(.easeInOut.delay(animationDelay), value: showFileAndImageSelector)
+                .animation(.easeInOut(duration: animationDuration), value: showFileAndImageSelector)
         }
         .rotationEffect(.degrees(0))
     }

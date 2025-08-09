@@ -8,42 +8,49 @@
 import SwiftUI
 
 struct PhotoAndFileHoriScrollView: View {
-    @Binding var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)]
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
     @Binding var showPhotoAndFile: Bool
+    
+    let playImageSize = CGSize(width: 8, height: 8)
+    
     
     var body: some View {
         ScrollView([.horizontal]) {
             HStack {
-                ForEach(Array(selectedPhotosAndFiles.enumerated()), id: \.offset) { index, element in
-                    if let uiImage = element.image {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 50, height: 50)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .padding(.top, 14)
-                            .padding(.trailing, 8)
-                            .onTapGesture {
-                                showPhotoAndFile.toggle()
+                ForEach(Array(uploadDataViewModel.selectionData.enumerated()), id: \.offset) { index, uploadData in
+                    if let photo = uploadData.data.photo {
+                        SelectedDataImagePreview(image: photo.image, index: index, showPhotoAndFile: $showPhotoAndFile, uploadDataViewModel: uploadDataViewModel)
+                    }
+                    else if let video = uploadData.data.video {
+                        SelectedDataImagePreview(image: video.thumbnail, index: index, showPhotoAndFile: $showPhotoAndFile, uploadDataViewModel: uploadDataViewModel)
+                            .overlay(alignment: .bottomLeading) {
+                                Image(systemName: "play.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: playImageSize.width, height: playImageSize.height)
+                                    .padding(5)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .fill(Color.secondaryBackground)
+                                    }
+                                    .padding([.leading, .bottom], 3)
                             }
-                            .overlay(alignment: .topTrailing) {
-                                Button {
-                                    selectedPhotosAndFiles.remove(at: index)
-                                } label: {
-                                    Text("x")
-                                        .bold()
-                                        .foregroundStyle(.black)
-                                        .padding(4)
-                                        .background {
-                                            Circle()
-                                                .fill(Color("ButtonColor"))
-                                        }
-                                }
-                            }
+                    }
+                    else if let file = uploadData.data.file {
+                        
                     }
                 }
             }
         }
         .padding(.leading)
+    }
+}
+
+struct Preview: View {
+    @State var show = true
+    @StateObject var viewModel: UploadDataViewModel = UploadDataViewModel()
+    
+    var body: some View {
+        PhotoAndFileHoriScrollView(uploadDataViewModel: viewModel, showPhotoAndFile: $show)
     }
 }

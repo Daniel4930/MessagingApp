@@ -11,7 +11,8 @@ import PhotosUI
 struct SelectorNavTopBar: View {
     @Binding var height: CGFloat
     let minHeight: CGFloat
-    @Binding var photoPickerItems: [PhotosPickerItem]
+    let accessStatus: PhotoLibraryAccessStatus
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
     
     var body: some View {
         HStack(alignment: .center) {
@@ -23,23 +24,36 @@ struct SelectorNavTopBar: View {
             
             Spacer()
             
-            VStack(spacing: 0) {
-                Text(photoPickerItems.isEmpty ? "Recents" : "\(photoPickerItems.count) selected")
-                    .bold()
-                    .font(.title2)
-                Text("Select up to 10")
-                    .font(.caption)
+            if accessStatus == .fullAccess || accessStatus == .limitedAccess {
+                VStack(spacing: 0) {
+                    Text(uploadDataViewModel.selectionData.isEmpty ? "Recents" : "\(uploadDataViewModel.selectionData.count) selected")
+                        .bold()
+                        .font(.title2)
+                    Text("Select up to 10")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                Spacer()
             }
-            .frame(maxWidth: .infinity, alignment: .center)
             
-            Spacer()
-            
-            PhotosPicker(selection: $photoPickerItems, maxSelectionCount: 10) {
-                Text("All Albums")
-                    .padding(14)
-                    .foregroundStyle(.blue)
+            if accessStatus == .fullAccess {
+                Button {
+                    height = minHeight
+                } label: {
+                    Text("Done")
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(14)
+                        .foregroundStyle(.blue)
+                }
+            } else {
+                CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, uploadDataViewModel: uploadDataViewModel) {
+                    Text("All Albums")
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(14)
+                        .foregroundStyle(.blue)
+                        .opacity(accessStatus != .limitedAccess ? 0.5 : 1.0)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .frame(maxWidth: .infinity)
         .padding()

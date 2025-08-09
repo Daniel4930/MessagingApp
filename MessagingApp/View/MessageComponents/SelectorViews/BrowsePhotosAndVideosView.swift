@@ -9,15 +9,19 @@ import SwiftUI
 import PhotosUI
 
 struct BrowsePhotosAndVideosView: View {
-    @Binding var photoPickerItems: [PhotosPickerItem]
+    let accessStatus: PhotoLibraryAccessStatus
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @Binding var height: CGFloat
+    let minHeight: CGFloat
     
     var body: some View {
         Text("Not what you're looking for? Browse your photo library for that perfect picture.")
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
         
-        PhotosPicker(selection: $photoPickerItems, maxSelectionCount: 10) {
+        CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, uploadDataViewModel: uploadDataViewModel) {
             Text("Browse Photos")
+                .frame(maxWidth: .infinity, alignment: .center)
                 .bold()
                 .padding(.horizontal)
                 .padding(.vertical, 10)
@@ -27,6 +31,5 @@ struct BrowsePhotosAndVideosView: View {
                         .frame(width: 150)
                 }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
     }
 }

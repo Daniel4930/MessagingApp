@@ -8,39 +8,45 @@
 import SwiftUI
 import PhotosUI
 
-enum ImageFrom {
-    case photoAsset
-    case videoAsset(duration: Double)
-}
-
 struct PhotoThumbnailView: View {
     let asset: PHAsset?
-    let item: PhotosPickerItem?
-    @Binding var selectedPhotosAndFiles: [(image: UIImage?, file: Data?)]
-    @State private var image: (uiImage: UIImage, from: ImageFrom)? = nil
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @State private var uploadData: UploadData? = nil
+    @State private var dataExistInSelection = false
     
     let frame: (width: CGFloat, height: CGFloat) = (120, 120)
     
     var body: some View {
         ZStack {
-            if let image = image {
+            if let data = uploadData {
                 Button {
-                    selectedPhotosAndFiles.append((image: image.uiImage, file: nil))
+                    if uploadDataViewModel.checkDataExist(identifier: data.identifier) {
+                        uploadDataViewModel.removeData(identifier: data.identifier)
+                    }
+                    else {
+                        uploadDataViewModel.addData(uploadData: data)
+                    }
                 } label: {
-                    Image(uiImage: image.uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: frame.width, height: frame.height)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(alignment: .bottomLeading) {
-                            switch image.from {
-                            case .photoAsset:
-                                Color.clear
-                            case .videoAsset(let duration):
+                    if let photoData = data.data.photo {
+                        Image(uiImage: photoData.image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: frame.width, height: frame.height)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .opacity(dataExistInSelection ? 0.5 : 1)
+                    }
+                    if let videoData = data.data.video {
+                        Image(uiImage: videoData.thumbnail)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: frame.width, height: frame.height)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(alignment: .bottomLeading) {
                                 HStack {
                                     Image(systemName: "play.circle.fill")
-                                    Text("\(formatTime(seconds: Int(duration)))")
+                                    Text("\(formatTime(seconds: Int(videoData.duration)))")
                                 }
                                 .font(.caption)
                                 .padding(5)
@@ -50,9 +56,19 @@ struct PhotoThumbnailView: View {
                                 }
                                 .padding([.leading, .bottom], 5)
                             }
-                        }
+                            .opacity(dataExistInSelection ? 0.5 : 1)
+                    }
+                    if data.data.file != nil {
+                        Image(systemName: "folder.fill")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: frame.width, height: frame.height)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
                 }
-            } else {
+            }
+            else {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color.gray.opacity(0.3))
                     .frame(width: frame.width, height: frame.height)
@@ -62,8 +78,17 @@ struct PhotoThumbnailView: View {
             }
         }
         .onAppear {
-            loadImage()
             loadPhotoOrVideo()
+        }
+        .onChange(of: uploadDataViewModel.selectionData) { oldValue, newValue in
+            if let data = uploadData {
+                if uploadDataViewModel.checkDataExist(identifier: data.identifier) {
+                    dataExistInSelection = true
+                }
+                else {
+                    dataExistInSelection = false
+                }
+            }
         }
     }
 }
@@ -81,18 +106,6 @@ extension PhotoThumbnailView {
         }
     }
     
-    func loadImage() {
-        Task {
-            do {
-                if let item = item, let data = try await item.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
-                    image = (uiImage, ImageFrom.photoAsset)
-                }
-            } catch {
-                print("Failed to load image: \(error)")
-            }
-        }
-    }
-    
     func loadPhotoOrVideo() {
         if let asset = asset {
             let size = CGSize(width: asset.pixelWidth, height: asset.pixelHeight)
@@ -102,22 +115,34 @@ extension PhotoThumbnailView {
             requestImageOptions.isNetworkAccessAllowed = true
             
             if asset.mediaType == .image {
-                PHImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFit, options: requestImageOptions) { uiImage, info in
+                PHImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFit, options: requestImageOptions) { uiImage, _ in
                     if let uiImage = uiImage {
-                        image = (uiImage, ImageFrom.photoAsset)
+                        uploadData = UploadData(identifier: asset.localIdentifier, data: (photo: UploadData.PhotoData(image: uiImage), nil, nil))
                     } else {
                         print("Can't convert to uiImage \(asset)")
-                        
-                        if let info = info {
-                            print("Info: \(info)")
-                        }
                     }
                 }
             }
             else if asset.mediaType == .video {
+                //Get video thumbnail
                 PHCachingImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFit, options: requestImageOptions) { uiImage, _ in
                     if let uiImage = uiImage {
-                        image = (uiImage, ImageFrom.videoAsset(duration: asset.duration))
+                        let videoOptions = PHVideoRequestOptions()
+                        videoOptions.isNetworkAccessAllowed = true
+                        videoOptions.version = .current
+                        videoOptions.deliveryMode = .highQualityFormat
+                        
+                        //Get the actual video data
+                        PHImageManager.default().requestAVAsset(forVideo: asset, options: videoOptions) { avAsset, _, _ in
+                            if let avAsset = avAsset as? AVURLAsset {
+                                do {
+                                    let videoData = try Data(contentsOf: avAsset.url)
+                                    uploadData = UploadData(identifier: asset.localIdentifier, data: (nil, video: UploadData.VideoData(thumbnail: uiImage, content: videoData, duration: asset.duration), nil))
+                                } catch {
+                                    print("Error loading video data: \(error)")
+                                }
+                            }
+                        }
                     }
                 }
             }

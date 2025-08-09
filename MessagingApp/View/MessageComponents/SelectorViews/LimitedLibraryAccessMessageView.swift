@@ -1,5 +1,5 @@
 //
-//  LimitedLibraryAccessView.swift
+//  LimitedLibraryAccessMessageView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 8/4/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct LimitedLibraryAccessView: View {
-    @Binding var presentLimitedLibraryPicker: Bool
+struct LimitedLibraryAccessMessageView: View {
+    @State private var presentLimitedLibraryPicker = false
     var getAssets: () -> Void
     
     var body: some View {
