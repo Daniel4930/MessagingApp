@@ -58,10 +58,7 @@ extension CustomTextEditor {
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
             if message.count == 1 && commandIndex == message.startIndex {
                 return users
-            }
-            
-            if message.contains(" ") {
-                //message = "text@text"
+            } else {
                 guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
                 
                 //message = "text@ " && message = "text @ "
@@ -77,7 +74,10 @@ extension CustomTextEditor {
             let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
             
             return users.filter { user in
-                return user.userName!.lowercased().contains(nameToSearch) || user.displayName!.lowercased().contains(nameToSearch)
+                if let userName = user.userName, let displayName = user.displayName {
+                    return userName.lowercased().contains(nameToSearch) || displayName.lowercased().contains(nameToSearch)
+                }
+                return false
             }
         } else {
             return []
@@ -163,9 +163,7 @@ struct CustomUITextView: UIViewRepresentable {
                 .font: UIFont.systemFont(ofSize: 16)
             ]
             
-            if let user = parent.userViewModel.user {
-                let text = textView.text!
-                
+            if let user = parent.userViewModel.user, let text = textView.text {
                 do {
                     guard let pattern = generateNameMatchPattern(user: user) else { return }
                     
