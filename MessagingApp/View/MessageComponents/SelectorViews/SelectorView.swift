@@ -100,6 +100,22 @@ struct SelectorView: View {
             .font(.subheadline)
             .padding(.horizontal)
             .highPriorityGesture(gesture, isEnabled: height == minHeight)
+            .overlay(alignment: .bottomTrailing) {
+                if !uploadDataViewModel.selectionData.isEmpty {
+                    Button {
+//                        scrollToBottom = true
+                    } label: {
+                        Image(systemName: "paperplane.fill")
+                            .resizable()
+                            .rotationEffect(Angle(degrees: 45))
+                            .frame(width: 25, height: 25)
+                            .padding(10)
+                            .background(.blue)
+                            .clipShape(.circle)
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
         }
         .foregroundStyle(Color.button)
         .frame(maxWidth: .infinity)
@@ -151,8 +167,6 @@ extension SelectorView {
                 for i in 0..<results.count {
                     assets.append(results[i])
                 }
-            } else {
-                print("No photos or videos")
             }
         }
     }

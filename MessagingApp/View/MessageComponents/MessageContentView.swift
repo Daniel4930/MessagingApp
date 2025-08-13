@@ -27,6 +27,7 @@ struct MessageContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let text = message.text {
+                
                 if text.contains(linkRegexPattern) {
                     Button {
                         showSafari = true
@@ -63,24 +64,9 @@ struct MessageContentView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 } else {
-                    HStack(spacing: 0) {
-                        ForEach(separateMentionedNameAndMessage(text: text), id: \.self) { substr in
-                            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst()))
-                            {
-                                Button {
-                                    userToPresent = user
-                                } label: {
-                                    Text("@" + (user.displayName ?? user.userName ?? "UNKNOWN"))
-                                        .bold()
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color.blue.opacity(0.5))
-                                        )
-                                }
-                                Text(" ")
-                            } else {
-                                Text(substr + " ")
-                            }
+                    AttributedTextView(text: text, userViewModel: userViewModel) { userName in
+                        if let user = userViewModel.fetchUserByUsername(name: userName) {
+                            userToPresent = user
                         }
                     }
                 }
@@ -90,7 +76,6 @@ struct MessageContentView: View {
                     .padding(.top, 5)
             }
             if let files = message.files?.allObjects as? [FileData], !files.isEmpty {
-                
                 ForEach(files, id: \.self) { file in
                     if let name = file.name, let data = file.data {
                         EmbededFileLayoutView(name: name, data: data)
@@ -156,6 +141,30 @@ extension MessageContentView {
         result = result.map { $0.last == " " ? String($0.dropLast()) : $0 }
         
         return result
+    }
+    
+    func styleMessage(_ text: String) -> AttributedString {
+        var attributedString = AttributedString()
+        
+        for (index, substr) in separateMentionedNameAndMessage(text: text).enumerated() {
+            var attributedSubstring = AttributedString()
+            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst())), let displayName = user.displayName {
+                var tempAttributedString = AttributedString("@\(displayName)")
+                tempAttributedString.font = Font.system(.body).bold()
+                tempAttributedString.backgroundColor = .blue.opacity(0.5)
+                attributedSubstring.append(tempAttributedString)
+                attributedSubstring.append(AttributedString(" "))
+            } else {
+                if index == 0 {
+                    attributedSubstring.append(AttributedString("\(substr) "))
+                } else {
+                    attributedString.append(AttributedString("\(substr) "))
+                }
+            }
+            attributedString.append(attributedSubstring)
+        }
+        
+        return attributedString
     }
 }
 

@@ -65,6 +65,7 @@ struct MentionButton: View {
             .padding(.horizontal)
             .padding(.vertical, 10)
             .background(isPressed ? Color("ButtonClickedBackgroundColor") : Color("SecondaryBackgroundColor"))
+            .tint(.white)
         }
     }
 }

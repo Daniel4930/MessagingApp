@@ -16,25 +16,24 @@ struct MessageScrollView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
-        VStack(spacing: 0) {
+        let sortedMessage = sortMessagesByDate(messages: messageViewModel.messages)
+        
+        if sortedMessage.isEmpty {
+            EmptyMessageView()
+            Spacer()
+        } else {
             ScrollView {
-                let sortedMessage = sortMessagesByDate(messages: messageViewModel.messages)
-                if sortedMessage.isEmpty {
-                    Text("No message")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ForEach(sortedMessage, id: \.0) { date, messages in
-                        VStack(alignment: .leading) {
-                            MessageDateView(date: date)
-                                .padding(.horizontal, 13)
-                            
-                            let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
-                            ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
-                                let sortedMessagesByUser = sortMessagesByUser(messages: messages)
-                                ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                    if let user = searchUser(id: userId) {
-                                        MessageLayoutView(user: user, messages: messages, time: time)
-                                    }
+                ForEach(sortedMessage, id: \.0) { date, messages in
+                    VStack(alignment: .leading) {
+                        MessageDateView(date: date)
+                            .padding(.horizontal, 13)
+                        
+                        let sortedMessageByHourMinute = sortMessagesByHourMinute(messages: messages)
+                        ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
+                            let sortedMessagesByUser = sortMessagesByUser(messages: messages)
+                            ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
+                                if let user = searchUser(id: userId) {
+                                    MessageLayoutView(user: user, messages: messages, time: time)
                                 }
                             }
                         }
@@ -140,5 +139,24 @@ extension MessageScrollView {
         }
         
         return result
+    }
+}
+
+
+struct EmptyMessageView: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("This is the beginning of your conversion")
+                .font(.title2)
+                .bold()
+                .multilineTextAlignment(.center)
+                .padding(.trailing)
+            Image(systemName: "message.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 50)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top)
     }
 }

@@ -11,6 +11,7 @@ struct MessagingBarLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
     @Binding var scrollToBottom: Bool
     @FocusState.Binding var focusedField: Field?
+    @ObservedObject var uploadDataViewModel: UploadDataViewModel
     
     @State private var showSendButton = false
     @State private var showMention = false
@@ -20,9 +21,6 @@ struct MessagingBarLayoutView: View {
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
-    
-    let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
-    let horizontalPaddingSpace: CGFloat = 10
     
     var body: some View {
         HStack(spacing: 10) {
@@ -34,15 +32,16 @@ struct MessagingBarLayoutView: View {
                 showSendButton: $showSendButton,
                 matchUsers: $matchUsers,
                 showMention: $showMention,
-                focusedField: $focusedField
+                focusedField: $focusedField,
+                scrollToBottom: $scrollToBottom
             )
             
-            if showSendButton {
+            if showSendButton || !uploadDataViewModel.selectionData.isEmpty {
                 Button {
-                    messageViewModel.addMessage(
+                    messageViewModel.addMessage (
                         userId: userViewModel.user!.id!,
                         text: removeExtraEndSpace(),
-                        imageData: nil,
+                        images: uploadDataViewModel.selectionData == [] ? [] : convertUImageToImageData(),
                         files: nil,
                         location: .dm,
                         reaction: nil,
@@ -51,14 +50,15 @@ struct MessagingBarLayoutView: View {
                         edited: false
                     )
                     uiTextView.text = ""
+                    uploadDataViewModel.selectionData = []
                     scrollToBottom = true
                     showSendButton = false
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .resizable()
                         .rotationEffect(Angle(degrees: 45))
-                        .frame(width: iconDimension.width, height: iconDimension.height)
-                        .padding(horizontalPaddingSpace)
+                        .frame(width: 25, height: 25)
+                        .padding(10)
                         .background(.blue)
                         .clipShape(.circle)
                         .foregroundStyle(.white)
@@ -70,26 +70,13 @@ struct MessagingBarLayoutView: View {
         .overlay(alignment: .top) {
             MentionLayoutViewAnimation(numUsersToShow: matchUsers.count, showMention: $showMention) {
                 MentionLayoutView(users: matchUsers) { name in
-                    uiTextView.text.removeLast() // remove "@"
-                    
-                    let mutableAttString = NSMutableAttributedString(attributedString: uiTextView.attributedText)
-                    let attributes: [NSAttributedString.Key: Any] = [
-                        .foregroundColor: UIColor(named: "MentionNameColor") ?? UIColor(Color(hex: "#d4c7ff")),
-                        .font: UIFont.systemFont(ofSize: 16, weight: .bold)
-                    ]
-                    
-                    let attributedString = NSAttributedString(string: "@" + name + " ", attributes: attributes)
-                    mutableAttString.append(attributedString)
-                    
-                    let normalAttributes: [NSAttributedString.Key: Any] = [
-                        .foregroundColor: UIColor.label,
-                        .font: UIFont.systemFont(ofSize: 16)
-                    ]
-                    
-                    uiTextView.attributedText = mutableAttString
-                    uiTextView.typingAttributes = normalAttributes
-                    
+                    uiTextView.text.removeLast(uiTextView.text.distance(from: uiTextView.text.lastIndex(of: "@")!, to: uiTextView.text.endIndex))
+                    uiTextView.text.append("@" + name + " ")
                     showMention = false
+                    
+                    if let delegate = uiTextView.delegate as? CustomUITextView.Coordinator {
+                        delegate.textViewDidChange(uiTextView)
+                    }
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -103,5 +90,14 @@ extension MessagingBarLayoutView {
             return String(uiTextView.text.dropLast())
         }
         return uiTextView.text
+    }
+    
+    func convertUImageToImageData() -> [Data?] {
+        return uploadDataViewModel.selectionData.map { data in
+            if let uiImage = data.data.photo?.image {
+                return uiImage.pngData() ?? nil
+            }
+            return nil
+        }
     }
 }

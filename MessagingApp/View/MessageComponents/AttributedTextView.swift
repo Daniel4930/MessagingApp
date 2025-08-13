@@ -1,0 +1,113 @@
+//
+//  AttributedTextView.swift
+//  MessagingApp
+//
+//  Created by Daniel Le on 8/11/25.
+//
+
+import SwiftUI
+import UIKit
+
+//TODO: Add an enum for action urls
+
+struct AttributedTextView: UIViewRepresentable {
+    let text: String
+    let userViewModel: UserViewModel
+    let onMentionTap: (String) -> Void
+    
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isScrollEnabled = false
+        textView.delegate = context.coordinator
+        textView.dataDetectorTypes = []
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = .zero
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        
+        return textView
+    }
+    
+    func updateUIView(_ uiTextView: UITextView, context: Context) {
+        let baseFont = UIFont.systemFont(ofSize: 16)
+        let baseColor = UIColor.white
+        
+        let attributed = NSMutableAttributedString()
+        
+        let words = text.split(separator: " ")
+        
+        for word in words {
+            if word.hasPrefix("@"),
+               let user = userViewModel.fetchUserByUsername(name: String(word.dropFirst())),
+               let displayName = user.displayName,
+               let userName = user.userName,
+               let url = URL(string: "mention://\(userName)") {
+                
+                // Build mention string with '@' + displayName
+                let mentionString = "@" + displayName
+                
+                // Create attributed string for mention
+                let mentionAttr = NSMutableAttributedString(string: mentionString, attributes: [
+                    .link: url,
+                    .foregroundColor: UIColor.white,
+                    .font: UIFont.boldSystemFont(ofSize: 16),
+                    .backgroundColor: UIColor.blue.withAlphaComponent(0.3)
+                ])
+                
+                // Append mention with styling
+                attributed.append(mentionAttr)
+            } else {
+                // Normal word - add with base style
+                let normalString = String(word)
+                let normalAttr = NSAttributedString(string: normalString, attributes: [
+                    .foregroundColor: baseColor,
+                    .font: baseFont
+                ])
+                attributed.append(normalAttr)
+            }
+            // Append a space after every word except last
+            attributed.append(NSAttributedString(string: " ", attributes: [
+                .foregroundColor: baseColor,
+                .font: baseFont
+            ]))
+        }
+        
+        // Set to UITextView
+        uiTextView.attributedText = attributed
+    }
+
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+    
+    class Coordinator: NSObject, UITextViewDelegate {
+        var parent: AttributedTextView
+        
+        init(parent: AttributedTextView) {
+            self.parent = parent
+        }
+        
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+            if case let .link(url) = textItem.content,
+               url.scheme == "mention" {
+                
+                // Rebuild the full username including fragment if it exists
+                let userNameWithFragment: String
+                if let fragment = url.fragment, !fragment.isEmpty {
+                    userNameWithFragment = "\(url.host ?? "")#\(fragment)"
+                } else {
+                    userNameWithFragment = url.host ?? ""
+                }
+                
+                return UIAction(title: "Show Profile") { _ in
+                    self.parent.onMentionTap(userNameWithFragment)
+                }
+            }
+            return defaultAction
+        }
+
+    }
+}

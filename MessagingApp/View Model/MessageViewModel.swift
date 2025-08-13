@@ -30,7 +30,7 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    func addMessage(userId: UUID, text: String?, imageData: [ImageData]?, files: [FileData]?, location: MessageLocation, reaction: String?, replyMessageId: UUID?, forwardMessageId: UUID?, edited: Bool) {
+    func addMessage(userId: UUID, text: String?, images: [Data?], files: [Data]?, location: MessageLocation, reaction: String?, replyMessageId: UUID?, forwardMessageId: UUID?, edited: Bool) {
         let message = Message(context: sharedContainerInstance.context)
         message.id = UUID()
         message.userId = userId
@@ -41,9 +41,14 @@ class MessageViewModel: ObservableObject {
         message.forwardMessageId = forwardMessageId
         message.edited = edited
         
-        if let imageData = imageData {
-            message.images = NSSet(array: imageData)
+        let imageData: [ImageData] = images.compactMap { data in
+            let imageData = ImageData(context: sharedContainerInstance.context)
+            imageData.data = data
+            
+            return imageData
         }
+        message.images = NSSet(array: imageData)
+        
         if let files = files {
             message.files = NSSet(array: files)
         }

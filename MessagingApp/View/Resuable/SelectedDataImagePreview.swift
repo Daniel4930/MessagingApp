@@ -27,6 +27,7 @@ struct SelectedDataImagePreview: View {
             .padding(.top)
             .padding(.trailing)
             .onTapGesture {
+                uploadDataViewModel.dataToShow = uploadDataViewModel.selectionData[index]
                 showPhotoAndFile.toggle()
             }
             .overlay(alignment: .topTrailing) {

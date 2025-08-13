@@ -38,7 +38,7 @@ struct DirectMessageView: View {
                     PhotoAndFileHoriScrollView(uploadDataViewModel: uploadDataViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
-                MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField)
+                MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, uploadDataViewModel: uploadDataViewModel)
             }
             .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
             .onChange(of: focusedField) { oldValue, newValue in
@@ -56,7 +56,7 @@ struct DirectMessageView: View {
                 }
             }
             .customSheetModifier(isPresented: $showPhotoAndFile) {
-                PhotoAndFileInfoView()
+                UploadedDataInfoView(uploadDataViewModel: uploadDataViewModel)
                     .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
         }

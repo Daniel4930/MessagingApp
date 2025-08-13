@@ -31,7 +31,7 @@ struct MessageLayoutView: View {
                     .frame(width: iconDimension.width, height: iconDimension.height)
                     .clipShape(.circle)
             }
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 5) {
                 HStack {
                     Text(user.displayName ?? "")
                         .font(.title3)

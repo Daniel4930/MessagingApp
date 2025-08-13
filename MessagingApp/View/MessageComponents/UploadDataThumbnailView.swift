@@ -1,5 +1,5 @@
 //
-//  PhotoThumbnailView.swift
+//  UploadDataThumbnailView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/26/25.
@@ -8,41 +8,42 @@
 import SwiftUI
 import PhotosUI
 
-struct PhotoThumbnailView: View {
+struct UploadDataThumbnailView: View {
     let asset: PHAsset?
     @ObservedObject var uploadDataViewModel: UploadDataViewModel
     @State private var uploadData: UploadData? = nil
     @State private var dataExistInSelection = false
     
     let frame: (width: CGFloat, height: CGFloat) = (120, 120)
+    let newOpacity: CGFloat = 0.3
     
     var body: some View {
         ZStack {
-            if let data = uploadData {
+            if let uploadData = uploadData {
                 Button {
-                    if uploadDataViewModel.checkDataExist(identifier: data.identifier) {
-                        uploadDataViewModel.removeData(identifier: data.identifier)
+                    if uploadDataViewModel.checkDataExist(identifier: uploadData.identifier) {
+                        uploadDataViewModel.removeData(identifier: uploadData.identifier)
                     }
                     else {
-                        uploadDataViewModel.addData(uploadData: data)
+                        uploadDataViewModel.addData(uploadData: uploadData)
                     }
                 } label: {
-                    if let photoData = data.data.photo {
-                        Image(uiImage: photoData.image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: frame.width, height: frame.height)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .opacity(dataExistInSelection ? 0.5 : 1)
+                    if let photoData = uploadData.data.photo {
+                        ImageThumbnailView(uiImage: photoData.image)
+                            .opacity(dataExistInSelection ? newOpacity : 1)
+                            .overlay(alignment: .topTrailing) {
+                                if dataExistInSelection {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 20, height: 20)
+                                        .foregroundStyle(.blue)
+                                        .padding([.top, .trailing], 8)
+                                }
+                            }
                     }
-                    if let videoData = data.data.video {
-                        Image(uiImage: videoData.thumbnail)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: frame.width, height: frame.height)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    if let videoData = uploadData.data.video {
+                        ImageThumbnailView(uiImage: videoData.thumbnail)
                             .overlay(alignment: .bottomLeading) {
                                 HStack {
                                     Image(systemName: "play.circle.fill")
@@ -56,15 +57,22 @@ struct PhotoThumbnailView: View {
                                 }
                                 .padding([.leading, .bottom], 5)
                             }
-                            .opacity(dataExistInSelection ? 0.5 : 1)
-                    }
-                    if data.data.file != nil {
-                        Image(systemName: "folder.fill")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: frame.width, height: frame.height)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .opacity(dataExistInSelection ? newOpacity : 1)
+                            .overlay(alignment: .topTrailing) {
+                                if dataExistInSelection {
+                                    Image(systemName: "checkmark.circle.fill")
+                                }
+                            }
+                            .overlay(alignment: .topTrailing) {
+                                if dataExistInSelection {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 20, height: 20)
+                                        .foregroundStyle(.blue)
+                                        .padding([.top, .trailing], 8)
+                                }
+                            }
                     }
                 }
             }
@@ -93,7 +101,9 @@ struct PhotoThumbnailView: View {
     }
 }
 
-extension PhotoThumbnailView {
+
+
+extension UploadDataThumbnailView {
     func formatTime(seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60

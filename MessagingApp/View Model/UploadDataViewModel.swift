@@ -10,6 +10,7 @@ import _PhotosUI_SwiftUI
 
 class UploadDataViewModel: ObservableObject {
     @Published var selectionData: [UploadData] = []
+    @Published var dataToShow: UploadData? = nil
     static let maxSelection = 10
     
     func addData(uploadData: UploadData) {
