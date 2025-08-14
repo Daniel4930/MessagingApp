@@ -10,7 +10,7 @@ import PhotosUI
 
 struct BrowsePhotosAndVideosView: View {
     let accessStatus: PhotoLibraryAccessStatus
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var height: CGFloat
     let minHeight: CGFloat
     
@@ -19,7 +19,7 @@ struct BrowsePhotosAndVideosView: View {
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
         
-        CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, uploadDataViewModel: uploadDataViewModel) {
+        CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
             Text("Browse Photos")
                 .frame(maxWidth: .infinity, alignment: .center)
                 .bold()

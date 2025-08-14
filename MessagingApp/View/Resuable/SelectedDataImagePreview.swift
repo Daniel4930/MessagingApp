@@ -11,7 +11,7 @@ struct SelectedDataImagePreview: View {
     let image: UIImage
     let index: Int
     @Binding var showPhotoAndFile: Bool
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
     
     let size = CGSize(width: 50, height: 50)
     let cornerRadius: CGFloat = 10

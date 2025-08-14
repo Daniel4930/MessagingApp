@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct UploadedDataInfoView: View {
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
     let thumbnailSize = CGSize(width: 350, height: 500)
     @Environment(\.dismiss) var dismiss
     

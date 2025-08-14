@@ -12,7 +12,7 @@ struct CustomPhotoPickerView<Content: View>: View {
     let accessStatus: PhotoLibraryAccessStatus
     @Binding var height: CGFloat
     let minHeight: CGFloat
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     let photoPickerContent: () -> Content
     @State private var showPhotoPicker = false
     
@@ -20,7 +20,7 @@ struct CustomPhotoPickerView<Content: View>: View {
         if accessStatus == .limitedAccess {
             photoPickerContent()
                 .sheet(isPresented: $showPhotoPicker) {
-                    PickerViewController(uploadDataViewModel: uploadDataViewModel, height: $height, minHeight: minHeight)
+                    PickerViewController(messageComposerViewModel: messageComposerViewModel, height: $height, minHeight: minHeight)
                 }
                 .onTapGesture {
                     showPhotoPicker.toggle()
@@ -36,14 +36,14 @@ enum LoadVideoError: Error {
 }
 
 struct PickerViewController: UIViewControllerRepresentable {
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var height: CGFloat
     let minHeight: CGFloat
     
     func makeUIViewController(context: Context) -> PHPickerViewController {
         var config = PHPickerConfiguration(photoLibrary: PHPhotoLibrary.shared())
-        config.selectionLimit = UploadDataViewModel.maxSelection
-        config.preselectedAssetIdentifiers = uploadDataViewModel.selectionData.map { $0.identifier }
+        config.selectionLimit = MessageComposerViewModel.maxSelection
+        config.preselectedAssetIdentifiers = messageComposerViewModel.selectionData.map { $0.identifier }
         
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = context.coordinator
@@ -73,7 +73,7 @@ struct PickerViewController: UIViewControllerRepresentable {
             picker.dismiss(animated: true)
             
             //Remove data that doesn't exist in the results
-            parent.uploadDataViewModel.selectionData = parent.uploadDataViewModel.selectionData.compactMap { data in
+            parent.messageComposerViewModel.selectionData = parent.messageComposerViewModel.selectionData.compactMap { data in
                 if results.contains(where: { $0.assetIdentifier == data.identifier }) {
                     return data
                 }
@@ -109,7 +109,7 @@ struct PickerViewController: UIViewControllerRepresentable {
                             }
                             
                             DispatchQueue.main.async {
-                                self.parent.uploadDataViewModel.selectionData.append(UploadData(identifier: identifier, data: (nil, UploadData.VideoData(thumbnail: thumbnail, content: videoData, duration: duration), nil)))
+                                self.parent.messageComposerViewModel.selectionData.append(UploadData(identifier: identifier, data: (nil, UploadData.VideoData(thumbnail: thumbnail, content: videoData, duration: duration), nil)))
                             }
                             
                         } catch {
@@ -126,7 +126,7 @@ struct PickerViewController: UIViewControllerRepresentable {
                             }
                             if let image = image as? UIImage {
                                 DispatchQueue.main.async {
-                                    self.parent.uploadDataViewModel.selectionData.append(UploadData(identifier: identifier, data: (photo: UploadData.PhotoData(image: image), nil, nil)))
+                                    self.parent.messageComposerViewModel.selectionData.append(UploadData(identifier: identifier, data: (photo: UploadData.PhotoData(image: image), nil, nil)))
                                 }
                             }
                         }

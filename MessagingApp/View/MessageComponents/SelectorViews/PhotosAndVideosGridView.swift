@@ -12,7 +12,7 @@ import PhotosUI
 struct PhotosAndVideosGridView: View {
     @Binding var assets: [PHAsset]
     let refreshAssets: () -> Void
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     
     @State private var openCamera = false
     let gridColums = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -36,7 +36,7 @@ struct PhotosAndVideosGridView: View {
                 }
             
             ForEach(assets, id: \.localIdentifier) { asset in
-                UploadDataThumbnailView(asset: asset, uploadDataViewModel: uploadDataViewModel)
+                UploadDataThumbnailView(asset: asset, messageComposerViewModel: messageComposerViewModel)
             }
         }
         .padding(.vertical)

@@ -21,13 +21,13 @@ struct MessageContentView: View {
     @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     @State private var userToPresent: User?
+    @State private var customTextViewHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let text = message.text {
-                
                 if text.contains(linkRegexPattern) {
                     Button {
                         showSafari = true
@@ -47,7 +47,6 @@ struct MessageContentView: View {
                     
                     if showEmbeded {
                         organizeEmbededItems()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                             .overlay(alignment: .leading) {
                                 Color.gray
                                     .frame(width: linkEmbededViewDimension.width * 0.015)
@@ -64,11 +63,12 @@ struct MessageContentView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 } else {
-                    AttributedTextView(text: text, userViewModel: userViewModel) { userName in
+                    AttributedTextView(text: text, userViewModel: userViewModel, customTextViewHeight: $customTextViewHeight) { userName in
                         if let user = userViewModel.fetchUserByUsername(name: userName) {
                             userToPresent = user
                         }
                     }
+                    .frame(height: customTextViewHeight)
                 }
             }
             if let images = message.images?.allObjects as? [ImageData], !images.isEmpty {

@@ -19,37 +19,40 @@ enum PhotoLibraryAccessStatus {
 
 struct SelectorView: View {
     let minHeight: CGFloat
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
-    let maxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @Binding var scrollToBottom: Bool
+    
+    let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
     let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     
-    @State private var height: CGFloat = .zero
+    @State private var selectorHeight: CGFloat = .zero
     @State private var openCamera = false
     @State private var photoLibraryAccessPermissonGranted = false
     @State private var accessStatus: PhotoLibraryAccessStatus?
     @State private var assets: [PHAsset] = []
-    
     @State private var enableHighPriorityGesture = false
+    @EnvironmentObject var messageViewModel: MessageViewModel
+    @EnvironmentObject var userViewModel: UserViewModel
     
     var gesture: some Gesture {
         DragGesture()
             .onChanged { dragValue in
-                if dragValue.translation.height < 0 && height <= maxHeight {
-                    if height + abs(dragValue.translation.height) <= maxHeight {
-                        height += abs(dragValue.translation.height)
+                if dragValue.translation.height < 0 && selectorHeight <= selectorMaxHeight {
+                    if selectorHeight + abs(dragValue.translation.height) <= selectorMaxHeight {
+                        selectorHeight += abs(dragValue.translation.height)
                     }
                 }
-                if dragValue.translation.height > 0 && height > minHeight {
-                    if height + dragValue.translation.height > minHeight {
-                        height -= dragValue.translation.height
+                if dragValue.translation.height > 0 && selectorHeight > minHeight {
+                    if selectorHeight + dragValue.translation.height > minHeight {
+                        selectorHeight -= dragValue.translation.height
                     }
                 }
             }
             .onEnded { dragValue in
-                if height > threshold {
-                    height = maxHeight
+                if selectorHeight > threshold {
+                    selectorHeight = selectorMaxHeight
                 } else {
-                    height = minHeight
+                    selectorHeight = minHeight
                 }
             }
     }
@@ -58,12 +61,12 @@ struct SelectorView: View {
         VStack {            
             LineIndicator()
             
-            if height >= threshold {
+            if selectorHeight >= threshold {
                 SelectorNavTopBar(
-                    height: $height,
+                    height: $selectorHeight,
                     minHeight: minHeight,
                     accessStatus: accessStatus ?? .undetermined,
-                    uploadDataViewModel: uploadDataViewModel
+                    messageComposerViewModel: messageComposerViewModel
                 )
                     .highPriorityGesture(gesture)
             } else {
@@ -75,7 +78,7 @@ struct SelectorView: View {
                 VStack(alignment: .leading) {
                     switch accessStatus {
                     case .fullAccess:
-                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, uploadDataViewModel: uploadDataViewModel)
+                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, messageComposerViewModel: messageComposerViewModel)
                             .task {
                                 getPhotosAndVideosAssets()
                             }
@@ -83,12 +86,12 @@ struct SelectorView: View {
                     case .limitedAccess:
                         LimitedLibraryAccessMessageView(getAssets: getPhotosAndVideosAssets)
                         
-                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, uploadDataViewModel: uploadDataViewModel)
+                        PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, messageComposerViewModel: messageComposerViewModel)
                         
                         BrowsePhotosAndVideosView(
                             accessStatus: accessStatus ?? .undetermined,
-                            uploadDataViewModel: uploadDataViewModel,
-                            height: $height,
+                            messageComposerViewModel: messageComposerViewModel,
+                            height: $selectorHeight,
                             minHeight: minHeight
                         )
                         
@@ -99,35 +102,24 @@ struct SelectorView: View {
             }
             .font(.subheadline)
             .padding(.horizontal)
-            .highPriorityGesture(gesture, isEnabled: height == minHeight)
-            .overlay(alignment: .bottomTrailing) {
-                if !uploadDataViewModel.selectionData.isEmpty {
-                    Button {
-//                        scrollToBottom = true
-                    } label: {
-                        Image(systemName: "paperplane.fill")
-                            .resizable()
-                            .rotationEffect(Angle(degrees: 45))
-                            .frame(width: 25, height: 25)
-                            .padding(10)
-                            .background(.blue)
-                            .clipShape(.circle)
-                            .foregroundStyle(.white)
-                    }
+            .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight)
+            .overlay(alignment: .bottom) {
+                if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
+                    CustomSendButtonView(messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, minHeight: minHeight)
                 }
             }
         }
         .foregroundStyle(Color.button)
         .frame(maxWidth: .infinity)
-        .frame(height: height)
+        .frame(height: selectorHeight)
         .background(Color.primaryBackground)
         .gesture(gesture)
         .onAppear {
-            height = minHeight
+            selectorHeight = minHeight
             handlePhotoLibraryAccessRequest()
         }
         .onChange(of: minHeight) { _, newValue in
-            height = newValue
+            selectorHeight = newValue
         }
     }
 }
@@ -169,5 +161,48 @@ extension SelectorView {
                 }
             }
         }
+    }
+}
+
+struct CustomSendButtonView: View {
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @Binding var scrollToBottom: Bool
+    @Binding var height: CGFloat
+    let minHeight: CGFloat
+    @EnvironmentObject var messageViewModel: MessageViewModel
+    @EnvironmentObject var userViewModel: UserViewModel
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(stops: [
+                .init(color: Color.black.opacity(0.0), location: 0.8),
+                .init(color: Color.black.opacity(0.6), location: 0.9),
+                .init(color: Color.black.opacity(0.9), location: 1.0)
+            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .allowsHitTesting(false)
+                .overlay(alignment: .bottomTrailing) {
+                    SendButtonView {
+                        messageViewModel.addMessage (
+                            userId: userViewModel.user!.id!,
+                            text: messageComposerViewModel.finalizeText(),
+                            images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.convertUImageToImageData(),
+                            files: nil,
+                            location: .dm,
+                            reaction: nil,
+                            replyMessageId: nil,
+                            forwardMessageId: nil,
+                            edited: false
+                        )
+                        messageComposerViewModel.uiTextView.text = ""
+                        messageComposerViewModel.selectionData = []
+                        messageComposerViewModel.showSendButton = false
+                        messageComposerViewModel.customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
+                        scrollToBottom = true
+                        height = minHeight
+                    }
+                    .padding([.trailing, .vertical], 20)
+                }
+        }
+        .frame(maxWidth: .infinity)
     }
 }

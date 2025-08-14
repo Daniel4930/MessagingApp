@@ -15,7 +15,7 @@ struct DirectMessageView: View {
     @State private var scrollToBottom: Bool = false
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
-    @StateObject private var uploadDataViewModel = UploadDataViewModel()
+    @StateObject private var messageComposerViewModel = MessageComposerViewModel()
     @FocusState private var focusedField: Field?
     
     @EnvironmentObject var keyboardProvider: KeyboardProvider
@@ -34,11 +34,11 @@ struct DirectMessageView: View {
                 
                 DividerView()
                 
-                if !uploadDataViewModel.selectionData.isEmpty {
-                    PhotoAndFileHoriScrollView(uploadDataViewModel: uploadDataViewModel, showPhotoAndFile: $showPhotoAndFile)
+                if !messageComposerViewModel.selectionData.isEmpty {
+                    PhotoAndFileHoriScrollView(uploadDataViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
-                MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, uploadDataViewModel: uploadDataViewModel)
+                MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
             }
             .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
             .onChange(of: focusedField) { oldValue, newValue in
@@ -48,7 +48,7 @@ struct DirectMessageView: View {
             }
             .overlay(alignment: .bottom) {
                 if showFileAndImageSelector {
-                    SelectorView(minHeight: keyboardProvider.height, uploadDataViewModel: uploadDataViewModel)
+                    SelectorView(minHeight: keyboardProvider.height, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom)
                         .offset(y: proxy.safeAreaInsets.bottom)
                         .onAppear {
                             hideKeyboard()
@@ -56,7 +56,7 @@ struct DirectMessageView: View {
                 }
             }
             .customSheetModifier(isPresented: $showPhotoAndFile) {
-                UploadedDataInfoView(uploadDataViewModel: uploadDataViewModel)
+                UploadedDataInfoView(uploadDataViewModel: messageComposerViewModel)
                     .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
         }

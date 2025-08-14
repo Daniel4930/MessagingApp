@@ -72,9 +72,9 @@ struct MentionButton: View {
 
 
 struct MentionLayoutViewAnimation<Content: View>: View {
-    let numUsersToShow: Int
-    var showMention: Binding<Bool>
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     let content: Content
+    let numUsersToShow: Int
     
     @State private var currentValue: CGFloat = 0
     let maxDisplayUsers: CGFloat = 5
@@ -82,10 +82,10 @@ struct MentionLayoutViewAnimation<Content: View>: View {
     let springStiffness = 0.5
     let springDrag = 0.75
     
-    init(numUsersToShow: Int, showMention: Binding<Bool>, content: () -> Content) {
-        self.numUsersToShow = numUsersToShow
+    init(messageComposerViewModel: MessageComposerViewModel, content: () -> Content) {
+        self.messageComposerViewModel = messageComposerViewModel
         self.content = content()
-        self.showMention = showMention
+        self.numUsersToShow = messageComposerViewModel.mathchUsers.count
     }
     
     var body: some View {
@@ -97,7 +97,7 @@ struct MentionLayoutViewAnimation<Content: View>: View {
                 let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
                 currentValue = newValue >= 5 ? maxHeight : targetHeight
             }
-            .onChange(of: showMention.wrappedValue) { _, newValue in
+            .onChange(of: messageComposerViewModel.showMention) { _, newValue in
                 if newValue == false {
                     currentValue = 0
                 }

@@ -10,7 +10,7 @@ import PhotosUI
 
 struct UploadDataThumbnailView: View {
     let asset: PHAsset?
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @State private var uploadData: UploadData? = nil
     @State private var dataExistInSelection = false
     
@@ -21,11 +21,11 @@ struct UploadDataThumbnailView: View {
         ZStack {
             if let uploadData = uploadData {
                 Button {
-                    if uploadDataViewModel.checkDataExist(identifier: uploadData.identifier) {
-                        uploadDataViewModel.removeData(identifier: uploadData.identifier)
+                    if messageComposerViewModel.checkDataExist(identifier: uploadData.identifier) {
+                        messageComposerViewModel.removeData(identifier: uploadData.identifier)
                     }
                     else {
-                        uploadDataViewModel.addData(uploadData: uploadData)
+                        messageComposerViewModel.addData(uploadData: uploadData)
                     }
                 } label: {
                     if let photoData = uploadData.data.photo {
@@ -88,9 +88,9 @@ struct UploadDataThumbnailView: View {
         .onAppear {
             loadPhotoOrVideo()
         }
-        .onChange(of: uploadDataViewModel.selectionData) { oldValue, newValue in
+        .onChange(of: messageComposerViewModel.selectionData) { oldValue, newValue in
             if let data = uploadData {
-                if uploadDataViewModel.checkDataExist(identifier: data.identifier) {
+                if messageComposerViewModel.checkDataExist(identifier: data.identifier) {
                     dataExistInSelection = true
                 }
                 else {

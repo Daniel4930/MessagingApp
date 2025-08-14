@@ -7,40 +7,35 @@
 import SwiftUI
 
 struct CustomTextEditor: View {
-    @Binding var uiTextView: UITextView
-    @Binding var dynamicHeight: CGFloat
-    @Binding var showSendButton: Bool
-    @Binding var matchUsers: [User]
-    @Binding var showMention: Bool
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @FocusState.Binding var focusedField: Field?
     @Binding var scrollToBottom: Bool
     
     @EnvironmentObject var userViewModel: UserViewModel
     
-    let maxHeight = UIScreen.main.bounds.height / 5
     let horizontalPaddingSpace: CGFloat = 10
     
     var body: some View {
         ZStack(alignment: .leading) {
-            CustomUITextView(dynamicHeight: $dynamicHeight, uiTextView: $uiTextView, userViewModel: userViewModel, scrollToBottom: $scrollToBottom) {
-                showSendButton = !uiTextView.text.isEmpty
+            CustomUITextView(messageComposerViewModel: messageComposerViewModel, userViewModel: userViewModel, scrollToBottom: $scrollToBottom) {
+                messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextView.text.isEmpty
                 
                 if let user = userViewModel.user, let friends = user.friends?.allObjects as? [User] {
                     var users = Array(arrayLiteral: user)
                     users.append(contentsOf: friends)
                     let matched = searchUser(users: users)
-                    matchUsers = matched
-                    showMention = !matched.isEmpty
+                    messageComposerViewModel.mathchUsers = matched
+                    messageComposerViewModel.showMention = !matched.isEmpty
                 }
             }
-            .frame(height: min(dynamicHeight, maxHeight))
+            .frame(height: min(messageComposerViewModel.customTextEditorHeight, MessageComposerViewModel.customTextEditorMaxHeight))
             .padding(.horizontal, horizontalPaddingSpace)
             .focused($focusedField, equals: .textView)
             
             if let friends = userViewModel.user?.friends?.allObjects as? [User],
                let friend = friends.first,
                let displayName = friend.displayName,
-               uiTextView.text == ""
+               messageComposerViewModel.uiTextView.text.isEmpty
             {
                 Text("Message @\(displayName)")
                     .padding(.horizontal)
@@ -53,7 +48,7 @@ struct CustomTextEditor: View {
 }
 extension CustomTextEditor {
     func searchUser(users: [User]) -> [User] {
-        if let message = uiTextView.text {
+        if let message = messageComposerViewModel.uiTextView.text {
             //message = "@"
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
             if message.count == 1 && commandIndex == message.startIndex {
@@ -86,8 +81,7 @@ extension CustomTextEditor {
 }
 
 struct CustomUITextView: UIViewRepresentable {
-    @Binding var dynamicHeight: CGFloat
-    @Binding var uiTextView: UITextView
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     let userViewModel: UserViewModel
     @Binding var scrollToBottom: Bool
     var onMessageChange: () -> Void
@@ -105,19 +99,13 @@ struct CustomUITextView: UIViewRepresentable {
         tapGesture.delegate = context.coordinator
         textView.addGestureRecognizer(tapGesture)
         DispatchQueue.main.async {
-            uiTextView = textView
+            messageComposerViewModel.uiTextView = textView
         }
         
         return textView
     }
     
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        DispatchQueue.main.async {
-            let fittingSize = CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude)
-            let newSize = uiView.sizeThatFits(fittingSize)
-            dynamicHeight = newSize.height
-        }
-    }
+    func updateUIView(_ uiView: UITextView, context: Context) {}
     
     class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         var parent: CustomUITextView
@@ -227,7 +215,7 @@ struct CustomUITextView: UIViewRepresentable {
             
             let fittingSize = CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)
             let newSize = textView.sizeThatFits(fittingSize)
-            parent.dynamicHeight = newSize.height
+            parent.messageComposerViewModel.customTextEditorHeight = newSize.height
             
             parent.onMessageChange()
         }

@@ -23,6 +23,7 @@ struct GridImageView: View {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFit()
+//                                .frame(width: 100, height: 150)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                     }

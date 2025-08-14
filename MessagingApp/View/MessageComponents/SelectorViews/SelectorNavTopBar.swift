@@ -12,7 +12,7 @@ struct SelectorNavTopBar: View {
     @Binding var height: CGFloat
     let minHeight: CGFloat
     let accessStatus: PhotoLibraryAccessStatus
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     
     var body: some View {
         HStack(alignment: .center) {
@@ -26,7 +26,7 @@ struct SelectorNavTopBar: View {
             
             if accessStatus == .fullAccess || accessStatus == .limitedAccess {
                 VStack(spacing: 0) {
-                    Text(uploadDataViewModel.selectionData.isEmpty ? "Recents" : "\(uploadDataViewModel.selectionData.count) selected")
+                    Text(messageComposerViewModel.selectionData.isEmpty ? "Recents" : "\(messageComposerViewModel.selectionData.count) selected")
                         .bold()
                         .font(.title2)
                     Text("Select up to 10")
@@ -46,7 +46,7 @@ struct SelectorNavTopBar: View {
                         .foregroundStyle(.blue)
                 }
             } else {
-                CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, uploadDataViewModel: uploadDataViewModel) {
+                CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
                     Text("All Albums")
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(14)

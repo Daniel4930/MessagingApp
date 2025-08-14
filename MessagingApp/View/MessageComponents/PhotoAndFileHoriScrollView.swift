@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PhotoAndFileHoriScrollView: View {
-    @ObservedObject var uploadDataViewModel: UploadDataViewModel
+    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
     @Binding var showPhotoAndFile: Bool
     
     let playImageSize = CGSize(width: 8, height: 8)
@@ -48,7 +48,7 @@ struct PhotoAndFileHoriScrollView: View {
 
 struct Preview: View {
     @State var show = true
-    @StateObject var viewModel: UploadDataViewModel = UploadDataViewModel()
+    @StateObject var viewModel: MessageComposerViewModel = MessageComposerViewModel()
     
     var body: some View {
         PhotoAndFileHoriScrollView(uploadDataViewModel: viewModel, showPhotoAndFile: $show)

@@ -13,6 +13,7 @@ import UIKit
 struct AttributedTextView: UIViewRepresentable {
     let text: String
     let userViewModel: UserViewModel
+    @Binding var customTextViewHeight: CGFloat
     let onMentionTap: (String) -> Void
     
     func makeUIView(context: Context) -> UITextView {
@@ -33,12 +34,10 @@ struct AttributedTextView: UIViewRepresentable {
     func updateUIView(_ uiTextView: UITextView, context: Context) {
         let baseFont = UIFont.systemFont(ofSize: 16)
         let baseColor = UIColor.white
-        
         let attributed = NSMutableAttributedString()
-        
         let words = text.split(separator: " ")
         
-        for word in words {
+        for (index, word) in words.enumerated() {
             if word.hasPrefix("@"),
                let user = userViewModel.fetchUserByUsername(name: String(word.dropFirst())),
                let displayName = user.displayName,
@@ -67,17 +66,26 @@ struct AttributedTextView: UIViewRepresentable {
                 ])
                 attributed.append(normalAttr)
             }
+            
             // Append a space after every word except last
-            attributed.append(NSAttributedString(string: " ", attributes: [
-                .foregroundColor: baseColor,
-                .font: baseFont
-            ]))
+            if index != words.count - 1 {
+                attributed.append(NSAttributedString(string: " ", attributes: [
+                    .foregroundColor: baseColor,
+                    .font: baseFont
+                ]))
+            }
         }
         
         // Set to UITextView
         uiTextView.attributedText = attributed
+        
+        let size = uiTextView.sizeThatFits(CGSize(width: uiTextView.frame.width, height: CGFloat.greatestFiniteMagnitude))
+        if uiTextView.frame.height != size.height {
+            DispatchQueue.main.async {
+                customTextViewHeight = size.height
+            }
+        }
     }
-
     
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -108,6 +116,5 @@ struct AttributedTextView: UIViewRepresentable {
             }
             return defaultAction
         }
-
     }
 }
