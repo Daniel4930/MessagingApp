@@ -1,13 +1,14 @@
 //
-//  ImageThumbnailView.swift
+//  PhotoThumbnailView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 8/9/25.
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
-struct ImageThumbnailView: View {
+struct PhotoThumbnailView: View {
     let uiImage: UIImage
     let frame: (width: CGFloat, height: CGFloat) = (120, 120)
     

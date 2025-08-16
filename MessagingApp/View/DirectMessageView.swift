@@ -35,7 +35,7 @@ struct DirectMessageView: View {
                 DividerView()
                 
                 if !messageComposerViewModel.selectionData.isEmpty {
-                    PhotoAndFileHoriScrollView(uploadDataViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
+                    PhotoAndFileHoriScrollView(messageComposerViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
                 MessagingBarLayoutView(showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
@@ -56,7 +56,7 @@ struct DirectMessageView: View {
                 }
             }
             .customSheetModifier(isPresented: $showPhotoAndFile) {
-                UploadedDataInfoView(uploadDataViewModel: messageComposerViewModel)
+                UploadedFileInfoView(messageComposerViewModel: messageComposerViewModel)
                     .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
         }

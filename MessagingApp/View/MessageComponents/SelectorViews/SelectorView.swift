@@ -75,7 +75,7 @@ struct SelectorView: View {
             }
             
             ScrollView {
-                VStack(alignment: .leading) {
+                LazyVStack(alignment: .leading) {
                     switch accessStatus {
                     case .fullAccess:
                         PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, messageComposerViewModel: messageComposerViewModel)
@@ -182,17 +182,18 @@ struct CustomSendButtonView: View {
             .allowsHitTesting(false)
                 .overlay(alignment: .bottomTrailing) {
                     SendButtonView {
-                        messageViewModel.addMessage (
-                            userId: userViewModel.user!.id!,
-                            text: messageComposerViewModel.finalizeText(),
-                            images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.convertUImageToImageData(),
-                            files: nil,
-                            location: .dm,
-                            reaction: nil,
-                            replyMessageId: nil,
-                            forwardMessageId: nil,
-                            edited: false
-                        )
+//                        messageViewModel.addMessage (
+//                            userId: userViewModel.user!.id!,
+//                            text: messageComposerViewModel.finalizeText(),
+//                            images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getPhotoURL(),
+//                            files: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getFileURL(),
+//                            videos: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getVideoURL(),
+//                            location: .dm,
+//                            reaction: nil,
+//                            replyMessageId: nil,
+//                            forwardMessageId: nil,
+//                            edited: false
+//                        )
                         messageComposerViewModel.uiTextView.text = ""
                         messageComposerViewModel.selectionData = []
                         messageComposerViewModel.showSendButton = false

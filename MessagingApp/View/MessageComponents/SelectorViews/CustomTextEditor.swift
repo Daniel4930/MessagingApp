@@ -51,11 +51,13 @@ extension CustomTextEditor {
         if let message = messageComposerViewModel.uiTextView.text {
             //message = "@"
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
-            if message.count == 1 && commandIndex == message.startIndex {
+            
+            if message.count == 1 {
                 return users
-            } else {
+            }
+            
+            if commandIndex != message.startIndex {
                 guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
-                
                 //message = "text@ " && message = "text @ "
                 guard message.distance(from: spaceIndex, to: commandIndex) == 1 else { return [] }
                 

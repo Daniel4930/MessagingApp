@@ -11,7 +11,7 @@ struct SelectedDataImagePreview: View {
     let image: UIImage
     let index: Int
     @Binding var showPhotoAndFile: Bool
-    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     
     let size = CGSize(width: 50, height: 50)
     let cornerRadius: CGFloat = 10
@@ -27,12 +27,12 @@ struct SelectedDataImagePreview: View {
             .padding(.top)
             .padding(.trailing)
             .onTapGesture {
-                uploadDataViewModel.dataToShow = uploadDataViewModel.selectionData[index]
+                messageComposerViewModel.dataToShow = messageComposerViewModel.selectionData[index]
                 showPhotoAndFile.toggle()
             }
             .overlay(alignment: .topTrailing) {
                 Button {
-                    uploadDataViewModel.removeDataAtIndex(index: index)
+                    messageComposerViewModel.removeDataAtIndex(index: index)
                 } label: {
                     Image(systemName: "x.circle.fill")
                         .resizable()

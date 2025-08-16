@@ -31,8 +31,9 @@ struct CustomPhotoPickerView<Content: View>: View {
     }
 }
 
-enum LoadVideoError: Error {
-    case thumbnailError
+enum LoadFileError: Error {
+    case loadDataError
+    case urlError
 }
 
 struct PickerViewController: UIViewControllerRepresentable {
@@ -90,100 +91,63 @@ struct PickerViewController: UIViewControllerRepresentable {
                 if provider.registeredTypeIdentifiers.isEmpty { continue }
                 
                 if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                    Task {
-                        do {
-                            let fileURL = try await loadVideoFileURL(provider: provider)
+                    
+//                    do {
+                        provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                            guard error != nil else { return }
+                            guard let url else { return }
+                            let asset = AVURLAsset(url: url)
                             
-                            let avAsset = AVURLAsset(url: fileURL)
-                            
-                            let duration = try await CMTimeGetSeconds(avAsset.load(.duration))
-                            
-                            let imageGenerator = AVAssetImageGenerator(asset: avAsset)
-                            imageGenerator.appliesPreferredTrackTransform = true
-                            
-                            let thumbnail = try await generateThumbnail(from: avAsset)
-                            
-                            guard let videoData = try? Data(contentsOf: fileURL) else {
-                                print("Failed to get video data")
-                                return
+                            Task {
+                                let duration = try await asset.load(.duration)
+                                print(try await asset.load(.commonMetadata))
                             }
-                            
-                            DispatchQueue.main.async {
-                                self.parent.messageComposerViewModel.selectionData.append(UploadData(identifier: identifier, data: (nil, UploadData.VideoData(thumbnail: thumbnail, content: videoData, duration: duration), nil)))
-                            }
-                            
-                        } catch {
-                            print("Video loading error: \(error)")
                         }
-                    }
+                        
+//                        let uploadedFile = UploadedFile(identifier: identifier, fileType: .video, photoInfo: nil, videoInfo: VideoFile(name: <#T##String#>, duration: <#T##Double#>, videoData: <#T##Data#>, thumbnail: <#T##Data#>), fileInfo: nil)
+//                        DispatchQueue.main.async {
+//                            self.parent.messageComposerViewModel.selectionData.append(uploadedFile)
+//                        }
+                        
+//                    } catch let error as LoadFileError {
+//                        switch error {
+//                        case .loadDataError:
+//                            print("Failed to load video data")
+//                        case .urlError:
+//                            print("Failed to get video url")
+//                        }
+//                    } catch {
+//                        print("Unexpected error: \(error)")
+//                    }
                 }
                 else if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                    if provider.canLoadObject(ofClass: UIImage.self) {
-                        provider.loadObject(ofClass: UIImage.self) { (image, error) in
-                            if let error = error {
-                                print("Error loading image: \(error.localizedDescription)")
-                                return
-                            }
-                            if let image = image as? UIImage {
-                                DispatchQueue.main.async {
-                                    self.parent.messageComposerViewModel.selectionData.append(UploadData(identifier: identifier, data: (photo: UploadData.PhotoData(image: image), nil, nil)))
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        print("Cannot load object to UIImage")
-                    }
-                }
-            }
-        }
-
-        private func generateThumbnail(from asset: AVAsset) async throws -> UIImage {
-            let imageGenerator = AVAssetImageGenerator(asset: asset)
-            imageGenerator.appliesPreferredTrackTransform = true
-            
-            return try await withCheckedThrowingContinuation { continuation in
-                imageGenerator.generateCGImageAsynchronously(for: .zero) { cgImage, _, error in
-                    if let error = error {
-                        continuation.resume(throwing: error)
-                        return
-                    }
-
-                    guard let cgImage = cgImage else {
-                        continuation.resume(throwing: LoadVideoError.thumbnailError)
-                        return
-                    }
-
-                    continuation.resume(returning: UIImage(cgImage: cgImage))
+//                    Task {
+//                        do {
+//                            let url = try await loadFileURL(provider: provider)
+//                            let uploadedFile = UploadedFile(identifier: identifier, fileType: .photo, url: url)
+//                            DispatchQueue.main.async {
+//                                self.parent.messageComposerViewModel.selectionData.append(uploadedFile)
+//                            }
+//                        } catch let error as LoadFileError {
+//                            switch error {
+//                            case .loadDataError:
+//                                print("Failed to load image data")
+//                            case .urlError:
+//                                print("Failed to get image url")
+//                            }
+//                        } catch {
+//                            print("Unexpected error: \(error)")
+//                        }
+//                    }
                 }
             }
         }
         
-        private func loadVideoFileURL(provider: NSItemProvider) async throws -> URL {
-            try await withCheckedThrowingContinuation { continuation in
-                provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
-                    if let error = error {
-                        continuation.resume(throwing: error)
-                        return
-                    }
-                    
-                    guard let url = url else {
-                        continuation.resume(throwing: URLError(.badURL))
-                        return
-                    }
-                    
-                    let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString)
-                        .appendingPathExtension(url.pathExtension)
-                    
-                    do {
-                        try FileManager.default.copyItem(at: url, to: tempURL)
-                        continuation.resume(returning: tempURL)
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
-            }
+        private func loadFileURL(provider: NSItemProvider) async throws -> URL {
+            guard let data = try await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) as? Data else { throw LoadFileError.loadDataError }
+            guard let url = URL(dataRepresentation: data, relativeTo: nil) else { throw LoadFileError.urlError }
+            
+            return url
         }
     }
 }

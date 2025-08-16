@@ -28,17 +28,34 @@ struct MessagingBarLayoutView: View {
             
             if messageComposerViewModel.showSendButton || !messageComposerViewModel.selectionData.isEmpty {
                 SendButtonView {
-                    messageViewModel.addMessage (
-                        userId: userViewModel.user!.id!,
-                        text: messageComposerViewModel.finalizeText(),
-                        images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.convertUImageToImageData(),
-                        files: nil,
-                        location: .dm,
-                        reaction: nil,
-                        replyMessageId: nil,
-                        forwardMessageId: nil,
-                        edited: false
-                    )
+//                    messageViewModel.addMessage (
+//                        userId: userViewModel.user!.id!,
+//                        text: messageComposerViewModel.finalizeText(),
+//                        images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getPhotoURL(),
+//                        files: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getFileURL(),
+//                        videos: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getVideoURL(),
+//                        location: .dm,
+//                        reaction: nil,
+//                        replyMessageId: nil,
+//                        forwardMessageId: nil,
+//                        edited: false
+//                    )
+                    
+                    let firebaseSharedInstance = FirebaseStorageService.shared
+                    for photoInfo in messageComposerViewModel.getPhotoInfo() {
+                        if let photoInfo = photoInfo {
+                            let tempUrl = FileManager.default.temporaryDirectory.appending(component: photoInfo.name)
+                            do {
+                                try photoInfo.image.write(to: tempUrl, options: .atomic)
+                                
+                                let storageReference = firebaseSharedInstance.createChildReference(folder: .images, fileName: photoInfo.name)
+                                firebaseSharedInstance.uploadFileToBucket(reference: storageReference, url: tempUrl)
+                            } catch {
+                                print("Failed to write file to temp dir")
+                            }
+                        }
+                    }
+                    
                     messageComposerViewModel.uiTextView.text = ""
                     messageComposerViewModel.selectionData = []
                     messageComposerViewModel.showSendButton = false

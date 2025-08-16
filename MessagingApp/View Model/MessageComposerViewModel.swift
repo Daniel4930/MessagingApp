@@ -9,8 +9,8 @@ import Foundation
 import _PhotosUI_SwiftUI
 
 class MessageComposerViewModel: ObservableObject {
-    @Published var selectionData: [UploadData] = []
-    @Published var dataToShow: UploadData? = nil
+    @Published var selectionData: [UploadedFile] = []
+    @Published var dataToShow: UploadedFile? = nil
     @Published var uiTextView: UITextView = UITextView()
     @Published var showSendButton: Bool = false
     @Published var showMention: Bool = false
@@ -21,20 +21,10 @@ class MessageComposerViewModel: ObservableObject {
     static let customTextEditorMaxHeight = UIScreen.main.bounds.height / 5
     static let customTextEditorMinHeight = UIScreen.main.bounds.height / 20
     
-    func addData(uploadData: UploadData) {
+    func addData(uploadData: UploadedFile) {
         if selectionData.count < MessageComposerViewModel.maxSelection {
             
-            let identifier = uploadData.identifier
-            
-            if let photoData = uploadData.data.photo {
-                selectionData.append(UploadData(identifier: identifier, data: (photo: photoData, video: nil, file: nil)))
-            }
-            else if let videoData = uploadData.data.video {
-                selectionData.append(UploadData(identifier: identifier, data: (nil, videoData, nil)))
-            }
-            else if let fileData = uploadData.data.file {
-                selectionData.append(UploadData(identifier: identifier, data: (nil, nil, fileData)))
-            }
+            selectionData.append(uploadData)
         }
     }
     
@@ -60,12 +50,36 @@ class MessageComposerViewModel: ObservableObject {
         return uiTextView.text
     }
     
-    func convertUImageToImageData() -> [Data?] {
+    func getPhotoInfo() -> [PhotoFile?] {
         return selectionData.map { data in
-            if let uiImage = data.data.photo?.image {
-                return uiImage.pngData() ?? nil
+            if data.fileType == .photo, let photoInfo = data.photoInfo {
+                return photoInfo
             }
             return nil
         }
     }
+//    
+//    func getFileURL() -> [URL?] {
+//        return selectionData.map { data in
+//            if data.fileType == .file, let url = data.url {
+//                return url
+//            }
+//            return nil
+//        }
+//    }
+//    
+//    func getVideoURL() -> [URL?] {
+//        return selectionData.map { data in
+//            if data.fileType == .video, let url = data.url {
+//                return url
+//            }
+//            return nil
+//        }
+//    }
+//    
+//    func addDataToUploadedFileWithUrl(url: URL , data: Data) {
+//        if let fileIndex = selectionData.firstIndex(where: { $0.url == url }) {
+//            selectionData[fileIndex].thumbnail = data
+//        }
+//    }
 }

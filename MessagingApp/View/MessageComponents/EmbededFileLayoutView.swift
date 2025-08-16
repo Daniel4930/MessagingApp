@@ -14,8 +14,7 @@ enum DataSize {
 }
 
 struct EmbededFileLayoutView: View {
-    let name: String
-    let data: Data
+    let url: URL
     
     var body: some View {
         HStack(alignment: .center) {
@@ -25,7 +24,7 @@ struct EmbededFileLayoutView: View {
                 .frame(width: 40, height: 40)
                 .foregroundStyle(.gray)
             VStack(alignment: .leading) {
-                Text(name)
+                Text("No name, fix this")
                     .font(.callout)
                     .foregroundStyle(.blue)
                 Text("\(fileSizeTextFormat())")
@@ -40,7 +39,7 @@ struct EmbededFileLayoutView: View {
 }
 extension EmbededFileLayoutView {
     func fileSizeTextFormat() -> String {
-        let size = data.count
+        let size = 0/*data.count*/ // Fix this too
         var sizeUnit = DataSize.byte()
         var result = ""
         var quotient: Float = Float(size)

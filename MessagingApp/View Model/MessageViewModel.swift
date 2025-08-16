@@ -30,7 +30,7 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    func addMessage(userId: UUID, text: String?, images: [Data?], files: [Data]?, location: MessageLocation, reaction: String?, replyMessageId: UUID?, forwardMessageId: UUID?, edited: Bool) {
+    func addMessage(userId: UUID, text: String?, images: [URL?], files: [URL?], videos: [URL?], location: MessageLocation, reaction: String?, replyMessageId: UUID?, forwardMessageId: UUID?, edited: Bool) {
         let message = Message(context: sharedContainerInstance.context)
         message.id = UUID()
         message.userId = userId
@@ -41,17 +41,28 @@ class MessageViewModel: ObservableObject {
         message.forwardMessageId = forwardMessageId
         message.edited = edited
         
-        let imageData: [ImageData] = images.compactMap { data in
-            let imageData = ImageData(context: sharedContainerInstance.context)
-            imageData.data = data
-            
-            return imageData
+        let imageUrls: [ImageUrl] = images.compactMap { url in
+            let imageUrl = ImageUrl(context: sharedContainerInstance.context)
+            imageUrl.url = url
+            return imageUrl
         }
-        message.images = NSSet(array: imageData)
+        message.images = NSSet(array: imageUrls)
         
-        if let files = files {
-            message.files = NSSet(array: files)
+        
+        let fileUrls: [FileUrl] = files.compactMap { url in
+            let fileUrl = FileUrl(context: sharedContainerInstance.context)
+            fileUrl.url = url
+            return fileUrl
         }
+        message.files = NSSet(array: fileUrls)
+        
+        let videoUrls: [VideoUrl] = videos.compactMap { url in
+            let videoUrl = VideoUrl(context: sharedContainerInstance.context)
+            videoUrl.url = url
+            return videoUrl
+        }
+        message.videos = NSSet(array: videoUrls)
+
         switch location {
         case .channel:
             message.location = "channel"

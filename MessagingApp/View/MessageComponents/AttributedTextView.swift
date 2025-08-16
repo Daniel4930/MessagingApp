@@ -14,7 +14,10 @@ struct AttributedTextView: UIViewRepresentable {
     let text: String
     let userViewModel: UserViewModel
     @Binding var customTextViewHeight: CGFloat
+    @Binding var showSafari: Bool
     let onMentionTap: (String) -> Void
+    
+    let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -38,8 +41,19 @@ struct AttributedTextView: UIViewRepresentable {
         let words = text.split(separator: " ")
         
         for (index, word) in words.enumerated() {
-            if word.hasPrefix("@"),
-               let user = userViewModel.fetchUserByUsername(name: String(word.dropFirst())),
+            let wordString = String(word)
+            
+            if word.contains(linkRegexPattern), let url = URL(string: wordString) {
+                let linkAttr = NSAttributedString(string: wordString, attributes: [
+                    .link: url,
+                    .foregroundColor: UIColor.blue,
+                    .font: baseFont,
+                    .underlineStyle: NSUnderlineStyle.single
+                ])
+                attributed.append(linkAttr)
+            }
+            
+            else if word.hasPrefix("@"), let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst())),
                let displayName = user.displayName,
                let userName = user.userName,
                let url = URL(string: "mention://\(userName)") {
@@ -59,8 +73,7 @@ struct AttributedTextView: UIViewRepresentable {
                 attributed.append(mentionAttr)
             } else {
                 // Normal word - add with base style
-                let normalString = String(word)
-                let normalAttr = NSAttributedString(string: normalString, attributes: [
+                let normalAttr = NSAttributedString(string: wordString, attributes: [
                     .foregroundColor: baseColor,
                     .font: baseFont
                 ])
@@ -99,19 +112,25 @@ struct AttributedTextView: UIViewRepresentable {
         }
         
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
-            if case let .link(url) = textItem.content,
-               url.scheme == "mention" {
-                
-                // Rebuild the full username including fragment if it exists
-                let userNameWithFragment: String
-                if let fragment = url.fragment, !fragment.isEmpty {
-                    userNameWithFragment = "\(url.host ?? "")#\(fragment)"
-                } else {
-                    userNameWithFragment = url.host ?? ""
+            if case let .link(url) = textItem.content {
+                if url.scheme == "mention" {
+                    // Rebuild the full username including fragment if it exists
+                    let userNameWithFragment: String
+                    if let fragment = url.fragment, !fragment.isEmpty {
+                        userNameWithFragment = "\(url.host ?? "")#\(fragment)"
+                    } else {
+                        userNameWithFragment = url.host ?? ""
+                    }
+                    
+                    return UIAction(title: "Show Profile") { _ in
+                        self.parent.onMentionTap(userNameWithFragment)
+                    }
                 }
                 
-                return UIAction(title: "Show Profile") { _ in
-                    self.parent.onMentionTap(userNameWithFragment)
+                else if url.scheme == "https" || url.scheme == "https" {
+                    return UIAction(title: "Show Link") { _ in
+                        self.parent.showSafari = true
+                    }
                 }
             }
             return defaultAction

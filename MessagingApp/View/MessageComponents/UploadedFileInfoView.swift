@@ -1,5 +1,5 @@
 //
-//  UploadedDataInfoView.swift
+//  UploadedFileInfoView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/27/25.
@@ -7,18 +7,16 @@
 
 import SwiftUI
 
-struct UploadedDataInfoView: View {
-    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
+struct UploadedFileInfoView: View {
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     let thumbnailSize = CGSize(width: 350, height: 500)
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         ScrollView {            
-            if let dataToShow = uploadDataViewModel.dataToShow {
-                let data = dataToShow.data
-                
-                if let photoData = data.photo {
-                    Image(uiImage: photoData.image)
+            if let dataToShow = messageComposerViewModel.dataToShow, let data = dataToShow.photoInfo?.image {
+                if let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()
                         .frame(width: thumbnailSize.width, height: thumbnailSize.height)
@@ -29,7 +27,7 @@ struct UploadedDataInfoView: View {
                 LineIndicator(color: .white, width: 70, height: 3)
                 
                 Button {
-                    uploadDataViewModel.selectionData.removeAll(where: { $0.identifier == uploadDataViewModel.dataToShow?.identifier })
+                    messageComposerViewModel.selectionData.removeAll(where: { $0.identifier == messageComposerViewModel.dataToShow?.identifier })
                     dismiss()
                 } label: {
                     Text("Remove file")

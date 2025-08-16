@@ -36,7 +36,7 @@ struct PhotosAndVideosGridView: View {
                 }
             
             ForEach(assets, id: \.localIdentifier) { asset in
-                UploadDataThumbnailView(asset: asset, messageComposerViewModel: messageComposerViewModel)
+                PhotoLibraryThumbnailView(asset: asset, messageComposerViewModel: messageComposerViewModel)
             }
         }
         .padding(.vertical)

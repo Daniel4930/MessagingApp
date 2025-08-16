@@ -8,21 +8,20 @@
 import SwiftUI
 
 struct PhotoAndFileHoriScrollView: View {
-    @ObservedObject var uploadDataViewModel: MessageComposerViewModel
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var showPhotoAndFile: Bool
     
     let playImageSize = CGSize(width: 8, height: 8)
     
-    
     var body: some View {
         ScrollView([.horizontal]) {
             HStack {
-                ForEach(Array(uploadDataViewModel.selectionData.enumerated()), id: \.offset) { index, uploadData in
-                    if let photo = uploadData.data.photo {
-                        SelectedDataImagePreview(image: photo.image, index: index, showPhotoAndFile: $showPhotoAndFile, uploadDataViewModel: uploadDataViewModel)
+                ForEach(Array(messageComposerViewModel.selectionData.enumerated()), id: \.offset) { index, uploadData in
+                    if uploadData.fileType == .photo, let photoInfo = uploadData.photoInfo, let uiImage = UIImage(data: photoInfo.image) {
+                        SelectedDataImagePreview(image: uiImage, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                     }
-                    else if let video = uploadData.data.video {
-                        SelectedDataImagePreview(image: video.thumbnail, index: index, showPhotoAndFile: $showPhotoAndFile, uploadDataViewModel: uploadDataViewModel)
+                    else if uploadData.fileType == .video, let videoInfo = uploadData.videoInfo, let uiImage = UIImage(data: videoInfo.thumbnail) {
+                        SelectedDataImagePreview(image: uiImage, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                             .overlay(alignment: .bottomLeading) {
                                 Image(systemName: "play.fill")
                                     .resizable()
@@ -36,21 +35,12 @@ struct PhotoAndFileHoriScrollView: View {
                                     .padding([.leading, .bottom], 3)
                             }
                     }
-                    else if let file = uploadData.data.file {
+                    else if uploadData.fileType == .file {
                         
                     }
                 }
             }
         }
         .padding(.leading)
-    }
-}
-
-struct Preview: View {
-    @State var show = true
-    @StateObject var viewModel: MessageComposerViewModel = MessageComposerViewModel()
-    
-    var body: some View {
-        PhotoAndFileHoriScrollView(uploadDataViewModel: viewModel, showPhotoAndFile: $show)
     }
 }

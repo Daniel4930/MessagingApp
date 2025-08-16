@@ -8,11 +8,10 @@
 import SwiftUI
 
 struct EmbededLinkLayoutView: View {
-    @Binding var embededTitle: String
-    @Binding var embededDescription: String
-    @Binding var embededImage: UIImage?
+    let embededTitle: String
+    let embededDescription: String
+    let embededImage: UIImage?
     @Binding var embededImageDimension: (width: CGFloat, height: CGFloat)
-    @Binding var linkEmbededViewDimension: (width: CGFloat, height: CGFloat)
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -24,7 +23,7 @@ struct EmbededLinkLayoutView: View {
                     .font(.footnote)
             }
         }
-        .frame(width: embededImage == nil ? linkEmbededViewDimension.width : linkEmbededViewDimension.width * 0.65, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding([.vertical, .leading])
         if let embededImage = embededImage {
             Image(uiImage: embededImage)

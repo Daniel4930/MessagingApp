@@ -26,59 +26,51 @@ struct MessageContentView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 5) {
             if let text = message.text {
-                if text.contains(linkRegexPattern) {
-                    Button {
-                        showSafari = true
-                    } label: {
-                        Text(text)
-                            .foregroundStyle(.blue)
+                AttributedTextView(text: text, userViewModel: userViewModel, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
+                    if let user = userViewModel.fetchUserByUsername(name: userName) {
+                        userToPresent = user
                     }
-                    .padding(.bottom, 5)
-                    .sheet(isPresented: $showSafari) {
-                        if let url = URL(string: text) {
-                            SafariView(url: url)
-                        }
+                }
+                .frame(height: customTextViewHeight)
+                .sheet(isPresented: $showSafari) {
+                    if let url = URL(string: text) {
+                        SafariView(url: url)
                     }
-                    .task {
+                }
+                .task {
+                    if text.contains(linkRegexPattern) {
                         retrieveMetaDataFromURL(url: text)
                     }
-                    
-                    if showEmbeded {
-                        organizeEmbededItems()
-                            .overlay(alignment: .leading) {
-                                Color.gray
-                                    .frame(width: linkEmbededViewDimension.width * 0.015)
-                            }
-                            .background(
-                                GeometryReader { proxy in
-                                    Color("SecondaryBackgroundColor")
-                                        .onAppear {
-                                            linkEmbededViewDimension.width = proxy.size.width
-                                            linkEmbededViewDimension.height = proxy.size.height
-                                        }
-                                }
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                } else {
-                    AttributedTextView(text: text, userViewModel: userViewModel, customTextViewHeight: $customTextViewHeight) { userName in
-                        if let user = userViewModel.fetchUserByUsername(name: userName) {
-                            userToPresent = user
+                }
+
+                if showEmbeded {
+                    organizeEmbededItems()
+                        .overlay(alignment: .leading) {
+                            Color.gray
+                                .frame(width: linkEmbededViewDimension.width * 0.015)
                         }
-                    }
-                    .frame(height: customTextViewHeight)
+                        .background(
+                            GeometryReader { proxy in
+                                Color("SecondaryBackgroundColor")
+                                    .onAppear {
+                                        linkEmbededViewDimension.width = proxy.size.width
+                                        linkEmbededViewDimension.height = proxy.size.height
+                                    }
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
-            if let images = message.images?.allObjects as? [ImageData], !images.isEmpty {
-                GridImageView(imageData: images)
+            if let urls = message.images?.allObjects as? [ImageUrl], !urls.isEmpty {
+                GridImageView(imageUrl: urls)
                     .padding(.top, 5)
             }
-            if let files = message.files?.allObjects as? [FileData], !files.isEmpty {
-                ForEach(files, id: \.self) { file in
-                    if let name = file.name, let data = file.data {
-                        EmbededFileLayoutView(name: name, data: data)
+            if let urls = message.files?.allObjects as? [FileUrl], !urls.isEmpty {
+                ForEach(urls, id: \.self) { fileUrl in
+                    if let url = fileUrl.url {
+                        EmbededFileLayoutView(url: url)
                     }
                 }
             }
@@ -108,12 +100,12 @@ extension MessageContentView {
     
     @ViewBuilder func organizeEmbededItems() -> some View {
         if embededImageDimension.width > embededImageDimension.height {
-            VStack(alignment: .leading) {
-                EmbededLinkLayoutView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
+            VStack(alignment: .center) {
+                EmbededLinkLayoutView(embededTitle: embededTitle, embededDescription: embededDescription, embededImage: embededImage, embededImageDimension: $embededImageDimension)
             }
         } else {
             HStack(alignment: .center) {
-                EmbededLinkLayoutView(embededTitle: $embededTitle, embededDescription: $embededDescription, embededImage: $embededImage, embededImageDimension: $embededImageDimension, linkEmbededViewDimension: $linkEmbededViewDimension)
+                EmbededLinkLayoutView(embededTitle: embededTitle, embededDescription: embededDescription, embededImage: embededImage, embededImageDimension: $embededImageDimension)
             }
         }
     }
