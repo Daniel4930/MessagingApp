@@ -7,16 +7,15 @@
 
 import Foundation
 
-struct UserInfo: Codable {
-    let id: UUID
+struct UserInfo: Codable, Identifiable, Equatable {
+    let id: String
     let email: String
-    let password: String //Hash the password
     let userName: String // Unique
     let displayName: String
-    let registeredData: String
+    let registeredDate: String
     let icon: String // Get the image from firebase storage (path)
     let onlineStatus: String
     let aboutMe: String
     let bannerColor: String // in hex
-    let friends: [UUID]
+    let friends: [String]
 }

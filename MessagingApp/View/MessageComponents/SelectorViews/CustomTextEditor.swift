@@ -20,9 +20,9 @@ struct CustomTextEditor: View {
             CustomUITextView(messageComposerViewModel: messageComposerViewModel, userViewModel: userViewModel, scrollToBottom: $scrollToBottom) {
                 messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextView.text.isEmpty
                 
-                if let user = userViewModel.user, let friends = user.friends?.allObjects as? [User] {
+                if let user = userViewModel.user {
                     var users = Array(arrayLiteral: user)
-                    users.append(contentsOf: friends)
+                    users.append(contentsOf: userViewModel.friends)
                     let matched = searchUser(users: users)
                     messageComposerViewModel.mathchUsers = matched
                     messageComposerViewModel.showMention = !matched.isEmpty
@@ -32,11 +32,9 @@ struct CustomTextEditor: View {
             .padding(.horizontal, horizontalPaddingSpace)
             .focused($focusedField, equals: .textView)
             
-            if let friends = userViewModel.user?.friends?.allObjects as? [User],
-               let friend = friends.first,
-               let displayName = friend.displayName,
-               messageComposerViewModel.uiTextView.text.isEmpty
-            {
+            if let friend = userViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
+                let displayName = friend.displayName
+                
                 Text("Message @\(displayName)")
                     .padding(.horizontal)
                     .foregroundStyle(.gray)
@@ -47,7 +45,7 @@ struct CustomTextEditor: View {
     }
 }
 extension CustomTextEditor {
-    func searchUser(users: [User]) -> [User] {
+    func searchUser(users: [UserInfo]) -> [UserInfo] {
         if let message = messageComposerViewModel.uiTextView.text {
             //message = "@"
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
@@ -71,10 +69,9 @@ extension CustomTextEditor {
             let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
             
             return users.filter { user in
-                if let userName = user.userName, let displayName = user.displayName {
-                    return userName.lowercased().contains(nameToSearch) || displayName.lowercased().contains(nameToSearch)
-                }
-                return false
+                let userName = user.userName
+                let displayName = user.displayName
+                return userName.lowercased().contains(nameToSearch) || displayName.lowercased().contains(nameToSearch)
             }
         } else {
             return []
@@ -116,16 +113,18 @@ struct CustomUITextView: UIViewRepresentable {
             self.parent = parent
         }
         
-        private func generateNameMatchPattern(user: User) -> String? {
-            guard let userName = user.userName else { return nil }
-            guard let displayName = user.displayName else { return nil }
-            guard let friends = user.friends?.allObjects as? [User] else { return nil }
+        private func generateNameMatchPattern(user: UserInfo) -> String? {
+            let userName = user.userName
+            let displayName = user.displayName
+            let friends = parent.userViewModel.friends
             
             var pattern = "@(\(userName)|\(displayName)"
             
             for friend in friends {
-                if let displayName = friend.displayName, let userName = friend.userName {
-                    pattern.append("|\(displayName)|\(userName)")
+                if !friend.displayName.isEmpty {
+                    pattern.append("|\(friend.displayName)|\(friend.userName)")
+                } else {
+                    pattern.append("|\(friend.userName)")
                 }
             }
             pattern.append(")")

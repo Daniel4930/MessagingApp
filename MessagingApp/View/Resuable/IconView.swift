@@ -7,12 +7,12 @@
 import SwiftUI
 
 struct IconView: View {
-    let user: User?
+    let user: UserInfo?
     let iconDimension: (width: CGFloat, height: CGFloat)
     let iconBorderThickness: CGFloat = 41
     let borderColor: Color
     
-    init(user: User?, iconDimension: (width: CGFloat, height: CGFloat) = (37, 37), borderColor: Color = Color("PrimaryBackgroundColor")) {
+    init(user: UserInfo?, iconDimension: (width: CGFloat, height: CGFloat) = (37, 37), borderColor: Color = Color("PrimaryBackgroundColor")) {
         self.user = user
         self.iconDimension = iconDimension
         self.borderColor = borderColor
@@ -24,12 +24,28 @@ struct IconView: View {
                 .frame(width: iconBorderThickness, height: iconBorderThickness)
                 .clipShape(.circle)
             
-            if let user = user, let data = user.icon, let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconDimension.width, height: iconDimension.height)
-                    .clipShape(.circle)
+            if let user = user {
+                let urlString = URL(string: user.icon)
+                AsyncImage(url: urlString) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: iconDimension.width, height: iconDimension.height)
+                            .clipShape(.circle)
+                    } else if let _ = phase.error {
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: iconDimension.width, height: iconDimension.height)
+                            .clipShape(.circle)
+                    } else {
+                        ProgressView()
+                            .frame(width: iconDimension.width, height: iconDimension.height)
+                            .clipShape(.circle)
+                    }
+                    
+                }
             } else {
                 Image(systemName: "person.fill")
                     .resizable()

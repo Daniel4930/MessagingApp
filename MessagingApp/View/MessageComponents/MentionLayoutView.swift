@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MentionLayoutView: View {
-    let users: [User]
+    let users: [UserInfo]
     let appendNameToText: (String) -> Void
     
     let clickedBackgroundColor = Color("ButtonClickedBackgroundColor")
@@ -34,7 +34,7 @@ struct MentionLayoutView: View {
 }
 
 struct MentionButton: View {
-    let user: User
+    let user: UserInfo
     let onSelect: (String) -> Void
     @State private var isPressed = false
     
@@ -47,18 +47,18 @@ struct MentionButton: View {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + removeMentionViewDeadline) {
-                onSelect(user.userName ?? "")
+                onSelect(user.userName)
             }
         } label: {
             HStack {
                 IconView(user: user, borderColor: Color("SecondaryBackgroundColor"))
                 
-                Text(user.displayName ?? "")
+                Text(user.displayName)
                     .bold()
                 
                 Spacer()
                 
-                Text(user.userName ?? "")
+                Text(user.userName)
                     .font(.footnote)
                     .foregroundStyle(.gray)
             }

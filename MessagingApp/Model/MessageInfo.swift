@@ -8,13 +8,13 @@
 import Foundation
 
 struct MessageInfo {
-    let id: UUID
-    let userId: UUID
+    let id: String
+    let userId: String
     let text: String
     let date: Date
     let edited: Bool
     let location: String
     let reaction: String
-    let forwardMessageId: UUID
-    let replayMessageId: UUID
+    let forwardMessageId: String
+    let replayMessageId: String
 }

@@ -16,98 +16,28 @@ enum OnlineStatus {
     case idle
 }
 
+@MainActor
 class UserViewModel: ObservableObject {
-    @Published var user: User?
+    @Published var user: UserInfo?
+    @Published var friends: [UserInfo] = []
+    
     private let sharedContainerInstance = PersistenceContainer.shared
     
-    init() {
-        let users = fetchAllUsers()
-        if users.isEmpty {
-            generateMockUser()
-        }
-        fetchCurrentUser()
+    func fetchCurrentUser(email: String) async {
+        self.user = await FirebaseCloudStoreService.shared.fetchUser(email: email)
     }
     
-    func fetchCurrentUser() {
-        let request = NSFetchRequest<User>(entityName: "User")
-        request.fetchLimit = 1
-        request.predicate = NSPredicate(format: "userName == %@", "phu" as NSString)
-        
-        do {
-            let result = try sharedContainerInstance.context.fetch(request)
-            if let firstUser = result.first {
-                user = firstUser
-            }
-        } catch let error {
-            fatalError("Failed to fetch user: \(error.localizedDescription)")
+    func fetchUserById(id: String) async {
+        if let friend = await FirebaseCloudStoreService.shared.fetchFriend(id: id) {
+            self.friends.append(friend)
         }
     }
     
-    func fetchUserById(id: UUID) -> User? {
-        let request = NSFetchRequest<User>(entityName: "User")
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        request.fetchLimit = 1
-        
-        do {
-            let result = try sharedContainerInstance.context.fetch(request)
-            if let firstUser = result.first {
-                return firstUser
-            }
-        } catch let error {
-            fatalError("Failed to fetch user: \(error.localizedDescription)")
+    func fetchUserByUsername(name: String) -> UserInfo? {
+        if user?.userName == name {
+            return user
+        } else {
+            return friends.first(where: { $0.userName == name })
         }
-        return nil
-    }
-    
-    func fetchUserByUsername(name: String) -> User? {
-        let request = NSFetchRequest<User>(entityName: "User")
-        request.predicate = NSPredicate(format: "userName == %@", name as NSString)
-        request.fetchLimit = 1
-        
-        do {
-            let result = try sharedContainerInstance.context.fetch(request)
-            if let firstUser = result.first {
-                return firstUser
-            }
-        } catch let error {
-            fatalError("Failed to fetch user: \(error.localizedDescription)")
-        }
-        return nil
-    }
-    
-    func fetchAllUsers() -> [User] {
-        let request = NSFetchRequest<User>(entityName: "User")
-
-        do {
-            let result = try sharedContainerInstance.context.fetch(request)
-            return result
-        } catch let error {
-            fatalError("Failed to fetch user: \(error.localizedDescription)")
-        }
-    }
-    
-    func generateMockUser() {
-        let user1 = User(context: sharedContainerInstance.context)
-        user1.id = UUID()
-        user1.displayName = "Clyde"
-        user1.userName = "clyde#0000"
-        user1.icon = UIImage(named: "icon")?.pngData()
-        user1.aboutMe = "I'm an AI bot created by Discord"
-        user1.bannerColor = "none"
-        user1.onlineStatus = "doNotDisturb"
-        user1.registeredDate = Date()
-        
-        let user2 = User(context: sharedContainerInstance.context)
-        user2.id = UUID()
-        user2.displayName = "Unlimited"
-        user2.userName = "phu"
-        user2.icon = UIImage(named: "userIcon")?.pngData()
-        user2.aboutMe = "Limitless..."
-        user2.bannerColor = "none"
-        user2.onlineStatus = "idle"
-        user2.registeredDate = Date()
-        user2.friends = NSSet(object: user1)
-        
-        sharedContainerInstance.save()
     }
 }

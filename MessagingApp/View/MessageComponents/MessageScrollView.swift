@@ -32,7 +32,7 @@ struct MessageScrollView: View {
                         ForEach(sortedMessageByHourMinute, id: \.0) { time, messages in
                             let sortedMessagesByUser = sortMessagesByUser(messages: messages)
                             ForEach(sortedMessagesByUser, id: \.0) { userId, messages in
-                                if let user = searchUser(id: userId) {
+                                if let user = /*searchUser(id: userId)*/userViewModel.user {
                                     MessageLayoutView(user: user, messages: messages, time: time)
                                 }
                             }
@@ -97,9 +97,10 @@ extension MessageScrollView {
         return result.sorted { $0.key < $1.key }
     }
     
-    func searchUser(id: UUID) -> User? {
-        return userViewModel.fetchUserById(id: id)
-    }
+    //TODO:
+//    func searchUser(id: UUID) -> User? {
+//        return userViewModel.fetchUserById(id: id)
+//    }
     
     func sortMessagesByUser(messages: [Message]) -> [(UUID, [Message])] {
         var result: [(UUID, [Message])] = []

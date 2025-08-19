@@ -9,7 +9,6 @@ import SwiftUI
 
 enum Tabs {
     case login
-    case signup
     case home
 }
 
@@ -20,12 +19,6 @@ struct ContentView: View {
         switch currentView {
         case .login:
             LoginView(currentView: $currentView)
-            
-            Button("Sign up") {
-                currentView = .signup
-            }
-        case .signup:
-            SignupView()
         case .home:
             HomeView()
         }

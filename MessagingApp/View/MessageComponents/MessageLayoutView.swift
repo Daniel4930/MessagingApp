@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MessageLayoutView: View {
-    let user: User
+    let user: UserInfo
     let messages: [Message]
     let time: Date
     
@@ -20,16 +20,25 @@ struct MessageLayoutView: View {
     
     var body: some View {
         HStack(alignment: .top) {
-            if let data = user.icon, let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .frame(width: iconDimension.width, height: iconDimension.height)
-                    .clipShape(.circle)
-            } else {
-                Image(systemName: "person.fill")
-                    .resizable()
-                    .frame(width: iconDimension.width, height: iconDimension.height)
-                    .clipShape(.circle)
+            let url = URL(string: user.icon)
+            
+            AsyncImage(url: url) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .frame(width: iconDimension.width, height: iconDimension.height)
+                        .clipShape(.circle)
+                } else if let _ = phase.error {
+                    Image(systemName: "person.fill")
+                        .resizable()
+                        .frame(width: iconDimension.width, height: iconDimension.height)
+                        .clipShape(.circle)
+                } else {
+                    Image(systemName: "person.fill")
+                        .resizable()
+                        .frame(width: iconDimension.width, height: iconDimension.height)
+                        .clipShape(.circle)
+                }
             }
             VStack(alignment: .leading, spacing: 5) {
                 HStack {

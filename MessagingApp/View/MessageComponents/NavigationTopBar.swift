@@ -24,7 +24,7 @@ struct NavigationTopBar: ToolbarContent {
                     .bold()
             }
             HStack {
-                if let friend = getFriend() {
+                if let friend = userViewModel.friends.first {
                     IconView(user: friend)
                         .overlay(alignment: .bottomTrailing) {
                             OnlineStatusCircle(status: friend.onlineStatus, color: Color("PrimaryBackgroundColor"))
@@ -44,14 +44,3 @@ struct NavigationTopBar: ToolbarContent {
         }
     }
 }
-extension NavigationTopBar {
-    func getFriend() -> User? {
-        if let friends = userViewModel.user?.friends?.allObjects, let first = friends.first as? User {
-            guard let id = first.id else { return nil }
-            return userViewModel.fetchUserById(id: id)
-        }
-        return nil
-    }
-}
-
-

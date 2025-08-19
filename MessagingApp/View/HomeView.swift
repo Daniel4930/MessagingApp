@@ -8,14 +8,27 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject var userViewModel: UserViewModel
+    
     var body: some View {
         NavigationStack {
-            NavigationLink {
-                DirectMessageView()
-            } label: {
-                Text("Direct message view")
+            VStack {
+                if let user = userViewModel.user {
+                    Text(user.id)
+                        .foregroundStyle(.white)
+                    Text(user.email)
+                        .foregroundStyle(.white)
+                    
+                    NavigationLink("Direct message view") {
+                        DirectMessageView()
+                    }
+                    Spacer()
+                } else {
+                    ProgressView("Fetching user…")
+                        .foregroundStyle(.white)
+                }
             }
-            Spacer()
+            .padding()
         }
     }
 }

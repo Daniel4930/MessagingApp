@@ -24,6 +24,7 @@ class FirebaseCloudStoreService {
         } catch {
             print("Error encoding JSON: \(error.localizedDescription)")
         }
+        
         return nil
     }
     
@@ -38,24 +39,7 @@ class FirebaseCloudStoreService {
         return nil
     }
     
-    private func checkUserAlreadyExist(email: String) async -> Bool {
-        do {
-            let querySnapshot = try await db.collection("users").whereField("email", isEqualTo: email).getDocuments()
-            
-            return querySnapshot.documents.isEmpty
-            
-        } catch {
-            print("Failed to check user existent: \(error.localizedDescription)")
-        }
-        
-        return false
-    }
-    
     func addUser(user: UserInfo) async {
-        guard await checkUserAlreadyExist(email: user.email) else {
-            print("User's email already exists")
-            return
-        }
         guard let jsonString = encodeJSON(user: user) else { return }
         guard let userDict = convertJSONToDictionary(jsonString: jsonString) else { return }
         
@@ -68,24 +52,32 @@ class FirebaseCloudStoreService {
         }
     }
     
-    func loginUser(email: String, password: String) async -> Bool {
-        guard await checkUserAlreadyExist(email: email) else {
-            print("User's email already exists")
-            return false
-        }
-        
+    func fetchUser(email: String) async -> UserInfo? {
         do {
-            let querySnapshot = try await db.collection("users").whereField("email", isEqualTo: email).whereField("password", isEqualTo: password).getDocuments()
+            let snapshot = try await db.collection("users").whereField("email", isEqualTo: email).getDocuments()
             
-            for document in querySnapshot.documents {
-                print("\(document.documentID) => \(document.data())")
+            if let document = snapshot.documents.first {
+                let user = try? document.data(as: UserInfo.self)
+                return user
             }
-            
-            return true
         } catch {
-            print("Error getting documents: \(error)")
+            print("Error fetching user: \(error.localizedDescription)")
         }
         
-        return false
+        return nil
+    }
+    
+    func fetchFriend(id: String) async -> UserInfo? {
+        do {
+            let snapshot = try await db.collection("users").whereField("id", isEqualTo: id).getDocuments()
+            
+            if let document = snapshot.documents.first {
+                return try? document.data(as: UserInfo.self)
+            }
+        } catch {
+            print("Error fetching a friend: \(error.localizedDescription)")
+        }
+        
+        return nil
     }
 }

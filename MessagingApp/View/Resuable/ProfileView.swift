@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    let user: User
+    let user: UserInfo
     
     @State private var showOptions: Bool = false
     
@@ -103,11 +103,11 @@ struct ProfileView: View {
                         )
                         .offset(x: -3, y: -1)
                     }
-                Text(user.displayName ?? user.userName ?? "UNKNOWN ERROR")
+                Text(user.displayName)
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text(user.userName ?? "UNKNOWN ERROR")
+                Text(user.userName)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -146,7 +146,7 @@ struct ProfileView: View {
                     .bold()
                     .padding(.bottom, 7)
                 
-                Text(user.aboutMe ?? "No description")
+                Text(user.aboutMe)
                     .padding(.bottom, 20)
                 
                 
@@ -154,7 +154,7 @@ struct ProfileView: View {
                     .font(.subheadline)
                     .bold()
                     .padding(.bottom, 4)
-                Text(user.registeredDate?.formatted(date: .abbreviated, time: .omitted) ?? "")
+                Text(user.registeredDate)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()

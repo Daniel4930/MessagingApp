@@ -20,7 +20,7 @@ struct MessageContentView: View {
     @State private var showSafari: Bool = false
     @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
-    @State private var userToPresent: User?
+    @State private var userToPresent: UserInfo?
     @State private var customTextViewHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
@@ -140,7 +140,8 @@ extension MessageContentView {
         
         for (index, substr) in separateMentionedNameAndMessage(text: text).enumerated() {
             var attributedSubstring = AttributedString()
-            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst())), let displayName = user.displayName {
+            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst())) {
+                let displayName = user.displayName
                 var tempAttributedString = AttributedString("@\(displayName)")
                 tempAttributedString.font = Font.system(.body).bold()
                 tempAttributedString.backgroundColor = .blue.opacity(0.5)
