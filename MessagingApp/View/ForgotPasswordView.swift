@@ -67,7 +67,11 @@ struct ForgotPasswordView: View {
                 if newValue == 0 {
                     generalMessageColor = .clear
                 } else {
-                    generalMessageColor = .red
+                    if generalMessage == "Reset password link sent. Please check your email" {
+                        generalMessageColor = .green
+                    } else {
+                        generalMessageColor = .red
+                    }
                 }
             }
         }
@@ -81,21 +85,14 @@ extension ForgotPasswordView {
                 emailErrorMessage = "Email is invalid"
             case .networkError:
                 generalMessage = "No internet connection. Please check your internet"
-                generalMessageColor = .red
                 generalMessageHeight = generalMessageMaxHeight
             case .unknown:
                 generalMessage = "Unknown error. Please try again later"
-                generalMessageColor = .red
                 generalMessageHeight = generalMessageMaxHeight
             case nil:
                 generalMessage = "Reset password link sent. Please check your email"
-                generalMessageColor = .green
                 generalMessageHeight = generalMessageMaxHeight
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
 }

@@ -36,11 +36,7 @@ class FirebaseAuthService {
     static let shared = FirebaseAuthService()
     func createANewUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, FirebaseSignUpError>) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-            if let error = error as NSError? {
-                print("Firebase error code: \(error.code)")
-                print("Firebase error domain: \(error.domain)")
-                print("Firebase error userInfo: \(error.userInfo)") 
-                
+            if let error = error as NSError? {                
                 if let authError = AuthErrorCode(rawValue: error.code) {
                     switch authError {
                     case .invalidEmail:
@@ -116,7 +112,10 @@ class FirebaseAuthService {
                         completion(FirebaseResetPasswordError.unknown)
                     }
                 }
+                completion(nil)
+                return
             }
+            completion(nil)
         }
     }
 }
