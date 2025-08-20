@@ -10,6 +10,7 @@ import SwiftUI
 enum FormType {
     case email
     case password
+    case text
 }
 
 struct FormTextFieldView: View {
@@ -28,19 +29,20 @@ struct FormTextFieldView: View {
             Group {
                 switch formType {
                 case .email:
-                    TextField(text: $text) {
-                        Text(textFieldTitle)
-                    }
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
+                    TextField(textFieldTitle, text: $text)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
                     
                 case .password:
-                    SecureField(text: $text) {
-                        Text(textFieldTitle)
-                    }
-                    .textContentType(.password)
+                    SecureField(textFieldTitle, text: $text)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                    
+                case .text:
+                    TextField(textFieldTitle, text: $text)
                 }
             }
             .padding(8)
@@ -50,7 +52,7 @@ struct FormTextFieldView: View {
             )
             
             Text(errorMessage.isEmpty ? " " : "*\(errorMessage)")
-                .font(.footnote)
+                .font(.subheadline)
                 .foregroundColor(.red)
         }
     }

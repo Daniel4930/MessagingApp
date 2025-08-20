@@ -8,6 +8,10 @@
 import FirebaseFirestore
 import FirebaseCore
 
+enum FirebaseCloudStoreUpdateDataError: Error {
+    case updateFailed(String)
+}
+
 class FirebaseCloudStoreService {
     static let shared = FirebaseCloudStoreService()
     let db = Firestore.firestore(app: FirebaseApp.app()!, database: "messaging-app")
@@ -24,7 +28,6 @@ class FirebaseCloudStoreService {
         } catch {
             print("Error encoding JSON: \(error.localizedDescription)")
         }
-        
         return nil
     }
     
@@ -44,9 +47,8 @@ class FirebaseCloudStoreService {
         guard let userDict = convertJSONToDictionary(jsonString: jsonString) else { return }
         
         do {
-            let ref = try await db.collection("users").addDocument(data: userDict)
-            
-            print("Document added with ID: \(ref.documentID)")
+            try await db.collection("users").document(user.id).setData(userDict)
+            print("Document successfully written!")
         } catch {
             print("Error adding document: \(error.localizedDescription)")
         }
@@ -79,5 +81,25 @@ class FirebaseCloudStoreService {
         }
         
         return nil
+    }
+    
+    func checkIfUsernameExists(username: String) async -> Bool? {
+        do {
+            let snapshot = try await db.collection("users").whereField("userName", isEqualTo: username).getDocuments()
+            
+            return !snapshot.documents.isEmpty
+        } catch {
+            print("Error checking user's existing: \(error.localizedDescription)")
+        }
+        return false
+    }
+    
+    func updateUser(documentId: String, newData: [String: Any]) async -> Result<Void, FirebaseCloudStoreUpdateDataError> {
+        do {
+            try await db.collection("users").document(documentId).updateData(newData)
+            return Result.success(())
+        } catch {
+            return Result.failure(FirebaseCloudStoreUpdateDataError.updateFailed(error.localizedDescription))
+        }
     }
 }

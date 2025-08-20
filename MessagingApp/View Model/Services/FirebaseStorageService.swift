@@ -10,6 +10,13 @@ import FirebaseStorage
 
 enum FirebaseStorageFolder {
     case images
+    case icons
+}
+
+enum FirebaseStorageUploadError: Error {
+    case uploadFailed(String)
+    case getDownloadUrlFailed(String)
+    case noDownloadUrl
 }
 
 enum FirebaseDownloadFileError: Error {
@@ -46,32 +53,48 @@ class FirebaseStorageService {
         switch folder {
         case .images:
             path = "images/\(fileName)"
+        case .icons:
+            path = "icons/\(fileName)"
         }
         
         return storageRef.child(path)
     }
     
-    func uploadFileToBucket(reference: StorageReference, url: URL) {
-        reference.putFile(from: url, metadata: nil) { metadata, error in
+    func uploadFileToBucket(reference: StorageReference, url: URL, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) {
+        reference.putFile(from: url, metadata: nil) { _, error in
             if let error = error {
-                print("Upload file to bucket failed: \(error.localizedDescription)")
-                return
+                completion(.failure(FirebaseStorageUploadError.uploadFailed(error.localizedDescription)))
             }
-            
-            guard let metadata = metadata else {
-                print("Upload file failed: Metadata is nil")
-                return
-            }
-            print("Uploaded file size: \(metadata.size)")
-            print("uploaded content-type: \(metadata.contentType ?? "Unknown content-type")")
             
             reference.downloadURL { url, error in
                 if let error = error {
-                    print("Failed to get download url: \(error.localizedDescription)")
+                    completion(.failure(FirebaseStorageUploadError.getDownloadUrlFailed(error.localizedDescription)))
                     return
                 }
                 if let downloadUrl = url {
-                    print("Download URL: \(downloadUrl)")
+                    completion(.success(downloadUrl))
+                } else {
+                    completion(.failure(FirebaseStorageUploadError.noDownloadUrl))
+                }
+            }
+        }
+    }
+    
+    func uploadDataToBucket(reference: StorageReference, data: Data, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) {
+        reference.putData(data) { _, error in
+            if let error = error {
+                completion(.failure(FirebaseStorageUploadError.uploadFailed(error.localizedDescription)))
+            }
+            
+            reference.downloadURL { url, error in
+                if let error = error {
+                    completion(.failure(FirebaseStorageUploadError.getDownloadUrlFailed(error.localizedDescription)))
+                    return
+                }
+                if let downloadUrl = url {
+                    completion(.success(downloadUrl))
+                } else {
+                    completion(.failure(FirebaseStorageUploadError.noDownloadUrl))
                 }
             }
         }

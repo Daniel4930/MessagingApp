@@ -52,7 +52,7 @@ struct LoginView: View {
                     .font(.subheadline)
                     .padding(.top)
                     
-                    Button("Login") {
+                    Button {
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         generalErrorMessage = ""
@@ -67,8 +67,9 @@ struct LoginView: View {
                         if errorEmailMessage.isEmpty && errorPasswordMessage.isEmpty {
                             signIn()
                         }
+                    } label: {
+                        CustomButtonLabelView(buttonTitle: "Login")
                     }
-                    .buttonStyle(.borderedProminent)
                     
                     Spacer()
                 }

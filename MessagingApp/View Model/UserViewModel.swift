@@ -20,6 +20,7 @@ enum OnlineStatus {
 class UserViewModel: ObservableObject {
     @Published var user: UserInfo?
     @Published var friends: [UserInfo] = []
+    @Published var documentId: String?
     
     private let sharedContainerInstance = PersistenceContainer.shared
     

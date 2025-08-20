@@ -17,7 +17,9 @@ struct SignupView: View {
     @State private var errorPasswordMessage: String = ""
     @State private var retypePassword: String = ""
     @State private var errorRetypePasswordMessage: String = ""
-    @State private var errorMessage: String = ""
+    @State private var generalErrorMessage: String = ""
+    @State private var generalErrorMessageColor: Color = .clear
+    @State private var generalErrorMessageHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -30,13 +32,9 @@ struct SignupView: View {
                         hideKeyboard()
                     }
                 VStack {
-                    if !errorMessage.isEmpty {
-                        Text(errorMessage)
-                            .foregroundStyle(.red)
-                    }
-                    
                     FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $errorEmailMessage, text: $email)
                         .padding(.bottom)
+                        .padding(.top, AlertMessageView.maxHeight)
                     
                     FormTextFieldView(formType: .password, formTitle: "Password", textFieldTitle: "Enter a password", errorMessage: $errorPasswordMessage, text: $password)
                     
@@ -54,11 +52,15 @@ struct SignupView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Button("Sign up") {
+                    Button {
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         errorRetypePasswordMessage = ""
-                        errorMessage = ""
+                        generalErrorMessage = ""
+                        
+                        if email.isEmpty {
+                            errorEmailMessage = "Email is missing"
+                        }
                         
                         if password != retypePassword {
                             errorPasswordMessage = "Passwords do not match"
@@ -72,12 +74,16 @@ struct SignupView: View {
                                 createNewUser()
                             }
                         }
+                    } label: {
+                        CustomButtonLabelView(buttonTitle: "Sign up")
                     }
-                    .buttonStyle(.borderedProminent)
                     
                     Spacer()
                 }
                 .padding(.horizontal)
+                .overlay(alignment: .top) {
+                    AlertMessageView(text: $generalErrorMessage, height: $generalErrorMessageHeight, backgroundColor: $generalErrorMessageColor)
+                }
             }
         }
         .scrollDismissesKeyboard(.immediately)
@@ -121,11 +127,17 @@ extension SignupView {
                         self.errorPasswordMessage = "Password is weak"
                         self.errorRetypePasswordMessage = "Password is weak"
                     case .operationNotAllowed:
-                        self.errorMessage = "Server side error. Please try again"
+                        self.generalErrorMessage = "Server side error. Please try again"
+                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                        self.generalErrorMessageColor = .red
                     case .networkError:
-                        self.errorMessage = "Not connected to the internet"
+                        self.generalErrorMessage = "Not connected to the internet"
+                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                        self.generalErrorMessageColor = .red
                     case .unknown:
-                        self.errorMessage = "Unknown error"
+                        self.generalErrorMessage = "Unknown error"
+                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                        self.generalErrorMessageColor = .red
                     }
                 }
             }
@@ -158,7 +170,7 @@ extension SignupView {
            var errors: [String] = []
            
            if password.count < 8 {
-               errors.append("*Password must be at least 8 characters")
+               errors.append("Password must be at least 8 characters")
            }
            if password.range(of: "[A-Z]", options: .regularExpression) == nil {
                errors.append("*Password must contain at least 1 uppercase letter")

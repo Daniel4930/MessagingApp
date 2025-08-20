@@ -49,7 +49,10 @@ struct MessagingBarLayoutView: View {
                                 try photoInfo.image.write(to: tempUrl, options: .atomic)
                                 
                                 let storageReference = firebaseSharedInstance.createChildReference(folder: .images, fileName: photoInfo.name)
-                                firebaseSharedInstance.uploadFileToBucket(reference: storageReference, url: tempUrl)
+                                firebaseSharedInstance.uploadFileToBucket(reference: storageReference, url: tempUrl) { result in
+                                    
+                                    
+                                }
                             } catch {
                                 print("Failed to write file to temp dir")
                             }

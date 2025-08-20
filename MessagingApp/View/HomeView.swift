@@ -14,15 +14,14 @@ struct HomeView: View {
         NavigationStack {
             VStack {
                 if let user = userViewModel.user {
-                    Text(user.id)
-                        .foregroundStyle(.white)
-                    Text(user.email)
-                        .foregroundStyle(.white)
-                    
-                    NavigationLink("Direct message view") {
-                        DirectMessageView()
+                    if user.userName.isEmpty {
+                        NewUserView()
+                    } else {
+                        NavigationLink("Direct message view") {
+                            DirectMessageView()
+                        }
+                        Spacer()
                     }
-                    Spacer()
                 } else {
                     ProgressView("Fetching user…")
                         .foregroundStyle(.white)

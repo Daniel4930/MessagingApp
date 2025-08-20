@@ -14,8 +14,6 @@ struct ForgotPasswordView: View {
     @State private var generalMessageColor: Color = .clear
     @State private var generalMessageHeight: CGFloat = .zero
     
-    let generalMessageMaxHeight: CGFloat = 50
-    
     var body: some View {
         ZStack {
             Color.clear
@@ -26,20 +24,10 @@ struct ForgotPasswordView: View {
             
             VStack {
                 Text("A password reset link will be sent to your email.")
-                    .padding(.top, generalMessageMaxHeight)
+                    .padding(.top, AlertMessageView.maxHeight)
                     .padding(.bottom)
-                    .overlay(alignment: .top) {
-                        Text(generalMessage)
-                            .font(.headline)
-                            .multilineTextAlignment(.center)
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: generalMessageHeight)
-                            .background(generalMessageColor.brightness(-0.5))
-                    }
                 
                 FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $emailErrorMessage, text: $email)
-                    .padding(.horizontal)
                 
                 Button {
                     emailErrorMessage = ""
@@ -52,27 +40,14 @@ struct ForgotPasswordView: View {
                         sendResetPasswordLink()
                     }
                 } label: {
-                    Text("Send reset password link")
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background {
-                            RoundedRectangle(cornerRadius: 10)
-                        }
+                    CustomButtonLabelView(buttonTitle: "Send reset password link")
                 }
                 
                 Spacer()
             }
-            .animation(.spring(duration: 0.5), value: generalMessageHeight)
-            .onChange(of: generalMessageHeight) { oldValue, newValue in
-                if newValue == 0 {
-                    generalMessageColor = .clear
-                } else {
-                    if generalMessage == "Reset password link sent. Please check your email" {
-                        generalMessageColor = .green
-                    } else {
-                        generalMessageColor = .red
-                    }
-                }
+            .padding(.horizontal)
+            .overlay(alignment: .top) {
+                AlertMessageView(text: $generalMessage, height: $generalMessageHeight, backgroundColor: $generalMessageColor)
             }
         }
     }
@@ -85,13 +60,16 @@ extension ForgotPasswordView {
                 emailErrorMessage = "Email is invalid"
             case .networkError:
                 generalMessage = "No internet connection. Please check your internet"
-                generalMessageHeight = generalMessageMaxHeight
+                generalMessageHeight = AlertMessageView.maxHeight
+                generalMessageColor = .red
             case .unknown:
                 generalMessage = "Unknown error. Please try again later"
-                generalMessageHeight = generalMessageMaxHeight
+                generalMessageHeight = AlertMessageView.maxHeight
+                generalMessageColor = .red
             case nil:
                 generalMessage = "Reset password link sent. Please check your email"
-                generalMessageHeight = generalMessageMaxHeight
+                generalMessageHeight = AlertMessageView.maxHeight
+                generalMessageColor = .green
             }
         }
     }
