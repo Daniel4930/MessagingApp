@@ -7,6 +7,14 @@
 
 import Foundation
 
+enum OnlineStatus {
+    case online
+    case offline
+    case invisible
+    case doNotDisturb
+    case idle
+}
+
 struct UserInfo: Codable, Identifiable, Equatable {
     let id: String
     let email: String

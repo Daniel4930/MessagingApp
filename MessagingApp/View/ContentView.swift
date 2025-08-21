@@ -7,20 +7,35 @@
 
 import SwiftUI
 
-enum Tabs {
+enum CurrentView {
     case login
-    case home
+    case content
+    case newUser
 }
 
 struct ContentView: View {
-    @State private var currentView: Tabs = .login
+    @State private var currentView: CurrentView = .login
+    @State private var isLoading = true
+    @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
         switch currentView {
         case .login:
             LoginView(currentView: $currentView)
-        case .home:
-            HomeView()
+            
+        case .content:
+            if userViewModel.userIcon == nil {
+                ProgressView("Loading...")
+                    .task {
+                        await userViewModel.fetchUserIcon()
+                    }
+            } else {
+                TabsView()
+            }
+            
+        case .newUser:
+            NewUserView(currentView: $currentView)
         }
     }
 }
+

@@ -8,13 +8,15 @@
 import SwiftUI
 
 struct CustomButtonLabelView: View {
+    @Binding var isLoading: Bool
     let buttonTitle: String
     let forgroundColor: Color
     let verticalPadding: CGFloat
     let cornerRadius: CGFloat
     let backgroundColor: Color
     
-    init(buttonTitle: String, forgroundColor: Color = .white, verticalPadding: CGFloat = 10, cornerRadius: CGFloat = 10, backgroundColor: Color = .blue) {
+    init(isLoading: Binding<Bool>, buttonTitle: String, forgroundColor: Color = .white, verticalPadding: CGFloat = 10, cornerRadius: CGFloat = 10, backgroundColor: Color = .blue) {
+        self._isLoading = isLoading
         self.buttonTitle = buttonTitle
         self.forgroundColor = forgroundColor
         self.verticalPadding = verticalPadding
@@ -23,13 +25,24 @@ struct CustomButtonLabelView: View {
     }
     
     var body: some View {
-        Text(buttonTitle)
-            .foregroundStyle(forgroundColor)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, verticalPadding)
-            .background (
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(backgroundColor)
-            )
+        if isLoading {
+            ProgressView()
+                .foregroundStyle(forgroundColor)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, verticalPadding)
+                .background (
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(backgroundColor)
+                )
+        } else {
+            Text(buttonTitle)
+                .foregroundStyle(forgroundColor)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, verticalPadding)
+                .background (
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(backgroundColor)
+                )
+        }
     }
 }

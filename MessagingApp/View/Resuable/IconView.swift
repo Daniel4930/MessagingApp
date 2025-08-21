@@ -6,64 +6,85 @@
 //
 import SwiftUI
 
+enum IconOrigin {
+    case user
+    case friend
+    case stranger
+}
+
 struct IconView: View {
     let user: UserInfo?
-    let iconDimension: (width: CGFloat, height: CGFloat)
-    let iconBorderThickness: CGFloat = 41
+    let iconDimension: CGSize
     let borderColor: Color
+    let borderWidth: CGFloat
+    let origin: IconOrigin
     
-    init(user: UserInfo?, iconDimension: (width: CGFloat, height: CGFloat) = (37, 37), borderColor: Color = Color("PrimaryBackgroundColor")) {
+    @EnvironmentObject var userViewModel: UserViewModel
+    
+    init(user: UserInfo?, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2, origin: IconOrigin) {
         self.user = user
         self.iconDimension = iconDimension
+        self.origin = origin
         self.borderColor = borderColor
+        self.borderWidth = borderWidth
     }
     
     var body: some View {
-        ZStack {
-            borderColor
-                .frame(width: iconBorderThickness, height: iconBorderThickness)
-                .clipShape(.circle)
-            
+        switch origin {
+        case .user:
+            if let uiImage = userViewModel.userIcon {
+                Image(uiImage: uiImage)
+                    .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
+            } else {
+                Image(systemName: "person.fill")
+                    .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
+            }
+        case .friend:
             if let user = user {
                 let urlString = URL(string: user.icon)
                 AsyncImage(url: urlString) { phase in
                     if let image = phase.image {
                         image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: iconDimension.width, height: iconDimension.height)
-                            .clipShape(.circle)
+                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else if let _ = phase.error {
                         Image(systemName: "person.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: iconDimension.width, height: iconDimension.height)
-                            .clipShape(.circle)
+                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else {
                         ProgressView()
                             .frame(width: iconDimension.width, height: iconDimension.height)
                             .clipShape(.circle)
                     }
-                    
                 }
-            } else {
-                Image(systemName: "person.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconDimension.width, height: iconDimension.height)
-                    .clipShape(.circle)
+            }
+        case .stranger:
+            if let user = user {
+                let urlString = URL(string: user.icon)
+                AsyncImage(url: urlString) { phase in
+                    if let image = phase.image {
+                        image
+                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
+                    } else if let _ = phase.error {
+                        Image(systemName: "person.fill")
+                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
+                    } else {
+                        ProgressView()
+                            .frame(width: iconDimension.width, height: iconDimension.height)
+                            .clipShape(.circle)
+                    }
+                }
             }
         }
     }
 }
 
+
 struct OnlineStatusCircle: View {
     let status: String?
     let color: Color
-    let outterCircleDimension: (width: CGFloat, height: CGFloat)
-    let innerCircleDimension: (width: CGFloat, height: CGFloat)
+    let outterCircleDimension: CGSize
+    let innerCircleDimension: CGSize
     
-    init(status: String?, color: Color, outterDimension: (width: CGFloat, height: CGFloat) = (15, 15), innerDimension: (width: CGFloat, height: CGFloat) = (11, 11)) {
+    init(status: String?, color: Color, outterDimension: CGSize = .init(width: 15, height: 15), innerDimension: CGSize = .init(width: 11, height: 11)) {
         self.status = status
         self.color = color
         self.outterCircleDimension = outterDimension
@@ -82,7 +103,7 @@ struct OnlineStatusCircle: View {
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
                     }
                     else if status == "offline" {
-                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.545, innerCircleDimension.height * 0.545)
+                        let blackDotDimension: CGSize = .init(width: innerCircleDimension.width * 0.545, height: innerCircleDimension.height * 0.545)
                         Circle()
                             .fill(.gray)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -93,7 +114,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "invisible" {
-                        let blackDotDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.545, innerCircleDimension.height * 0.545)
+                        let blackDotDimension: CGSize = .init(width: innerCircleDimension.width * 0.545, height: innerCircleDimension.height * 0.545)
                         Circle()
                             .fill(.gray)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -104,7 +125,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "doNotDisturb" {
-                        let rectangleDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.727, innerCircleDimension.height * 0.272)
+                        let rectangleDimension: CGSize = .init(width: innerCircleDimension.width * 0.727, height: innerCircleDimension.height * 0.272)
                         Circle()
                             .fill(.red)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)
@@ -115,7 +136,7 @@ struct OnlineStatusCircle: View {
                             }
                     }
                     else if status == "idle" {
-                        let circleOverlayDimension: (width: CGFloat, height: CGFloat) = (innerCircleDimension.width * 0.727, innerCircleDimension.height * 0.727)
+                        let circleOverlayDimension: CGSize = .init(width: innerCircleDimension.width * 0.727, height: innerCircleDimension.height * 0.727)
                         Circle()
                             .fill(.yellow)
                             .frame(width: innerCircleDimension.width, height: innerCircleDimension.height)

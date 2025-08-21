@@ -10,6 +10,8 @@ import PhotosUI
 
 @MainActor
 struct NewUserView: View {
+    @Binding var currentView: CurrentView
+    
     @State private var username: String = ""
     @State private var usernameErrorMessage: String = ""
     @State private var displayName: String = ""
@@ -19,6 +21,7 @@ struct NewUserView: View {
     @State private var generalErrorMessageHeight: CGFloat = .zero
     @State private var photoItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
+    @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -64,27 +67,9 @@ struct NewUserView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
                     Button {
-                        usernameErrorMessage = ""
-                        displayNameErrorMessage = ""
-                        generalErrorMessage = ""
-                        
-                        if username.isEmpty {
-                            usernameErrorMessage = "Username is empty"
-                        }
-                        else if username.contains(where: { $0 == " " }) {
-                            usernameErrorMessage = "Username can't contain a space"
-                        }
-                        if displayName.contains(where: { $0 == " "}) {
-                            displayNameErrorMessage = "Display name can't contain a space"
-                        }
-                        
-                        if usernameErrorMessage.isEmpty && displayNameErrorMessage.isEmpty && generalErrorMessage.isEmpty {
-                            Task {
-                                await checkUsernameAlreadyExists()
-                            }
-                        }
+                        buttonAction()
                     } label: {
-                        CustomButtonLabelView(buttonTitle: "Create")
+                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Create")
                     }
                 }
                 .padding(.horizontal)
@@ -108,6 +93,32 @@ struct NewUserView: View {
     }
 }
 extension NewUserView {
+    func buttonAction() {
+        usernameErrorMessage = ""
+        displayNameErrorMessage = ""
+        generalErrorMessage = ""
+        isLoading = true
+        
+        if username.isEmpty {
+            usernameErrorMessage = "Username is empty"
+            isLoading = false
+        }
+        else if username.contains(where: { $0 == " " }) {
+            usernameErrorMessage = "Username can't contain a space"
+            isLoading = false
+        }
+        if displayName.contains(where: { $0 == " "}) {
+            displayNameErrorMessage = "Display name can't contain a space"
+            isLoading = false
+        }
+        
+        if usernameErrorMessage.isEmpty && displayNameErrorMessage.isEmpty && generalErrorMessage.isEmpty {
+            Task {
+                await checkUsernameAlreadyExists()
+            }
+        }
+    }
+    
     func setupErrorMessage(message: String, color: Color = .red) {
         generalErrorMessage = message
         generalErrorMessageColor = color
@@ -163,11 +174,13 @@ extension NewUserView {
     func checkUsernameAlreadyExists() async {
         guard let exists = await FirebaseCloudStoreService.shared.checkIfUsernameExists(username: username) else {
             setupErrorMessage(message: "Internal Error")
+            isLoading = false
             return
         }
         
         if exists {
             usernameErrorMessage = "Username is taken"
+            isLoading = false
         } else {
             var dataToUpload: [String: Any] = [:]
             
@@ -188,35 +201,22 @@ extension NewUserView {
                 let result = await FirebaseCloudStoreService.shared.updateUser(documentId: user.id, newData: dataToUpload)
                 switch result {
                 case .success(_):
-                    print("Update successfully")
+                    await userViewModel.fetchCurrentUser(email: user.email)
+                    isLoading = false
+                    currentView = .content
                 case .failure(let failure):
                     switch failure {
                     case .updateFailed(let errorDescription):
                         print("Failed to update user: \(errorDescription)")
                         setupErrorMessage(message: "Failed to create user's information. Please try again")
+                        isLoading = false
                     }
                 }
             } else {
                 setupErrorMessage(message: "Can't update user because userInfo is nil")
+                isLoading = false
             }
         }
-    }
-    
-    func loadImage() async -> UIImage? {
-        do {
-            if let item = photoItem {
-                let data = try await item.loadTransferable(type: Data.self)
-                
-                if let data = data, let uiImage = UIImage(data: data) {
-                    return uiImage
-                } else {
-                    setupErrorMessage(message: "Failed to upload image. Please try again")
-                }
-            }
-        } catch {
-            setupErrorMessage(message: "Failed to upload image. Please try again")
-        }
-        return nil
     }
     
     @ViewBuilder

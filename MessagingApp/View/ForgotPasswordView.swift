@@ -13,6 +13,7 @@ struct ForgotPasswordView: View {
     @State private var generalMessage: String = ""
     @State private var generalMessageColor: Color = .clear
     @State private var generalMessageHeight: CGFloat = .zero
+    @State private var isLoading: Bool = false
     
     var body: some View {
         ZStack {
@@ -33,14 +34,16 @@ struct ForgotPasswordView: View {
                     emailErrorMessage = ""
                     generalMessage = ""
                     generalMessageHeight = .zero
+                    isLoading = true
                     
                     if email.isEmpty {
                         emailErrorMessage = "Email is empty"
+                        isLoading = false
                     } else {
                         sendResetPasswordLink()
                     }
                 } label: {
-                    CustomButtonLabelView(buttonTitle: "Send reset password link")
+                    CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Send reset password link")
                 }
                 
                 Spacer()
@@ -71,6 +74,7 @@ extension ForgotPasswordView {
                 generalMessageHeight = AlertMessageView.maxHeight
                 generalMessageColor = .green
             }
+            isLoading = false
         }
     }
 }

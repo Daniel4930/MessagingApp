@@ -27,6 +27,19 @@ extension View {
     }
 }
 
+extension Image {
+    func iconStyle(_ dimension: CGSize, borderColor: Color, borderWidth: CGFloat) -> some View {
+        self
+            .resizable()
+            .scaledToFit()
+            .frame(width: dimension.width, height: dimension.height)
+            .clipShape(Circle())
+            .overlay {
+                Circle().stroke(borderColor, lineWidth: borderWidth)
+            }
+    }
+}
+
 extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     override open func viewDidLoad() {
         super.viewDidLoad()

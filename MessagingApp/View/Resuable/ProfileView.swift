@@ -93,13 +93,13 @@ struct ProfileView: View {
             }
             
             VStack(alignment: .leading) {
-                IconView(user: user, iconDimension: (width: 100, height: 100))
+                IconView(user: user, iconDimension: CGSize(width: 100, height: 100), origin: .user)
                     .overlay(alignment: .bottomTrailing) {
                         OnlineStatusCircle(
                             status: user.onlineStatus,
                             color: Color("PrimaryBackgroundColor"),
-                            outterDimension: (width: 26, height: 26),
-                            innerDimension: (width: 20, height: 20)
+                            outterDimension: .init(width: 26, height: 26),
+                            innerDimension: .init(width: 20, height: 20)
                         )
                         .offset(x: -3, y: -1)
                     }

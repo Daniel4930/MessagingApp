@@ -25,12 +25,12 @@ struct NavigationTopBar: ToolbarContent {
             }
             HStack {
                 if let friend = userViewModel.friends.first {
-                    IconView(user: friend)
+                    IconView(user: friend, origin: .friend)
                         .overlay(alignment: .bottomTrailing) {
                             OnlineStatusCircle(status: friend.onlineStatus, color: Color("PrimaryBackgroundColor"))
                         }
                     
-                    Text(friend.displayName ?? "")
+                    Text(friend.displayName)
                         .font(.title3)
                         .bold()
                     Image(systemName: "chevron.right")

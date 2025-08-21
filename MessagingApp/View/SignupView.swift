@@ -8,8 +8,9 @@
 import SwiftUI
 import FirebaseAuth
 
+@MainActor
 struct SignupView: View {
-    @Binding var currentView: Tabs
+    @Binding var currentView: CurrentView
     
     @State private var email: String = ""
     @State private var errorEmailMessage: String = ""
@@ -20,6 +21,7 @@ struct SignupView: View {
     @State private var generalErrorMessage: String = ""
     @State private var generalErrorMessageColor: Color = .clear
     @State private var generalErrorMessageHeight: CGFloat = .zero
+    @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -57,25 +59,29 @@ struct SignupView: View {
                         errorPasswordMessage = ""
                         errorRetypePasswordMessage = ""
                         generalErrorMessage = ""
+                        isLoading = true
                         
                         if email.isEmpty {
                             errorEmailMessage = "Email is missing"
+                            isLoading = false
                         }
                         
                         if password != retypePassword {
                             errorPasswordMessage = "Passwords do not match"
                             errorRetypePasswordMessage = "Passwords do not match"
+                            isLoading = false
                         } else {
                             let passwordErrors = validatePassword(password)
                             if !passwordErrors.isEmpty {
                                 errorPasswordMessage = passwordErrors.joined(separator: "\n")
                                 errorRetypePasswordMessage = passwordErrors.joined(separator: "\n")
+                                isLoading = false
                             } else {
                                 createNewUser()
                             }
                         }
                     } label: {
-                        CustomButtonLabelView(buttonTitle: "Sign up")
+                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Sign up")
                     }
                     
                     Spacer()
@@ -106,39 +112,41 @@ extension SignupView {
             case .success(let authDataResult):
                 guard let userInfo = setupUserInfo(authDataResult: authDataResult) else {
                     print("Failed to setup user")
+                    isLoading = false
                     return
                 }
                 
                 Task {
                     await FirebaseCloudStoreService.shared.addUser(user: userInfo)
                     await userViewModel.fetchCurrentUser(email: email)
-                    DispatchQueue.main.async {
-                        self.currentView = .home
+                    
+                    if let user = userViewModel.user {
+                        isLoading = false
+                        currentView = user.userName.isEmpty ? .newUser : .content
                     }
                 }
             case .failure(let error):
-                DispatchQueue.main.async {
-                    switch error {
-                    case .emailAlreadyInUse:
-                        self.errorEmailMessage = "Email alredy in use"
-                    case .invalidEmail:
-                        self.errorEmailMessage = "Email is invalid"
-                    case .weakPassword:
-                        self.errorPasswordMessage = "Password is weak"
-                        self.errorRetypePasswordMessage = "Password is weak"
-                    case .operationNotAllowed:
-                        self.generalErrorMessage = "Server side error. Please try again"
-                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                        self.generalErrorMessageColor = .red
-                    case .networkError:
-                        self.generalErrorMessage = "Not connected to the internet"
-                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                        self.generalErrorMessageColor = .red
-                    case .unknown:
-                        self.generalErrorMessage = "Unknown error"
-                        self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                        self.generalErrorMessageColor = .red
-                    }
+                isLoading = false
+                switch error {
+                case .emailAlreadyInUse:
+                    self.errorEmailMessage = "Email alredy in use"
+                case .invalidEmail:
+                    self.errorEmailMessage = "Email is invalid"
+                case .weakPassword:
+                    self.errorPasswordMessage = "Password is weak"
+                    self.errorRetypePasswordMessage = "Password is weak"
+                case .operationNotAllowed:
+                    self.generalErrorMessage = "Server side error. Please try again"
+                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                    self.generalErrorMessageColor = .red
+                case .networkError:
+                    self.generalErrorMessage = "Not connected to the internet"
+                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                    self.generalErrorMessageColor = .red
+                case .unknown:
+                    self.generalErrorMessage = "Unknown error"
+                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
+                    self.generalErrorMessageColor = .red
                 }
             }
         }
@@ -150,14 +158,14 @@ extension SignupView {
         guard let email = authDataResult.user.email else { return nil }
         guard let registeredDate = authDataResult.user.metadata.creationDate else { return nil }
         
-        let user = UserInfo(
+        let user = UserInfo (
             id: userId,
             email: email,
             userName: "",
             displayName: "",
             registeredDate: registeredDate.formatted(),
             icon: "",
-            onlineStatus: "",
+            onlineStatus: "online",
             aboutMe: "",
             bannerColor: "",
             friends: []

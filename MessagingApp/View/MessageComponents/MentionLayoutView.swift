@@ -51,7 +51,7 @@ struct MentionButton: View {
             }
         } label: {
             HStack {
-                IconView(user: user, borderColor: Color("SecondaryBackgroundColor"))
+                IconView(user: user, origin: .user)
                 
                 Text(user.displayName)
                     .bold()

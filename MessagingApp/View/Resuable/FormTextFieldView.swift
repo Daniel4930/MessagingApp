@@ -34,13 +34,11 @@ struct FormTextFieldView: View {
                         .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
-                    
                 case .password:
                     SecureField(textFieldTitle, text: $text)
                         .textContentType(.password)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
-                    
                 case .text:
                     TextField(textFieldTitle, text: $text)
                 }

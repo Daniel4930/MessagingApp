@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Binding var currentView: Tabs
+    @Binding var currentView: CurrentView
     
     @State private var email: String = ""
     @State private var errorEmailMessage: String = ""
     @State private var password: String = ""
     @State private var errorPasswordMessage: String = ""
     @State private var generalErrorMessage: String = ""
+    @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -56,19 +57,22 @@ struct LoginView: View {
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         generalErrorMessage = ""
+                        isLoading = true
                         
                         if email.isEmpty {
                             errorEmailMessage = "Email is missing"
+                            isLoading = false
                         }
                         if password.isEmpty {
                             errorPasswordMessage = "Password is missing"
+                            isLoading = false
                         }
                         
                         if errorEmailMessage.isEmpty && errorPasswordMessage.isEmpty {
                             signIn()
                         }
                     } label: {
-                        CustomButtonLabelView(buttonTitle: "Login")
+                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Login")
                     }
                     
                     Spacer()
@@ -87,10 +91,22 @@ extension LoginView {
                     if let email = authData.user.email {
                         await userViewModel.fetchCurrentUser(email: email)
                     }
-                    currentView = .home
+                    if let user = userViewModel.user {
+                        if user.userName.isEmpty {
+                            isLoading = false
+                            currentView = .newUser
+                        } else {
+                            if userViewModel.userIcon == nil {
+                                await userViewModel.fetchUserIcon()
+                            }
+                            isLoading = false
+                            currentView = .content
+                        }
+                    }
                 }
                 
             case .failure(let error):
+                isLoading = false
                 DispatchQueue.main.async {
                     switch error {
                     case .wrongPassword, .invalidCredential:
