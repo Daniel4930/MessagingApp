@@ -93,7 +93,7 @@ struct ProfileView: View {
             }
             
             VStack(alignment: .leading) {
-                IconView(user: user, iconDimension: CGSize(width: 100, height: 100), origin: .user)
+                UserIconView(user: user, iconDimension: CGSize(width: 100, height: 100), origin: .user)
                     .overlay(alignment: .bottomTrailing) {
                         OnlineStatusCircle(
                             status: user.onlineStatus,
@@ -154,7 +154,7 @@ struct ProfileView: View {
                     .font(.subheadline)
                     .bold()
                     .padding(.bottom, 4)
-                Text(user.registeredDate)
+                Text(user.registeredDate.formatted())
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()

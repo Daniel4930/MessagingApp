@@ -38,6 +38,14 @@ extension Image {
                 Circle().stroke(borderColor, lineWidth: borderWidth)
             }
     }
+    
+    func sidebarItemStyle(dimension: CGSize, space: CGFloat) -> some View {
+        self
+            .resizable()
+            .scaledToFit()
+            .frame(width: dimension.width, height: dimension.height)
+            .padding(space)
+    }
 }
 
 extension UINavigationController: @retroactive UIGestureRecognizerDelegate {

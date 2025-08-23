@@ -1,5 +1,5 @@
 //
-//  CustomButtonLabelView.swift
+//  CustomAuthButtonLabelView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 8/19/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CustomButtonLabelView: View {
+struct CustomAuthButtonLabelView: View {
     @Binding var isLoading: Bool
     let buttonTitle: String
     let forgroundColor: Color

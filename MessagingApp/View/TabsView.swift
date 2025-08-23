@@ -14,28 +14,31 @@ enum CurrentTab {
 }
 
 struct TabsView: View {
+    @Binding var xOffset: CGFloat
+    
     @State private var selection: CurrentTab = .home
+    @State private var viewToShow: (() -> AnyView)?
     @EnvironmentObject var userViewModel: UserViewModel
     
+    let iconDimension: CGSize = CGSize(width: 25, height: 25)
     let tabsInfo: [(tab: CurrentTab, title: String, icon: String)] = [
         (.home, "Home", "house.fill"),
         (.notifications, "Notifications", "bell.fill"),
         (.account, "Account", "USER_ICON")
     ]
-    let iconDimension: CGSize = CGSize(width: 25, height: 25)
     
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {            
             switch selection {
             case .home:
-                HomeView()
+                HomeView(viewToShow: $viewToShow)
             case .notifications:
                 Text("Notifications")
             case .account:
-                Text("Account")
+                if let user = userViewModel.user {
+                    ProfileView(user: user)
+                }
             }
-            
-            Spacer()
             
             HStack(alignment: .center) {
                 ForEach(tabsInfo, id: \.tab) { info in
@@ -55,13 +58,22 @@ struct TabsView: View {
             }
             .padding(.top, 10)
             .background(Color.secondaryBackground)
+            .overlay(alignment: .top) {
+                DividerView(color: Color.button.opacity(0.5), thickness: 1)
+            }
+        }
+        .overlay(alignment: .trailing) {
+            if let view = viewToShow {
+                view()
+                    .offset(x: xOffset)
+            }
         }
     }
 }
 extension TabsView {
     @ViewBuilder func tabIcon(icon: String, tab: CurrentTab) -> some View {
-        if icon == "USER_ICON" {
-            IconView(
+        if icon == "USER_ICON", let user = userViewModel.user {
+            UserIconView(
                 user: nil,
                 iconDimension: iconDimension,
                 borderColor: Color.primaryBackground.opacity(selection == tab ? 1 : 0.5),
@@ -69,7 +81,7 @@ extension TabsView {
             )
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(
-                        status: "online",
+                        status: user.onlineStatus,
                         color: Color.secondaryBackground.opacity(selection == tab ? 1 : 0.5)
                     )
                         .offset(x: 8, y: 5)
@@ -82,10 +94,4 @@ extension TabsView {
                 .clipShape(Circle())
         }
     }
-}
-
-#Preview {
-    TabsView()
-        .environmentObject(UserViewModel())
-        .environmentObject(MessageViewModel())
 }

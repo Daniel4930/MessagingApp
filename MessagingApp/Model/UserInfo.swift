@@ -20,7 +20,7 @@ struct UserInfo: Codable, Identifiable, Equatable {
     let email: String
     let userName: String // Unique
     let displayName: String
-    let registeredDate: String
+    let registeredDate: Double
     let icon: String // Get the image from firebase storage (path)
     let onlineStatus: String
     let aboutMe: String

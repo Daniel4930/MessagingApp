@@ -18,7 +18,7 @@ class PersistenceContainer {
         }
         
         container.loadPersistentStores { storeDescription, error in
-            print(storeDescription.url ?? "no path")
+//            print(storeDescription.url ?? "no path")
             guard error == nil else {
                 fatalError("Couldn't load persistence stores. \(error?.localizedDescription ?? "")")
             }

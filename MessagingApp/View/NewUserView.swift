@@ -69,7 +69,7 @@ struct NewUserView: View {
                     Button {
                         buttonAction()
                     } label: {
-                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Create")
+                        CustomAuthButtonLabelView(isLoading: $isLoading, buttonTitle: "Create")
                     }
                 }
                 .padding(.horizontal)

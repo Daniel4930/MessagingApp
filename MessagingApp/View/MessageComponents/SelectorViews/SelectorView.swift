@@ -183,12 +183,12 @@ struct CustomSendButtonView: View {
                 .overlay(alignment: .bottomTrailing) {
                     SendButtonView {
 //                        messageViewModel.addMessage (
-//                            userId: userViewModel.user!.id!,
+//                            senderId: userViewModel.user!.id!,
 //                            text: messageComposerViewModel.finalizeText(),
 //                            images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getPhotoURL(),
 //                            files: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getFileURL(),
 //                            videos: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getVideoURL(),
-//                            location: .dm,
+//                            channelId: .dm,
 //                            reaction: nil,
 //                            replyMessageId: nil,
 //                            forwardMessageId: nil,

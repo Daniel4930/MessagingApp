@@ -1,27 +1,27 @@
 //
-//  IconView.swift
+//  UserIconView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 7/16/25.
 //
 import SwiftUI
 
-enum IconOrigin {
+enum UserIconOrigin {
     case user
     case friend
     case stranger
 }
 
-struct IconView: View {
+struct UserIconView: View {
     let user: UserInfo?
     let iconDimension: CGSize
     let borderColor: Color
     let borderWidth: CGFloat
-    let origin: IconOrigin
+    let origin: UserIconOrigin
     
     @EnvironmentObject var userViewModel: UserViewModel
     
-    init(user: UserInfo?, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2, origin: IconOrigin) {
+    init(user: UserInfo?, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2, origin: UserIconOrigin) {
         self.user = user
         self.iconDimension = iconDimension
         self.origin = origin
@@ -36,7 +36,7 @@ struct IconView: View {
                 Image(uiImage: uiImage)
                     .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
             } else {
-                Image(systemName: "person.fill")
+                Image(systemName: "person.circle")
                     .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
             }
         case .friend:
@@ -47,7 +47,7 @@ struct IconView: View {
                         image
                             .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else if let _ = phase.error {
-                        Image(systemName: "person.fill")
+                        Image(systemName: "person.circle")
                             .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else {
                         ProgressView()
@@ -64,7 +64,7 @@ struct IconView: View {
                         image
                             .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else if let _ = phase.error {
-                        Image(systemName: "person.fill")
+                        Image(systemName: "person.circle")
                             .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
                     } else {
                         ProgressView()

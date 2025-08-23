@@ -54,6 +54,7 @@ struct LoginView: View {
                     .padding(.top)
                     
                     Button {
+                        hideKeyboard()
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         generalErrorMessage = ""
@@ -72,7 +73,7 @@ struct LoginView: View {
                             signIn()
                         }
                     } label: {
-                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Login")
+                        CustomAuthButtonLabelView(isLoading: $isLoading, buttonTitle: "Login")
                     }
                     
                     Spacer()
@@ -102,6 +103,9 @@ extension LoginView {
                             isLoading = false
                             currentView = .content
                         }
+                    } else {
+                        isLoading = false
+                        generalErrorMessage = "Failed to sign in. Please try again"
                     }
                 }
                 

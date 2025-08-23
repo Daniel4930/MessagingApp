@@ -43,7 +43,7 @@ struct ForgotPasswordView: View {
                         sendResetPasswordLink()
                     }
                 } label: {
-                    CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Send reset password link")
+                    CustomAuthButtonLabelView(isLoading: $isLoading, buttonTitle: "Send reset password link")
                 }
                 
                 Spacer()

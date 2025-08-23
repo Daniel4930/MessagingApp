@@ -29,12 +29,12 @@ struct MessagingBarLayoutView: View {
             if messageComposerViewModel.showSendButton || !messageComposerViewModel.selectionData.isEmpty {
                 SendButtonView {
 //                    messageViewModel.addMessage (
-//                        userId: userViewModel.user!.id!,
+//                        senderId: userViewModel.user!.id!,
 //                        text: messageComposerViewModel.finalizeText(),
 //                        images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getPhotoURL(),
 //                        files: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getFileURL(),
 //                        videos: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getVideoURL(),
-//                        location: .dm,
+//                        channelId: .dm,
 //                        reaction: nil,
 //                        replyMessageId: nil,
 //                        forwardMessageId: nil,

@@ -81,7 +81,7 @@ struct SignupView: View {
                             }
                         }
                     } label: {
-                        CustomButtonLabelView(isLoading: $isLoading, buttonTitle: "Sign up")
+                        CustomAuthButtonLabelView(isLoading: $isLoading, buttonTitle: "Sign up")
                     }
                     
                     Spacer()
@@ -163,7 +163,7 @@ extension SignupView {
             email: email,
             userName: "",
             displayName: "",
-            registeredDate: registeredDate.formatted(),
+            registeredDate: Double(registeredDate.timeIntervalSince1970),
             icon: "",
             onlineStatus: "online",
             aboutMe: "",

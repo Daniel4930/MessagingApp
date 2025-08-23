@@ -9,11 +9,11 @@ import Foundation
 
 struct MessageInfo {
     let id: String
-    let userId: String
+    let senderId: String
     let text: String
     let date: Date
     let edited: Bool
-    let location: String
+    let channelId: String
     let reaction: String
     let forwardMessageId: String
     let replayMessageId: String
