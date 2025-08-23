@@ -62,19 +62,27 @@ struct ContentView: View {
             LoginView(currentView: $currentView)
             
         case .content:
-            if userViewModel.userIcon == nil {
-                ProgressView("Loading...")
-                    .task {
-                        await userViewModel.fetchUserIcon()
-                    }
-            } else {
-                TabsView(xOffset: $totalOffset)
-                    .simultaneousGesture(dragGesture)
-                    .onAppear {
-                        startingOffset = maxOffset
-                        totalOffset = startingOffset + currentOffset + endingOffset
-                    }
-            }
+            TabsView(xOffset: $totalOffset)
+                .gesture(dragGesture)
+                .onAppear {
+                    startingOffset = maxOffset
+                    totalOffset = startingOffset + currentOffset + endingOffset
+                }
+            
+//            if let user = userViewModel.user, userViewModel.userIcon == nil {
+//                ProgressView("Loading...")
+//                    .task {
+//                        let icon = await userViewModel.fetchIcon(urlString: user.icon)
+//                        userViewModel.userIcon = icon
+//                    }
+//            } else {
+//                TabsView(xOffset: $totalOffset)
+//                    .gesture(dragGesture)
+//                    .onAppear {
+//                        startingOffset = maxOffset
+//                        totalOffset = startingOffset + currentOffset + endingOffset
+//                    }
+//            }
             
         case .newUser:
             NewUserView(currentView: $currentView)

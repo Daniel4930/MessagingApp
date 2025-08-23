@@ -93,13 +93,16 @@ extension LoginView {
                         await userViewModel.fetchCurrentUser(email: email)
                     }
                     if let user = userViewModel.user {
+                        await userViewModel.fetchFriendInfo()
+                        
                         if user.userName.isEmpty {
                             isLoading = false
                             currentView = .newUser
                         } else {
-                            if userViewModel.userIcon == nil {
-                                await userViewModel.fetchUserIcon()
-                            }
+//                            if userViewModel.userIcon == nil {
+//                                let icon = await userViewModel.fetchIcon(urlString: user.icon)
+//                                userViewModel.userIcon = icon
+//                            }
                             isLoading = false
                             currentView = .content
                         }

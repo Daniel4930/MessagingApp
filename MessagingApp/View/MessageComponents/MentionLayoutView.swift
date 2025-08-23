@@ -51,7 +51,7 @@ struct MentionButton: View {
             }
         } label: {
             HStack {
-                UserIconView(user: user, origin: .user)
+                UserIconView(user: user)
                 
                 Text(user.displayName)
                     .bold()

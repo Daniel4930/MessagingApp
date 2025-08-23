@@ -31,7 +31,7 @@ extension Image {
     func iconStyle(_ dimension: CGSize, borderColor: Color, borderWidth: CGFloat) -> some View {
         self
             .resizable()
-            .scaledToFit()
+            .scaledToFill()
             .frame(width: dimension.width, height: dimension.height)
             .clipShape(Circle())
             .overlay {

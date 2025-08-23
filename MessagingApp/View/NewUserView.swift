@@ -94,6 +94,7 @@ struct NewUserView: View {
 }
 extension NewUserView {
     func buttonAction() {
+        hideKeyboard()
         usernameErrorMessage = ""
         displayNameErrorMessage = ""
         generalErrorMessage = ""

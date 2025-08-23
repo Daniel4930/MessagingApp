@@ -31,6 +31,7 @@ struct ForgotPasswordView: View {
                 FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $emailErrorMessage, text: $email)
                 
                 Button {
+                    hideKeyboard()
                     emailErrorMessage = ""
                     generalMessage = ""
                     generalMessageHeight = .zero

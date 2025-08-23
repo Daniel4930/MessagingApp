@@ -6,72 +6,34 @@
 //
 import SwiftUI
 
-enum UserIconOrigin {
-    case user
-    case friend
-    case stranger
-}
-
 struct UserIconView: View {
-    let user: UserInfo?
+    let user: UserInfo
     let iconDimension: CGSize
     let borderColor: Color
     let borderWidth: CGFloat
-    let origin: UserIconOrigin
     
     @EnvironmentObject var userViewModel: UserViewModel
     
-    init(user: UserInfo?, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2, origin: UserIconOrigin) {
+    init(user: UserInfo, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
         self.user = user
         self.iconDimension = iconDimension
-        self.origin = origin
         self.borderColor = borderColor
         self.borderWidth = borderWidth
     }
     
     var body: some View {
-        switch origin {
-        case .user:
-            if let uiImage = userViewModel.userIcon {
-                Image(uiImage: uiImage)
+        let urlString = URL(string: user.icon)
+        AsyncImage(url: urlString) { phase in
+            if let image = phase.image {
+                image
                     .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-            } else {
+            } else if let _ = phase.error {
                 Image(systemName: "person.circle")
                     .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-            }
-        case .friend:
-            if let user = user {
-                let urlString = URL(string: user.icon)
-                AsyncImage(url: urlString) { phase in
-                    if let image = phase.image {
-                        image
-                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-                    } else if let _ = phase.error {
-                        Image(systemName: "person.circle")
-                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-                    } else {
-                        ProgressView()
-                            .frame(width: iconDimension.width, height: iconDimension.height)
-                            .clipShape(.circle)
-                    }
-                }
-            }
-        case .stranger:
-            if let user = user {
-                let urlString = URL(string: user.icon)
-                AsyncImage(url: urlString) { phase in
-                    if let image = phase.image {
-                        image
-                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-                    } else if let _ = phase.error {
-                        Image(systemName: "person.circle")
-                            .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-                    } else {
-                        ProgressView()
-                            .frame(width: iconDimension.width, height: iconDimension.height)
-                            .clipShape(.circle)
-                    }
-                }
+            } else {
+                ProgressView()
+                    .frame(width: iconDimension.width, height: iconDimension.height)
+                    .clipShape(.circle)
             }
         }
     }

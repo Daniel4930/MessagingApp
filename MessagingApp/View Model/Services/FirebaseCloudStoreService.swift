@@ -69,18 +69,35 @@ class FirebaseCloudStoreService {
         return nil
     }
     
-    func fetchFriend(id: String) async -> UserInfo? {
-        do {
-            let snapshot = try await db.collection("users").whereField("id", isEqualTo: id).getDocuments()
-            
-            if let document = snapshot.documents.first {
-                return try? document.data(as: UserInfo.self)
-            }
-        } catch {
-            print("Error fetching a friend: \(error.localizedDescription)")
+    func fetchFriends(ids: [String]) async -> [UserInfo] {
+        guard !ids.isEmpty else { return [] }
+
+        let chunkSize = 10
+        let chunks = stride(from: 0, to: ids.count, by: chunkSize).map {
+            Array(ids[$0..<min($0 + chunkSize, ids.count)])
         }
         
-        return nil
+        var friends: [UserInfo] = []
+
+        await withTaskGroup(of: [UserInfo].self) { group in
+            for chunk in chunks {
+                group.addTask {
+                    do {
+                        let snapshot = try await self.db.collection("users").whereField("id", in: chunk).getDocuments()
+                        return snapshot.documents.compactMap { try? $0.data(as: UserInfo.self) }
+                    } catch {
+                        print("Error fetching friends chunk: \(error.localizedDescription)")
+                        return []
+                    }
+                }
+            }
+
+            for await chunkOfFriends in group {
+                friends.append(contentsOf: chunkOfFriends)
+            }
+        }
+
+        return friends
     }
     
     func checkIfUsernameExists(username: String) async -> Bool? {

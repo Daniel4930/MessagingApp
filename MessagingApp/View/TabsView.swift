@@ -74,10 +74,9 @@ extension TabsView {
     @ViewBuilder func tabIcon(icon: String, tab: CurrentTab) -> some View {
         if icon == "USER_ICON", let user = userViewModel.user {
             UserIconView(
-                user: nil,
+                user: user,
                 iconDimension: iconDimension,
                 borderColor: Color.primaryBackground.opacity(selection == tab ? 1 : 0.5),
-                origin: .user
             )
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(

@@ -9,9 +9,7 @@ import SwiftUI
 
 struct ProfileView: View {
     let user: UserInfo
-    
     @State private var showOptions: Bool = false
-    
     @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
@@ -93,7 +91,7 @@ struct ProfileView: View {
             }
             
             VStack(alignment: .leading) {
-                UserIconView(user: user, iconDimension: CGSize(width: 100, height: 100), origin: .user)
+                UserIconView(user: user, iconDimension: CGSize(width: 100, height: 100))
                     .overlay(alignment: .bottomTrailing) {
                         OnlineStatusCircle(
                             status: user.onlineStatus,
