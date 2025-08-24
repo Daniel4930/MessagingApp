@@ -15,6 +15,7 @@ enum SidebarItem: Equatable {
 }
 
 struct HomeView: View {
+    @ObservedObject var navViewModel: CustomNavigationViewModel
     @Binding var viewToShow: (() -> AnyView)?
     @State private var selectedItem: SidebarItem = .messageCenter
     @EnvironmentObject var userViewModel: UserViewModel
@@ -25,7 +26,6 @@ struct HomeView: View {
     
     var body: some View {
         HStack {
-            //Side bar: Each items show a different view
             ScrollView {
                 ForEach(Array(sidebarItems.indices), id: \.self) { index in
                     let currentItem = sidebarItems[index]
@@ -35,23 +35,16 @@ struct HomeView: View {
             .frame(width: 70)
             .padding(.top)
             
-            //content: Show based on the selected item in the side bar
             Group {
                 switch selectedItem {
                 case .messageCenter:
                     MessageCenter(viewToShow: $viewToShow)
                 case .server(_):
-                    NavigationLink("Direct message view") {
-                        DirectMessageView()
-                    }
+                    DirectMessageView()
                 case .createServer:
-                    NavigationLink("Direct message view") {
-                        DirectMessageView()
-                    }
+                    DirectMessageView()
                 case .searchServer:
-                    NavigationLink("Direct message view") {
-                        DirectMessageView()
-                    }
+                    DirectMessageView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -64,11 +57,8 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: selectedItem) { oldValue, newValue in
+            navViewModel.gestureDisabled = selectedItem == .messageCenter ? false : true
+        }
     }
 }
-
-//#Preview {
-//    TabsView()
-//        .environmentObject(UserViewModel())
-//        .environmentObject(MessageViewModel())
-//}

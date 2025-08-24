@@ -12,11 +12,13 @@ class CustomNavigationViewModel: ObservableObject  {
     @Published var startingXOffset: CGFloat
     @Published var currentXOffset: CGFloat
     @Published var endingXOffset: CGFloat
+    @Published var gestureDisabled: Bool
     
     init() {
         self.startingXOffset = CustomNavigationViewModel.maxOffset
         self.currentXOffset = .zero
         self.endingXOffset = .zero
+        self.gestureDisabled = false
     }
     
     static let threshold: CGFloat = UIScreen.main.bounds.width * 0.5

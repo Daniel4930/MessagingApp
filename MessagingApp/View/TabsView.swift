@@ -14,8 +14,8 @@ enum CurrentTab {
 }
 
 struct TabsView: View {
-    @ObservedObject var navViewModel: CustomNavigationViewModel
     @State private var selection: CurrentTab = .home
+    @StateObject private var navViewModel = CustomNavigationViewModel()
     @State private var viewToShow: (() -> AnyView)?
     @EnvironmentObject var userViewModel: UserViewModel
     
@@ -30,9 +30,10 @@ struct TabsView: View {
         VStack(spacing: 0) {            
             switch selection {
             case .home:
-                HomeView(viewToShow: $viewToShow)
+                HomeView(navViewModel: navViewModel, viewToShow: $viewToShow)
             case .notifications:
                 Text("Notifications")
+                Spacer()
             case .account:
                 if let user = userViewModel.user {
                     ProfileView(user: user)
@@ -51,6 +52,7 @@ struct TabsView: View {
                     .foregroundStyle(Color.button.opacity(selection == info.tab ? 1 : 0.5))
                     .onTapGesture {
                         selection = info.tab
+                        navViewModel.gestureDisabled = selection == .home ? false : true
                     }
                 }
                 Spacer()
@@ -67,6 +69,12 @@ struct TabsView: View {
                     .offset(x: navViewModel.totalXOffset())
             }
         }
+        .gesture(
+            DragGesture()
+                .onChanged(navViewModel.onDragChanged(_:))
+                .onEnded(navViewModel.onDragEnded(_:))
+            , isEnabled: !navViewModel.gestureDisabled
+        )
     }
 }
 extension TabsView {

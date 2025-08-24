@@ -14,22 +14,14 @@ enum CurrentView {
 }
 
 struct ContentView: View {
-    @State private var currentView: CurrentView = .login
-    @State private var isLoading = true
-    @StateObject var navViewModel = CustomNavigationViewModel()
-    @EnvironmentObject var userViewModel: UserViewModel
+    @State private var currentView: CurrentView = .content
     
     var body: some View {
         switch currentView {
         case .login:
             LoginView(currentView: $currentView)
         case .content:
-            TabsView(navViewModel: navViewModel)
-                .gesture(
-                    DragGesture()
-                        .onChanged(navViewModel.onDragChanged(_:))
-                        .onEnded(navViewModel.onDragEnded(_:))
-                )
+            TabsView()
         case .newUser:
             NewUserView(currentView: $currentView)
         }

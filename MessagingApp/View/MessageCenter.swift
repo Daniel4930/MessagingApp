@@ -81,7 +81,9 @@ struct MessageCenter: View {
                     Button {
                         selectedFriend = friends[index]
                         viewToShow = {
-                            AnyView(DirectMessageView())
+                            AnyView(
+                                DirectMessageView()
+                            )
                         }
                     } label: {
                         HStack {
@@ -120,6 +122,9 @@ struct MessageCenter: View {
                 viewToShow = {
                     AnyView(DirectMessageView())
                 }
+            }
+            viewToShow = {
+                AnyView(DirectMessageView())
             }
         }
         .sheet(item: $selectedIcon) { friend in
