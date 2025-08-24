@@ -18,11 +18,11 @@ struct MessageScrollView: View {
     var body: some View {
         let sortedMessage = sortMessagesByDate(messages: messageViewModel.messages)
         
-        if sortedMessage.isEmpty {
-            EmptyMessageView()
-            Spacer()
-        } else {
-            ScrollView {
+        ScrollView {
+            if sortedMessage.isEmpty {
+                EmptyMessageView()
+                Spacer()
+            } else {
                 ForEach(sortedMessage, id: \.0) { date, messages in
                     VStack(alignment: .leading) {
                         MessageDateView(date: date)
@@ -40,21 +40,21 @@ struct MessageScrollView: View {
                     }
                 }
             }
-            .scrollPosition($scrollPosition)
-            .scrollDismissesKeyboard(.immediately)
-            .defaultScrollAnchor(.bottom)
-            .onScrollPhaseChange { oldPhase, newPhase in
-                if newPhase == .interacting {
-                    focusedField = nil
-                }
+        }
+        .scrollPosition($scrollPosition)
+        .scrollDismissesKeyboard(.immediately)
+        .defaultScrollAnchor(.bottom)
+        .onScrollPhaseChange { oldPhase, newPhase in
+            if newPhase == .interacting {
+                focusedField = nil
             }
-            .onChange(of: scrollToBottom) { _, newValue in
-                if newValue == true {
-                    withAnimation(.spring(duration: 0.2)) {
-                        scrollPosition.scrollTo(edge: .bottom)
-                    }
-                    scrollToBottom = false
+        }
+        .onChange(of: scrollToBottom) { _, newValue in
+            if newValue == true {
+                withAnimation(.spring(duration: 0.2)) {
+                    scrollPosition.scrollTo(edge: .bottom)
                 }
+                scrollToBottom = false
             }
         }
     }

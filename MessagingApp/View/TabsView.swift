@@ -14,8 +14,7 @@ enum CurrentTab {
 }
 
 struct TabsView: View {
-    @Binding var xOffset: CGFloat
-    
+    @ObservedObject var navViewModel: CustomNavigationViewModel
     @State private var selection: CurrentTab = .home
     @State private var viewToShow: (() -> AnyView)?
     @EnvironmentObject var userViewModel: UserViewModel
@@ -65,7 +64,7 @@ struct TabsView: View {
         .overlay(alignment: .trailing) {
             if let view = viewToShow {
                 view()
-                    .offset(x: xOffset)
+                    .offset(x: navViewModel.totalXOffset())
             }
         }
     }

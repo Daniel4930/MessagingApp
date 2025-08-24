@@ -152,7 +152,7 @@ struct ProfileView: View {
                     .font(.subheadline)
                     .bold()
                     .padding(.bottom, 4)
-                Text(user.registeredDate.formatted())
+                Text(Date(timeIntervalSinceReferenceDate: TimeInterval(floatLiteral: user.registeredDate)).formatted(.dateTime.month(.abbreviated).day().year()))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
