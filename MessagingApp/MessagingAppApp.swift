@@ -19,15 +19,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct MessagingAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var userViewModel = UserViewModel()
+    @StateObject private var friendViewModel = FriendViewModel()
     @StateObject private var messageViewModel = MessageViewModel()
     @StateObject private var keyboardProvider = KeyboardProvider()
+    @StateObject private var navViewModel = CustomNavigationViewModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(userViewModel)
+                .environmentObject(friendViewModel)
                 .environmentObject(messageViewModel)
                 .environmentObject(keyboardProvider)
+                .environmentObject(navViewModel)
         }
     }
 }

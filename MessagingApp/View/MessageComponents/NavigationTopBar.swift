@@ -7,24 +7,20 @@
 
 import SwiftUI
 
-struct NavigationTopBar: ToolbarContent {
-    @EnvironmentObject var userViewModel: UserViewModel
-    @Environment(\.dismiss) var dismiss
-    
+struct NavigationTopBar: View {
     let backButtonWidth: CGFloat = 19
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
+    var body: some View {
+        HStack {
             Button {
-                dismiss()
+
             } label: {
                 Image(systemName: "arrow.left")
-                    .resizable()
-                    .frame(width: backButtonWidth)
                     .bold()
             }
             HStack {
-                if let friend = userViewModel.friends.first {
+                if let friend = friendViewModel.friends.first {
                     UserIconView(user: friend)
                         .overlay(alignment: .bottomTrailing) {
                             OnlineStatusCircle(status: friend.onlineStatus, color: Color("PrimaryBackgroundColor"))

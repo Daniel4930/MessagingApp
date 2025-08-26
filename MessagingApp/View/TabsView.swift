@@ -15,9 +15,8 @@ enum CurrentTab {
 
 struct TabsView: View {
     @State private var selection: CurrentTab = .home
-    @StateObject private var navViewModel = CustomNavigationViewModel()
-    @State private var viewToShow: (() -> AnyView)?
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     let iconDimension: CGSize = CGSize(width: 25, height: 25)
     let tabsInfo: [(tab: CurrentTab, title: String, icon: String)] = [
@@ -30,7 +29,7 @@ struct TabsView: View {
         VStack(spacing: 0) {            
             switch selection {
             case .home:
-                HomeView(navViewModel: navViewModel, viewToShow: $viewToShow)
+                HomeView()
             case .notifications:
                 Text("Notifications")
                 Spacer()
@@ -64,7 +63,7 @@ struct TabsView: View {
             }
         }
         .overlay(alignment: .trailing) {
-            if let view = viewToShow {
+            if let view = navViewModel.viewToShow {
                 view()
                     .offset(x: navViewModel.totalXOffset())
             }

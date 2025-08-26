@@ -12,17 +12,18 @@ struct CustomTextEditor: View {
     @Binding var scrollToBottom: Bool
     
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
     let horizontalPaddingSpace: CGFloat = 10
     
     var body: some View {
         ZStack(alignment: .leading) {
-            CustomUITextView(messageComposerViewModel: messageComposerViewModel, userViewModel: userViewModel, scrollToBottom: $scrollToBottom) {
+            CustomUITextView(messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom) {
                 messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextView.text.isEmpty
                 
                 if let user = userViewModel.user {
                     var users = Array(arrayLiteral: user)
-                    users.append(contentsOf: userViewModel.friends)
+                    users.append(contentsOf: friendViewModel.friends)
                     let matched = searchUser(users: users)
                     messageComposerViewModel.mathchUsers = matched
                     messageComposerViewModel.showMention = !matched.isEmpty
@@ -32,7 +33,7 @@ struct CustomTextEditor: View {
             .padding(.horizontal, horizontalPaddingSpace)
             .focused($focusedField, equals: .textView)
             
-            if let friend = userViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
+            if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
                 let displayName = friend.displayName
                 
                 Text("Message @\(displayName)")
@@ -81,9 +82,10 @@ extension CustomTextEditor {
 
 struct CustomUITextView: UIViewRepresentable {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
-    let userViewModel: UserViewModel
     @Binding var scrollToBottom: Bool
     var onMessageChange: () -> Void
+    @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -116,7 +118,7 @@ struct CustomUITextView: UIViewRepresentable {
         private func generateNameMatchPattern(user: UserInfo) -> String? {
             let userName = user.userName
             let displayName = user.displayName
-            let friends = parent.userViewModel.friends
+            let friends = parent.friendViewModel.friends
             
             var pattern = "@(\(userName)|\(displayName)"
             
@@ -180,7 +182,7 @@ struct CustomUITextView: UIViewRepresentable {
                     }
 
                     for (index, part) in parts.enumerated() {
-                        if part.first == "@", let _ = parent.userViewModel.fetchUserByUsername(name: String(part.dropFirst())) {
+                        if part.first == "@", let _ = parent.userViewModel.fetchUserByUsername(name: String(part.dropFirst()), friends: parent.friendViewModel.friends) {
                             var finalAttributes: [NSAttributedString.Key: Any] = normalAttributes
                             
                             if index != 0 && index != parts.count - 1 {

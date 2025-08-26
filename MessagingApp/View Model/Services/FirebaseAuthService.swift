@@ -35,7 +35,7 @@ enum FirebaseResetPasswordError: Error {
 class FirebaseAuthService {
     static let shared = FirebaseAuthService()
     
-    func createANewUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, FirebaseSignUpError>) -> Void) {
+    func signUpUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, FirebaseSignUpError>) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
             if let error = error as NSError? {                
                 if let authError = AuthErrorCode(rawValue: error.code) {

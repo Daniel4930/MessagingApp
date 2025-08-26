@@ -14,7 +14,7 @@ enum CurrentView {
 }
 
 struct ContentView: View {
-    @State private var currentView: CurrentView = .content
+    @State private var currentView: CurrentView = .login
     
     var body: some View {
         switch currentView {

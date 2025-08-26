@@ -24,12 +24,13 @@ struct MessageContentView: View {
     @State private var customTextViewHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if let text = message.text {
-                AttributedTextView(text: text, userViewModel: userViewModel, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
-                    if let user = userViewModel.fetchUserByUsername(name: userName) {
+                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
+                    if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
                         userToPresent = user
                     }
                 }
@@ -140,7 +141,7 @@ extension MessageContentView {
         
         for (index, substr) in separateMentionedNameAndMessage(text: text).enumerated() {
             var attributedSubstring = AttributedString()
-            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst())) {
+            if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst()), friends: friendViewModel.friends) {
                 let displayName = user.displayName
                 var tempAttributedString = AttributedString("@\(displayName)")
                 tempAttributedString.font = Font.system(.body).bold()

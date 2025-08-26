@@ -23,6 +23,7 @@ struct DirectMessageView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 0) {
+                NavigationTopBar()
                 
                 DividerView()
                 
@@ -62,9 +63,5 @@ struct DirectMessageView: View {
         }
         .ignoresSafeArea(.keyboard)
         .background(Color("PrimaryBackgroundColor"))
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            NavigationTopBar()
-        }
     }
 }

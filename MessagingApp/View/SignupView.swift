@@ -107,17 +107,17 @@ extension SignupView {
     }
     
     func createNewUser() {
-        FirebaseAuthService.shared.createANewUser(email: email, password: password) { result in
+        FirebaseAuthService.shared.signUpUser(email: email, password: password) { result in
             switch result {
             case .success(let authDataResult):
-                guard let userInfo = setupUserInfo(authDataResult: authDataResult) else {
+                guard let userInsert = setupUserInsert(authDataResult: authDataResult) else {
                     print("Failed to setup user")
                     isLoading = false
                     return
                 }
                 
                 Task {
-                    await FirebaseCloudStoreService.shared.addUser(user: userInfo)
+                    await userViewModel.createNewUser(authId: authDataResult.user.uid, data: userInsert)
                     await userViewModel.fetchCurrentUser(email: email)
                     
                     if let user = userViewModel.user {
@@ -152,23 +152,21 @@ extension SignupView {
         }
     }
     
-    func setupUserInfo(authDataResult: AuthDataResult) -> UserInfo? {
-        let userId = authDataResult.user.uid
-        
+    func setupUserInsert(authDataResult: AuthDataResult) -> UserInfo? {
         guard let email = authDataResult.user.email else { return nil }
         guard let registeredDate = authDataResult.user.metadata.creationDate else { return nil }
         
         let user = UserInfo (
-            id: userId,
             email: email,
             userName: "",
             displayName: "",
             registeredDate: Double(registeredDate.timeIntervalSince1970),
             icon: "",
-            onlineStatus: "online",
+            onlineStatus: OnlineStatus.online.rawValue,
             aboutMe: "",
             bannerColor: "",
-            friends: []
+            friends: [],
+            channelId: []
         )
         
         return user

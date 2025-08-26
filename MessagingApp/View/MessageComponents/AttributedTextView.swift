@@ -12,12 +12,13 @@ import UIKit
 
 struct AttributedTextView: UIViewRepresentable {
     let text: String
-    let userViewModel: UserViewModel
     @Binding var customTextViewHeight: CGFloat
     @Binding var showSafari: Bool
     let onMentionTap: (String) -> Void
-    
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
+    
+    @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -53,7 +54,7 @@ struct AttributedTextView: UIViewRepresentable {
                 attributed.append(linkAttr)
             }
             
-            else if word.hasPrefix("@"), let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst())),
+            else if word.hasPrefix("@"), let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst()), friends: friendViewModel.friends),
                     let url = URL(string: "mention://\(user.userName)") {
                 
                 let displayName = user.displayName

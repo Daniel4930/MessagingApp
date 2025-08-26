@@ -12,15 +12,20 @@ enum FirebaseCloudStoreUpdateDataError: Error {
     case updateFailed(String)
 }
 
+enum FirebaseCloudStoreCollection: String {
+    case users = "users"
+    case channels = "channels"
+}
+
 class FirebaseCloudStoreService {
     static let shared = FirebaseCloudStoreService()
     let db = Firestore.firestore(app: FirebaseApp.app()!, database: "messaging-app")
     
-    private func encodeJSON(user: UserInfo) -> String? {
+    private func encodeJSON<T: Encodable>(_ value: T) -> String? {
         let encoder = JSONEncoder()
         
         do {
-            let jsonData = try encoder.encode(user)
+            let jsonData = try encoder.encode(value)
             
             if let jsonString = String(data: jsonData, encoding: .utf8) {
                 return jsonString
@@ -42,13 +47,18 @@ class FirebaseCloudStoreService {
         return nil
     }
     
-    func addUser(user: UserInfo) async {
-        guard let jsonString = encodeJSON(user: user) else { return }
+    func addDocument<T: Encodable>(collection: FirebaseCloudStoreCollection.RawValue, documentId: String?, data: T) async {
+        guard let jsonString = encodeJSON(data) else { return }
         guard let userDict = convertJSONToDictionary(jsonString: jsonString) else { return }
         
         do {
-            try await db.collection("users").document(user.id).setData(userDict)
-            print("Document successfully written!")
+            if let documentId {
+                try await db.collection(collection).document(documentId).setData(data as! [String : Any])
+                print("Document successfully written!")
+            } else {
+                try await db.collection(collection).document().setData(data as! [String : Any])
+                print("Document successfully written!")
+            }
         } catch {
             print("Error adding document: \(error.localizedDescription)")
         }
@@ -56,10 +66,10 @@ class FirebaseCloudStoreService {
     
     func fetchUser(email: String) async -> UserInfo? {
         do {
-            let snapshot = try await db.collection("users").whereField("email", isEqualTo: email).getDocuments()
+            let snapshot = try await db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField("email", isEqualTo: email).getDocuments()
             
             if let document = snapshot.documents.first {
-                let user = try? document.data(as: UserInfo.self)
+                let user = try document.data(as: UserInfo.self)
                 return user
             }
         } catch {
@@ -81,9 +91,9 @@ class FirebaseCloudStoreService {
 
         await withTaskGroup(of: [UserInfo].self) { group in
             for chunk in chunks {
-                group.addTask {
+                group.addTask {                    
                     do {
-                        let snapshot = try await self.db.collection("users").whereField("id", in: chunk).getDocuments()
+                        let snapshot = try await self.db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField(FieldPath.documentID(), in: chunk).getDocuments()
                         return snapshot.documents.compactMap { try? $0.data(as: UserInfo.self) }
                     } catch {
                         print("Error fetching friends chunk: \(error.localizedDescription)")
@@ -102,7 +112,7 @@ class FirebaseCloudStoreService {
     
     func checkIfUsernameExists(username: String) async -> Bool? {
         do {
-            let snapshot = try await db.collection("users").whereField("userName", isEqualTo: username).getDocuments()
+            let snapshot = try await db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField("userName", isEqualTo: username).getDocuments()
             
             return !snapshot.documents.isEmpty
         } catch {
@@ -111,9 +121,9 @@ class FirebaseCloudStoreService {
         return false
     }
     
-    func updateUser(documentId: String, newData: [String: Any]) async -> Result<Void, FirebaseCloudStoreUpdateDataError> {
+    func updateData(collection: FirebaseCloudStoreCollection.RawValue, documentId: String, newData: [String: Any]) async -> Result<Void, FirebaseCloudStoreUpdateDataError> {
         do {
-            try await db.collection("users").document(documentId).updateData(newData)
+            try await db.collection(collection).document(documentId).updateData(newData)
             return Result.success(())
         } catch {
             return Result.failure(FirebaseCloudStoreUpdateDataError.updateFailed(error.localizedDescription))

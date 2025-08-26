@@ -18,6 +18,7 @@ struct LoginView: View {
     @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
     
     var body: some View {
         NavigationStack {
@@ -93,7 +94,7 @@ extension LoginView {
                         await userViewModel.fetchCurrentUser(email: email)
                     }
                     if let user = userViewModel.user {
-                        await userViewModel.fetchFriendInfo()
+                        await friendViewModel.fetchFriends(for: user)
                         
                         if user.userName.isEmpty {
                             isLoading = false

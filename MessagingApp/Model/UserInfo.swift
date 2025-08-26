@@ -6,24 +6,26 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
-enum OnlineStatus {
-    case online
-    case offline
-    case invisible
-    case doNotDisturb
-    case idle
+enum OnlineStatus: String, Codable {
+    case online = "online"
+    case offline = "offline"
+    case invisible = "invisible"
+    case doNotDisturb = "doNotDisturb"
+    case idle = "idle"
 }
 
 struct UserInfo: Codable, Identifiable, Equatable {
-    let id: String
+    @DocumentID var id: String?
     let email: String
     let userName: String // Unique
     let displayName: String
     let registeredDate: Double
     let icon: String // Get the image from firebase storage (path)
-    let onlineStatus: String
+    let onlineStatus: OnlineStatus.RawValue
     let aboutMe: String
     let bannerColor: String // in hex
-    let friends: [String]
+    var friends: [String]
+    let channelId: [String]
 }

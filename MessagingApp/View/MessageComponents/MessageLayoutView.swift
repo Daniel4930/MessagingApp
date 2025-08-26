@@ -42,7 +42,7 @@ struct MessageLayoutView: View {
             }
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    Text(user.displayName ?? "")
+                    Text(user.displayName)
                         .font(.title3)
                         .bold()
                     Text(MessageLayoutView.messageTimeFormatter.string(from: time))

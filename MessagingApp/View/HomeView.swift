@@ -15,10 +15,9 @@ enum SidebarItem: Equatable {
 }
 
 struct HomeView: View {
-    @ObservedObject var navViewModel: CustomNavigationViewModel
-    @Binding var viewToShow: (() -> AnyView)?
     @State private var selectedItem: SidebarItem = .messageCenter
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     let sidebarItems: [SidebarItem] = [
         .messageCenter, .createServer, .searchServer
@@ -38,7 +37,7 @@ struct HomeView: View {
             Group {
                 switch selectedItem {
                 case .messageCenter:
-                    MessageCenter(viewToShow: $viewToShow)
+                    MessageCenter()
                 case .server(_):
                     DirectMessageView()
                 case .createServer:

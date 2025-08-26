@@ -198,8 +198,8 @@ extension NewUserView {
                 ]
             }
             
-            if let user = userViewModel.user {
-                let result = await FirebaseCloudStoreService.shared.updateUser(documentId: user.id, newData: dataToUpload)
+            if let user = userViewModel.user, let id = user.id {
+                let result = await FirebaseCloudStoreService.shared.updateData(collection: FirebaseCloudStoreCollection.users.rawValue, documentId: id, newData: dataToUpload)
                 switch result {
                 case .success(_):
                     await userViewModel.fetchCurrentUser(email: user.email)

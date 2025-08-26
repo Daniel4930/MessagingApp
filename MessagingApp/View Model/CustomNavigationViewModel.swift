@@ -9,13 +9,13 @@ import Foundation
 import SwiftUI
 
 class CustomNavigationViewModel: ObservableObject  {
-    @Published var startingXOffset: CGFloat
     @Published var currentXOffset: CGFloat
     @Published var endingXOffset: CGFloat
     @Published var gestureDisabled: Bool
+    @Published var viewToShow: (() -> AnyView)?
+    
     
     init() {
-        self.startingXOffset = CustomNavigationViewModel.maxOffset
         self.currentXOffset = .zero
         self.endingXOffset = .zero
         self.gestureDisabled = false
@@ -42,7 +42,7 @@ class CustomNavigationViewModel: ObservableObject  {
             }
             
             if self.currentXOffset <= -CustomNavigationViewModel.threshold {
-                self.endingXOffset = -self.startingXOffset
+                self.endingXOffset = -CustomNavigationViewModel.maxOffset
             } else if self.currentXOffset >= CustomNavigationViewModel.threshold {
                 self.endingXOffset = 0
             }
@@ -51,6 +51,11 @@ class CustomNavigationViewModel: ObservableObject  {
     }
     
     func totalXOffset() -> CGFloat {
-        return startingXOffset + currentXOffset + endingXOffset
+        return CustomNavigationViewModel.maxOffset + currentXOffset + endingXOffset
+    }
+    
+    func showView() {
+        currentXOffset = .zero
+        endingXOffset = -CustomNavigationViewModel.maxOffset
     }
 }
