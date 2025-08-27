@@ -12,6 +12,7 @@ enum Field {
 }
 
 struct DirectMessageView: View {
+    let channelInfo: ChannelInfo
     @State private var scrollToBottom: Bool = false
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false

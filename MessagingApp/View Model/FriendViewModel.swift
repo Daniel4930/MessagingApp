@@ -14,7 +14,7 @@ class FriendViewModel: ObservableObject {
     
     func fetchFriends(for user: UserInfo) async {
         if !user.friends.isEmpty {
-            self.friends = await FirebaseCloudStoreService.shared.fetchFriends(ids: user.friends)
+            self.friends = await FirebaseCloudStoreService.shared.fetchData(collection: FirebaseCloudStoreCollection.users.rawValue, ids: user.friends)
         } else {
             self.friends = []
         }

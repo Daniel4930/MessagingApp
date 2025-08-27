@@ -168,7 +168,6 @@ extension SignupView {
             friends: [],
             channelId: []
         )
-        
         return user
     }
     

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MessageCenter: View {
     @State private var selectedFriend: UserInfo?
-    @State private var selectedIcon: UserInfo?
+    @State private var selectedFriendIcon: UserInfo?
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
@@ -60,7 +60,7 @@ struct MessageCenter: View {
                     HStack(spacing: 16) {
                         ForEach(friendViewModel.friends) { friend in
                             Button {
-                                selectedIcon = friend
+                                selectedFriendIcon = friend
                             } label: {
                                 UserIconView(user: friend, iconDimension: .init(width: 45, height: 45))
                                     .overlay(alignment: .bottomTrailing) {
@@ -78,67 +78,59 @@ struct MessageCenter: View {
                 .scrollIndicators(.hidden)
                 .padding(.vertical, 10)
                 
-                if let currentUser = userViewModel.user {
-                    let dmConversations = friendViewModel.friends.compactMap { friend -> (UserInfo, String)? in
-                        let commonChannel = friend.channelId.first(where: { currentUser.channelId.contains($0) })
-                        if let channelId = commonChannel {
-                            return (friend, channelId)
+                ForEach(Array(channelViewModel.dmChannelsMapWithFriends.indices), id: \.self) { index in
+                    let friend = channelViewModel.dmChannelsMapWithFriends[index].friend
+                    let channel = channelViewModel.dmChannelsMapWithFriends[index].channel
+                    
+                    Button {
+                        selectedFriend = friend
+                        navViewModel.viewToShow = {
+                            AnyView(
+                                DirectMessageView(channelInfo: channel)
+                            )
                         }
-                        return nil
-                    }
-
-                    ForEach(dmConversations, id: \.0.id) { (friend, channelId) in
-                        Button {
-                            selectedFriend = friend
-                            navViewModel.viewToShow = {
-                                AnyView(
-                                    DirectMessageView()
-                                )
-                            }
-                        } label: {
-                            HStack {
-                                UserIconView(user: friend)
-                                    .overlay(alignment: .bottomTrailing) {
-                                        OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
-                                    }
-                                VStack(alignment: .leading, spacing: 0) {
-                                    HStack {
-                                        Text(friend.displayName)
-                                            .font(.subheadline)
-                                            .bold()
-                                        Spacer()
-                                        if let lastMessageDate = channelViewModel.channels[channelId]?.date {
-                                            Text(lastMessageDate, style: .time)
-                                                .font(.footnote)
-                                        }
-                                    }
-                                    Text(channelViewModel.channels[channelId]?.text ?? "No messages yet")
-                                        .font(.footnote)
-                                        .lineLimit(1)
+                        navViewModel.showView()
+                    } label: {
+                        HStack {
+                            UserIconView(user: friend)
+                                .overlay(alignment: .bottomTrailing) {
+                                    OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
                                 }
-                                .opacity(selectedFriend?.id == friend.id ? 1 : 0.4)
+                            VStack(alignment: .leading, spacing: 0) {
+                                HStack {
+                                    Text(friend.displayName)
+                                        .font(.subheadline)
+                                        .bold()
+                                    Spacer()
+                                    Text("1y")
+                                        .font(.footnote)
+                                }
+                                Text("No messages yet")
+                                    .font(.footnote)
+                                    .lineLimit(1)
                             }
-                            .padding(10)
-                            .background {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(selectedFriend?.id == friend.id ? .white.opacity(0.1) : .clear)
-                            }
+                            .opacity(selectedFriend?.id == friend.id ? 1 : 0.4)
                         }
-                        .tint(.white)
+                        .padding(10)
+                        .background {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selectedFriend?.id == friend.id ? .white.opacity(0.1) : .clear)
+                        }
                     }
+                    .tint(.white)
                 }
             }
         }
         .padding()
         .onAppear {
-            if let friend = friendViewModel.friends.first {
-                selectedFriend = friend
+            if let first = channelViewModel.dmChannelsMapWithFriends.first {
+                selectedFriend = first.friend
                 navViewModel.viewToShow = {
-                    AnyView(DirectMessageView())
+                    AnyView(DirectMessageView(channelInfo: first.channel))
                 }
             }
         }
-        .sheet(item: $selectedIcon) { friend in
+        .sheet(item: $selectedFriendIcon) { friend in
             ProfileView(user: friend)
                 .presentationDetents([.fraction(0.95)])
         }

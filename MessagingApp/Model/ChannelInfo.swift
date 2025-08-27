@@ -12,8 +12,13 @@ enum ChannelType: String {
     case server = "server"
 }
 
-struct ChannelInfo: Identifiable {
+struct ChannelInfo: Codable, Identifiable {
     @DocumentID var id: String?
+    let messageIds: [String]
+    let type: ChannelType.RawValue
+}
+
+struct ChannelInsert: Codable {
     let messageIds: [String]
     let type: ChannelType.RawValue
 }

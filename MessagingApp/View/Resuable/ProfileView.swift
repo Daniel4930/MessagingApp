@@ -19,7 +19,7 @@ struct ProfileView: View {
             userInfoSection
             
             if user.id != userViewModel.user?.id {
-                ProfileAddAndMessageButton()
+                ProfileAddAndMessageButton(user: user)
             }
             
             aboutMeSection
@@ -106,18 +106,31 @@ private extension ProfileView {
     }
     
     struct ProfileAddAndMessageButton: View {
+        let user: UserInfo
         @EnvironmentObject var navViewModel: CustomNavigationViewModel
+        @EnvironmentObject var channelViewModel: ChannelViewModel
+        @EnvironmentObject var userViewModel: UserViewModel
         @Environment(\.dismiss) var dismiss
         
         var body: some View {
             HStack {
                 Spacer()
                 ProfileActionButton(systemImageName: "message.fill", label: "Message") {
-                    navViewModel.viewToShow = {
-                        AnyView(DirectMessageView())
+                    Task {
+                        guard let currentUser = userViewModel.user else { return }
+                        //Create a channel if doesn't exist
+                        let channelInfo = await channelViewModel.getDmChannel(currentUser: currentUser, otherUser: user)
+                        
+                        if let channelInfo {
+                            navViewModel.viewToShow = {
+                                AnyView(DirectMessageView(channelInfo: channelInfo))
+                            }
+                            navViewModel.showView()
+                            dismiss()
+                        } else {
+                            print("Failed to open a new dm")
+                        }
                     }
-                    navViewModel.showView()
-                    dismiss()
                 }
                 Spacer()
                 ProfileActionButton(systemImageName: "person.fill.badge.plus", label: "Add friend") {

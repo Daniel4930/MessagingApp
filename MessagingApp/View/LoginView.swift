@@ -19,6 +19,7 @@ struct LoginView: View {
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
+    @EnvironmentObject var channelViewModel: ChannelViewModel
     
     var body: some View {
         NavigationStack {
@@ -94,16 +95,13 @@ extension LoginView {
                         await userViewModel.fetchCurrentUser(email: email)
                     }
                     if let user = userViewModel.user {
-                        await friendViewModel.fetchFriends(for: user)
-                        
                         if user.userName.isEmpty {
                             isLoading = false
                             currentView = .newUser
                         } else {
-//                            if userViewModel.userIcon == nil {
-//                                let icon = await userViewModel.fetchIcon(urlString: user.icon)
-//                                userViewModel.userIcon = icon
-//                            }
+                            await friendViewModel.fetchFriends(for: user)
+                            await channelViewModel.fetchChannels(for: user.channelId)
+                            channelViewModel.sortDmChannelWithFriends(friends: friendViewModel.friends)
                             isLoading = false
                             currentView = .content
                         }

@@ -22,6 +22,7 @@ struct MessagingAppApp: App {
     @StateObject private var friendViewModel = FriendViewModel()
     @StateObject private var messageViewModel = MessageViewModel()
     @StateObject private var keyboardProvider = KeyboardProvider()
+    @StateObject private var channelViewModel = ChannelViewModel()
     @StateObject private var navViewModel = CustomNavigationViewModel()
 
     var body: some Scene {
@@ -30,6 +31,7 @@ struct MessagingAppApp: App {
                 .environmentObject(userViewModel)
                 .environmentObject(friendViewModel)
                 .environmentObject(messageViewModel)
+                .environmentObject(channelViewModel)
                 .environmentObject(keyboardProvider)
                 .environmentObject(navViewModel)
         }

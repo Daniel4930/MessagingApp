@@ -39,11 +39,11 @@ struct HomeView: View {
                 case .messageCenter:
                     MessageCenter()
                 case .server(_):
-                    DirectMessageView()
+                    Text("Server")
                 case .createServer:
-                    DirectMessageView()
+                    Text("Create a new server")
                 case .searchServer:
-                    DirectMessageView()
+                    Text("Search a server")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
