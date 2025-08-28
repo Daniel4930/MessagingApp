@@ -14,7 +14,7 @@ class MessageComposerViewModel: ObservableObject {
     @Published var uiTextView: UITextView = UITextView()
     @Published var showSendButton: Bool = false
     @Published var showMention: Bool = false
-    @Published var mathchUsers: [UserInfo] = []
+    @Published var mathchUsers: [User] = []
     @Published var customTextEditorHeight: CGFloat = MessageComposerViewModel.customTextEditorMinHeight
     
     static let maxSelection = 10

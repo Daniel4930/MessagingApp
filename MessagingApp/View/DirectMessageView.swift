@@ -12,19 +12,19 @@ enum Field {
 }
 
 struct DirectMessageView: View {
-    let channelInfo: ChannelInfo
+    let channelInfo: Channel
     @State private var scrollToBottom: Bool = false
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
     @StateObject private var messageComposerViewModel = MessageComposerViewModel()
     @FocusState private var focusedField: Field?
-    
     @EnvironmentObject var keyboardProvider: KeyboardProvider
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 0) {
-                NavigationTopBar()
+            VStack(alignment: .leading, spacing: 0) {
+                NavigationTopBar(channelInfo: channelInfo)
+                    .padding([.leading, .vertical])
                 
                 DividerView()
                 

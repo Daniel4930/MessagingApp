@@ -7,14 +7,14 @@
 import SwiftUI
 
 struct UserIconView: View {
-    let user: UserInfo
+    let user: User
     let iconDimension: CGSize
     let borderColor: Color
     let borderWidth: CGFloat
     
     @EnvironmentObject var userViewModel: UserViewModel
     
-    init(user: UserInfo, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
+    init(user: User, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
         self.user = user
         self.iconDimension = iconDimension
         self.borderColor = borderColor

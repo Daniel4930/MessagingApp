@@ -14,7 +14,7 @@ enum DataSize {
 }
 
 struct EmbededFileLayoutView: View {
-    let url: URL
+    let url: String
     
     var body: some View {
         HStack(alignment: .center) {

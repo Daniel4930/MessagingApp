@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    let user: UserInfo
+    let user: User
     @State private var showOptions: Bool = false
     @EnvironmentObject var userViewModel: UserViewModel
 
@@ -95,7 +95,7 @@ private extension ProfileView {
                 .font(.subheadline)
                 .bold()
                 .padding(.bottom, 4)
-            Text(Date(timeIntervalSinceReferenceDate: TimeInterval(floatLiteral: user.registeredDate)).formatted(.dateTime.month(.abbreviated).day().year()))
+            Text(user.registeredDate.dateValue().formatted(.dateTime.month(.abbreviated).day().year()))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -106,7 +106,7 @@ private extension ProfileView {
     }
     
     struct ProfileAddAndMessageButton: View {
-        let user: UserInfo
+        let user: User
         @EnvironmentObject var navViewModel: CustomNavigationViewModel
         @EnvironmentObject var channelViewModel: ChannelViewModel
         @EnvironmentObject var userViewModel: UserViewModel
@@ -117,9 +117,9 @@ private extension ProfileView {
                 Spacer()
                 ProfileActionButton(systemImageName: "message.fill", label: "Message") {
                     Task {
-                        guard let currentUser = userViewModel.user else { return }
+                        guard let currentUserId = userViewModel.user?.id else { return }
                         //Create a channel if doesn't exist
-                        let channelInfo = await channelViewModel.getDmChannel(currentUser: currentUser, otherUser: user)
+                        let channelInfo = await channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: user)
                         
                         if let channelInfo {
                             navViewModel.viewToShow = {

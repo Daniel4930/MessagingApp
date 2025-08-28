@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MessageLayoutView: View {
-    let user: UserInfo
+    let user: User
     let messages: [Message]
     let time: Date
     

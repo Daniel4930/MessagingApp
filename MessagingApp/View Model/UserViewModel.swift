@@ -9,18 +9,23 @@ import UIKit
 
 @MainActor
 class UserViewModel: ObservableObject {
-    @Published var user: UserInfo?
+    @Published var user: User?
     @Published var userIcon: UIImage?
     
-    func createNewUser(authId: String, data: UserInfo) async {
-        await FirebaseCloudStoreService.shared.addDocument(collection: FirebaseCloudStoreCollection.users.rawValue, documentId: authId, data: data)
+    func createNewUser(authId: String, data: User) async throws {
+        do {
+            let _ = try await FirebaseCloudStoreService.shared.addDocument(collection: FirebaseCloudStoreCollection.users, documentId: authId, data: data)
+        } catch {
+            print(error)
+            throw(error)
+        }
     }
     
     func fetchCurrentUser(email: String) async {
         self.user = await FirebaseCloudStoreService.shared.fetchUser(email: email)
     }
     
-    func fetchUserByUsername(name: String, friends: [UserInfo]) -> UserInfo? {
+    func fetchUserByUsername(name: String, friends: [User]) -> User? {
         if user?.userName == name {
             return user
         } else {

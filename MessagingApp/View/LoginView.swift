@@ -20,6 +20,7 @@ struct LoginView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
+    @EnvironmentObject var messageViewModel: MessageViewModel
     
     var body: some View {
         NavigationStack {
@@ -99,9 +100,13 @@ extension LoginView {
                             isLoading = false
                             currentView = .newUser
                         } else {
+                            guard let userId = user.id else {
+                                isLoading = false
+                                generalErrorMessage = "Failed to sign in. Please try again"
+                                return
+                            }
+                            
                             await friendViewModel.fetchFriends(for: user)
-                            await channelViewModel.fetchChannels(for: user.channelId)
-                            channelViewModel.sortDmChannelWithFriends(friends: friendViewModel.friends)
                             isLoading = false
                             currentView = .content
                         }

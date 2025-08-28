@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 @MainActor
 struct SignupView: View {
@@ -117,7 +118,14 @@ extension SignupView {
                 }
                 
                 Task {
-                    await userViewModel.createNewUser(authId: authDataResult.user.uid, data: userInsert)
+                    do {
+                        try await userViewModel.createNewUser(authId: authDataResult.user.uid, data: userInsert)
+                    } catch {
+                        isLoading = false
+                        generalErrorMessage = "Unable to sign up. Please try again"
+                        generalErrorMessageColor = .red
+                        generalErrorMessageHeight = AlertMessageView.maxHeight
+                    }
                     await userViewModel.fetchCurrentUser(email: email)
                     
                     if let user = userViewModel.user {
@@ -129,38 +137,38 @@ extension SignupView {
                 isLoading = false
                 switch error {
                 case .emailAlreadyInUse:
-                    self.errorEmailMessage = "Email alredy in use"
+                    errorEmailMessage = "Email alredy in use"
                 case .invalidEmail:
-                    self.errorEmailMessage = "Email is invalid"
+                    errorEmailMessage = "Email is invalid"
                 case .weakPassword:
-                    self.errorPasswordMessage = "Password is weak"
-                    self.errorRetypePasswordMessage = "Password is weak"
+                    errorPasswordMessage = "Password is weak"
+                    errorRetypePasswordMessage = "Password is weak"
                 case .operationNotAllowed:
-                    self.generalErrorMessage = "Server side error. Please try again"
-                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                    self.generalErrorMessageColor = .red
+                    generalErrorMessage = "Server side error. Please try again"
+                    generalErrorMessageHeight = AlertMessageView.maxHeight
+                    generalErrorMessageColor = .red
                 case .networkError:
-                    self.generalErrorMessage = "Not connected to the internet"
-                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                    self.generalErrorMessageColor = .red
+                    generalErrorMessage = "Not connected to the internet"
+                    generalErrorMessageHeight = AlertMessageView.maxHeight
+                    generalErrorMessageColor = .red
                 case .unknown:
-                    self.generalErrorMessage = "Unknown error"
-                    self.generalErrorMessageHeight = AlertMessageView.maxHeight
-                    self.generalErrorMessageColor = .red
+                    generalErrorMessage = "Unknown error"
+                    generalErrorMessageHeight = AlertMessageView.maxHeight
+                    generalErrorMessageColor = .red
                 }
             }
         }
     }
     
-    func setupUserInsert(authDataResult: AuthDataResult) -> UserInfo? {
+    func setupUserInsert(authDataResult: AuthDataResult) -> User? {
         guard let email = authDataResult.user.email else { return nil }
         guard let registeredDate = authDataResult.user.metadata.creationDate else { return nil }
         
-        let user = UserInfo (
+        let user = User (
             email: email,
             userName: "",
             displayName: "",
-            registeredDate: Double(registeredDate.timeIntervalSince1970),
+            registeredDate: Timestamp(date: registeredDate),
             icon: "",
             onlineStatus: OnlineStatus.online.rawValue,
             aboutMe: "",

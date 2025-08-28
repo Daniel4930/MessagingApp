@@ -8,12 +8,11 @@
 import SwiftUI
 
 struct MessageCenter: View {
-    @State private var selectedFriend: UserInfo?
-    @State private var selectedFriendIcon: UserInfo?
+    @State private var selectedFriend: User?
+    @State private var selectedFriendIcon: User?
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
-    @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     var body: some View {
@@ -78,9 +77,10 @@ struct MessageCenter: View {
                 .scrollIndicators(.hidden)
                 .padding(.vertical, 10)
                 
-                ForEach(Array(channelViewModel.dmChannelsMapWithFriends.indices), id: \.self) { index in
-                    let friend = channelViewModel.dmChannelsMapWithFriends[index].friend
-                    let channel = channelViewModel.dmChannelsMapWithFriends[index].channel
+                ForEach(channelViewModel.dmChannelsMapWithFriends) { map in
+                    let friend = map.friend
+                    let channel = map.channel
+                    let latestMessage = channel.lastMessage
                     
                     Button {
                         selectedFriend = friend
@@ -97,20 +97,28 @@ struct MessageCenter: View {
                                     OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
                                 }
                             VStack(alignment: .leading, spacing: 0) {
-                                HStack {
+                                if let latestMessage = latestMessage {
+                                    HStack {
+                                        Text(friend.displayName)
+                                            .font(.subheadline)
+                                            .bold()
+                                        Spacer()
+                                        Text("\(latestMessage.timestamp.dateValue().formatted())")
+                                            .font(.footnote)
+                                    }
+                                    Text(latestMessage.text)
+                                        .font(.footnote)
+                                        .lineLimit(1)
+                                } else {
                                     Text(friend.displayName)
                                         .font(.subheadline)
                                         .bold()
                                     Spacer()
-                                    Text("1y")
-                                        .font(.footnote)
                                 }
-                                Text("No messages yet")
-                                    .font(.footnote)
-                                    .lineLimit(1)
                             }
                             .opacity(selectedFriend?.id == friend.id ? 1 : 0.4)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(10)
                         .background {
                             RoundedRectangle(cornerRadius: 10)
@@ -122,8 +130,12 @@ struct MessageCenter: View {
             }
         }
         .padding()
-        .onAppear {
-            if let first = channelViewModel.dmChannelsMapWithFriends.first {
+        .task {
+            guard let currentUser = userViewModel.user else { return }
+            channelViewModel.listenForChannels(userId: currentUser.id!, friends: friendViewModel.friends)
+        }
+        .onChange(of: channelViewModel.dmChannelsMapWithFriends) { oldMap, newMap in
+            if selectedFriend == nil, let first = newMap.first {
                 selectedFriend = first.friend
                 navViewModel.viewToShow = {
                     AnyView(DirectMessageView(channelInfo: first.channel))

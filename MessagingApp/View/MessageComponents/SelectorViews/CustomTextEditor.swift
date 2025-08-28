@@ -46,7 +46,7 @@ struct CustomTextEditor: View {
     }
 }
 extension CustomTextEditor {
-    func searchUser(users: [UserInfo]) -> [UserInfo] {
+    func searchUser(users: [User]) -> [User] {
         if let message = messageComposerViewModel.uiTextView.text {
             //message = "@"
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
@@ -115,7 +115,7 @@ struct CustomUITextView: UIViewRepresentable {
             self.parent = parent
         }
         
-        private func generateNameMatchPattern(user: UserInfo) -> String? {
+        private func generateNameMatchPattern(user: User) -> String? {
             let userName = user.userName
             let displayName = user.displayName
             let friends = parent.friendViewModel.friends

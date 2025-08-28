@@ -55,7 +55,14 @@ class CustomNavigationViewModel: ObservableObject  {
     }
     
     func showView() {
-        currentXOffset = .zero
         endingXOffset = -CustomNavigationViewModel.maxOffset
+        currentXOffset = .zero
+    }
+    
+    func hideView() {
+        withAnimation(.snappy()) {
+            endingXOffset = .zero
+            currentXOffset = .zero
+        }
     }
 }

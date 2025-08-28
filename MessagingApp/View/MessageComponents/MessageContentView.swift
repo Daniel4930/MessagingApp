@@ -20,7 +20,7 @@ struct MessageContentView: View {
     @State private var showSafari: Bool = false
     @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
     @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
-    @State private var userToPresent: UserInfo?
+    @State private var userToPresent: User?
     @State private var customTextViewHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
@@ -28,51 +28,47 @@ struct MessageContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            if let text = message.text {
-                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
-                    if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
-                        userToPresent = user
-                    }
-                }
-                .frame(height: customTextViewHeight)
-                .sheet(isPresented: $showSafari) {
-                    if let url = URL(string: text) {
-                        SafariView(url: url)
-                    }
-                }
-                .task {
-                    if text.contains(linkRegexPattern) {
-                        retrieveMetaDataFromURL(url: text)
-                    }
-                }
-
-                if showEmbeded {
-                    organizeEmbededItems()
-                        .overlay(alignment: .leading) {
-                            Color.gray
-                                .frame(width: linkEmbededViewDimension.width * 0.015)
-                        }
-                        .background(
-                            GeometryReader { proxy in
-                                Color("SecondaryBackgroundColor")
-                                    .onAppear {
-                                        linkEmbededViewDimension.width = proxy.size.width
-                                        linkEmbededViewDimension.height = proxy.size.height
-                                    }
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+            AttributedTextView(text: message.text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
+                if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
+                    userToPresent = user
                 }
             }
-            if let urls = message.images?.allObjects as? [ImageUrl], !urls.isEmpty {
-                GridImageView(imageUrl: urls)
+            .frame(height: customTextViewHeight)
+            .sheet(isPresented: $showSafari) {
+                if let url = URL(string: message.text) {
+                    SafariView(url: url)
+                }
+            }
+            .task {
+                if message.text.contains(linkRegexPattern) {
+                    retrieveMetaDataFromURL(url: message.text)
+                }
+            }
+
+            if showEmbeded {
+                organizeEmbededItems()
+                    .overlay(alignment: .leading) {
+                        Color.gray
+                            .frame(width: linkEmbededViewDimension.width * 0.015)
+                    }
+                    .background(
+                        GeometryReader { proxy in
+                            Color("SecondaryBackgroundColor")
+                                .onAppear {
+                                    linkEmbededViewDimension.width = proxy.size.width
+                                    linkEmbededViewDimension.height = proxy.size.height
+                                }
+                        }
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            if !message.photoUrls.isEmpty {
+                GridImageView(imageUrl: message.photoUrls)
                     .padding(.top, 5)
             }
-            if let urls = message.files?.allObjects as? [FileUrl], !urls.isEmpty {
-                ForEach(urls, id: \.self) { fileUrl in
-                    if let url = fileUrl.url {
-                        EmbededFileLayoutView(url: url)
-                    }
+            if !message.fileUrls.isEmpty {
+                ForEach(message.fileUrls.indices, id: \.self) { index in
+                    EmbededFileLayoutView(url: message.fileUrls[index])
                 }
             }
         }

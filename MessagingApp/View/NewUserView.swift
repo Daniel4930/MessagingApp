@@ -199,19 +199,15 @@ extension NewUserView {
             }
             
             if let user = userViewModel.user, let id = user.id {
-                let result = await FirebaseCloudStoreService.shared.updateData(collection: FirebaseCloudStoreCollection.users.rawValue, documentId: id, newData: dataToUpload)
-                switch result {
-                case .success(_):
+                do {
+                    try await FirebaseCloudStoreService.shared.updateData(collection: FirebaseCloudStoreCollection.users, documentId: id, newData: dataToUpload)
+                    
                     await userViewModel.fetchCurrentUser(email: user.email)
                     isLoading = false
                     currentView = .content
-                case .failure(let failure):
-                    switch failure {
-                    case .updateFailed(let errorDescription):
-                        print("Failed to update user: \(errorDescription)")
-                        setupErrorMessage(message: "Failed to create user's information. Please try again")
-                        isLoading = false
-                    }
+                } catch {
+                    setupErrorMessage(message: "Failed to create user's information. Please try again")
+                    isLoading = false
                 }
             } else {
                 setupErrorMessage(message: "Can't update user because userInfo is nil")

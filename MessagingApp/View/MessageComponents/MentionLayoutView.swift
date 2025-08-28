@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MentionLayoutView: View {
-    let users: [UserInfo]
+    let users: [User]
     let appendNameToText: (String) -> Void
     
     let clickedBackgroundColor = Color("ButtonClickedBackgroundColor")
@@ -34,7 +34,7 @@ struct MentionLayoutView: View {
 }
 
 struct MentionButton: View {
-    let user: UserInfo
+    let user: User
     let onSelect: (String) -> Void
     @State private var isPressed = false
     
