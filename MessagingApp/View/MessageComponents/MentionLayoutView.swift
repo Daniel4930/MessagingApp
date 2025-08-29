@@ -53,7 +53,7 @@ struct MentionButton: View {
             HStack {
                 UserIconView(user: user)
                 
-                Text(user.displayName)
+                Text(user.displayName == "" ? user.userName : user.displayName)
                     .bold()
                 
                 Spacer()

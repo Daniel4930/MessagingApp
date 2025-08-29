@@ -58,28 +58,4 @@ class MessageComposerViewModel: ObservableObject {
             return nil
         }
     }
-//    
-//    func getFileURL() -> [URL?] {
-//        return selectionData.map { data in
-//            if data.fileType == .file, let url = data.url {
-//                return url
-//            }
-//            return nil
-//        }
-//    }
-//    
-//    func getVideoURL() -> [URL?] {
-//        return selectionData.map { data in
-//            if data.fileType == .video, let url = data.url {
-//                return url
-//            }
-//            return nil
-//        }
-//    }
-//    
-//    func addDataToUploadedFileWithUrl(url: URL , data: Data) {
-//        if let fileIndex = selectionData.firstIndex(where: { $0.url == url }) {
-//            selectionData[fileIndex].thumbnail = data
-//        }
-//    }
 }

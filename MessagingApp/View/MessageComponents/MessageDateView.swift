@@ -19,17 +19,15 @@ struct MessageDateView: View {
     
     var body: some View {
         HStack {
-            Rectangle()
-                .fill(.gray)
-                .frame(height: dividerLineThickness)
+            DividerView(color: .gray, thickness: dividerLineThickness)
+            
             Text(MessageDateView.dateHeaderFormatter.string(from: date))
                 .foregroundStyle(.gray)
                 .fontWeight(.bold)
                 .font(.footnote)
                 .padding(.horizontal, 8)
-            Rectangle()
-                .fill(.gray)
-                .frame(height: dividerLineThickness)
+            
+            DividerView(color: .gray, thickness: dividerLineThickness)
         }
     }
 }

@@ -10,7 +10,6 @@ import UIKit
 @MainActor
 class UserViewModel: ObservableObject {
     @Published var user: User?
-    @Published var userIcon: UIImage?
     
     func createNewUser(authId: String, data: User) async throws {
         do {

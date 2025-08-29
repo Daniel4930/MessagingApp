@@ -90,7 +90,7 @@ class FirebaseCloudStoreService {
     }
 
     /// Listens for the latest messages in a specific channel.
-    func listenForMessages(channelId: String, limit: Int = 20) -> AsyncThrowingStream<([Message], DocumentSnapshot?), Error> {
+    func listenForMessages(channelId: String, limit: Int = 10) -> AsyncThrowingStream<(messages: [Message], documentSnapshot: DocumentSnapshot?), Error> {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
                 .order(by: "date", descending: true)

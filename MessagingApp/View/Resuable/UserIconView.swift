@@ -5,6 +5,7 @@
 //  Created by Daniel Le on 7/16/25.
 //
 import SwiftUI
+import Kingfisher
 
 struct UserIconView: View {
     let user: User
@@ -12,7 +13,11 @@ struct UserIconView: View {
     let borderColor: Color
     let borderWidth: CGFloat
     
-    @EnvironmentObject var userViewModel: UserViewModel
+    // We can now remove the unused userViewModel
+    // @EnvironmentObject var userViewModel: UserViewModel
+    
+    // Add a state to handle loading failures
+    @State private var didFail = false
     
     init(user: User, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
         self.user = user
@@ -22,19 +27,22 @@ struct UserIconView: View {
     }
     
     var body: some View {
-        let urlString = URL(string: user.icon)
-        AsyncImage(url: urlString) { phase in
-            if let image = phase.image {
-                image
-                    .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-            } else if let _ = phase.error {
-                Image(systemName: "person.circle")
-                    .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
-            } else {
-                ProgressView()
-                    .frame(width: iconDimension.width, height: iconDimension.height)
-                    .clipShape(.circle)
-            }
+        if didFail {
+            Image(systemName: "person.circle")
+                .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
+        } else {
+            KFImage(URL(string: user.icon))
+                .placeholder {
+                    ProgressView()
+                        .frame(width: iconDimension.width, height: iconDimension.height)
+                        .clipShape(.circle)
+                }
+                .onFailure { _ in
+                    didFail = true
+                }
+                .resizable()
+                .cancelOnDisappear(true)
+                .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
         }
     }
 }

@@ -1,4 +1,3 @@
-
 //
 //  FriendViewModel.swift
 //  MessagingApp
@@ -12,11 +11,36 @@ import Foundation
 class FriendViewModel: ObservableObject {
     @Published var friends: [User] = []
     
+    // Cache for users who are not friends
+    @Published var fetchedUsers: [String: User] = [:]
+    
     func fetchFriends(for user: User) async {
         if !user.friends.isEmpty {
             self.friends = await FirebaseCloudStoreService.shared.fetchData(collection: FirebaseCloudStoreCollection.users, ids: user.friends)
         } else {
             self.friends = []
+        }
+    }
+    
+    /// Synchronously gets a user from local data if available (current user, friends, or cache).
+    func getUser(withId id: String, currentUser: User?) -> User? {
+        if let user = currentUser, user.id == id {
+            return user
+        }
+        if let friend = friends.first(where: { $0.id == id }) {
+            return friend
+        }
+        return fetchedUsers[id]
+    }
+    
+    /// Fetches a user from the server if they aren't available locally and adds them to the cache.
+    func fetchUserIfNeeded(withId id: String) async {
+        // Avoid re-fetching if user is already in the cache
+        guard fetchedUsers[id] == nil else { return }
+        
+        let users: [User] = await FirebaseCloudStoreService.shared.fetchData(collection: .users, ids: [id])
+        if let user = users.first {
+            fetchedUsers[id] = user
         }
     }
     
@@ -58,5 +82,16 @@ class FriendViewModel: ObservableObject {
         } catch {
             print("Failed to remove friend: \(error.localizedDescription)")
         }
+    }
+    
+    func getFriendDmChannel(memberIds: [String]) -> User? {
+        friends.first(where: { user in
+            if let id = user.id {
+                return memberIds.contains(id)
+            } else {
+                print("Id is nil")
+            }
+            return false
+        })
     }
 }

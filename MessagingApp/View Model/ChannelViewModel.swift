@@ -9,8 +9,7 @@ import Foundation
 import SwiftUI
 
 // A new struct to replace the tuple, making it Equatable and Identifiable.
-struct FriendChannelMap: Equatable, Identifiable {
-    var id: String { channel.id! }
+struct FriendChannelMap: Equatable {
     let friend: User
     let channel: Channel
 }
@@ -25,6 +24,29 @@ class ChannelViewModel: ObservableObject {
 
     deinit {
         channelListenerTask?.cancel()
+    }
+    
+    func formatLastMessageTime(time: Date) -> String {
+        let pastDate = Date().addingTimeInterval(time.timeIntervalSinceNow)
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        formatter.dateTimeStyle = .numeric
+        return formatter.string(for: pastDate)!
+    }
+    
+    /// Maps the dmChannels to their corresponding friend objects.
+    private func sortDmChannelWithFriends(currentUserId: String, friends: [User]) {
+        dmChannelsMapWithFriends = dmChannels.compactMap { channel -> FriendChannelMap? in
+            // Find the other member's ID in the channel
+            guard let friendId = channel.memberIds.first(where: { $0 != currentUserId }) else {
+                return nil
+            }
+            // Find the corresponding friend object from the provided list
+            guard let friend = friends.first(where: { $0.id == friendId }) else {
+                return nil
+            }
+            return FriendChannelMap(friend: friend, channel: channel)
+        }
     }
 
     /// Starts a listener to get real-time updates for all channels a user is a member of.
@@ -44,21 +66,6 @@ class ChannelViewModel: ObservableObject {
             } catch {
                 print("Error listening for channels: \(error.localizedDescription)")
             }
-        }
-    }
-    
-    /// Maps the dmChannels to their corresponding friend objects.
-    private func sortDmChannelWithFriends(currentUserId: String, friends: [User]) {
-        dmChannelsMapWithFriends = dmChannels.compactMap { channel -> FriendChannelMap? in
-            // Find the other member's ID in the channel
-            guard let friendId = channel.memberIds.first(where: { $0 != currentUserId }) else {
-                return nil
-            }
-            // Find the corresponding friend object from the provided list
-            guard let friend = friends.first(where: { $0.id == friendId }) else {
-                return nil
-            }
-            return FriendChannelMap(friend: friend, channel: channel)
         }
     }
     

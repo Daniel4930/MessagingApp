@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MessageCenter: View {
-    @State private var selectedFriend: User?
+    @State private var selectedDmChannel: Channel?
     @State private var selectedFriendIcon: User?
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -57,7 +57,7 @@ struct MessageCenter: View {
             ScrollView {
                 ScrollView([.horizontal]) {
                     HStack(spacing: 16) {
-                        ForEach(friendViewModel.friends) { friend in
+                        ForEach(friendViewModel.friends, id: \.id) { friend in
                             Button {
                                 selectedFriendIcon = friend
                             } label: {
@@ -77,13 +77,13 @@ struct MessageCenter: View {
                 .scrollIndicators(.hidden)
                 .padding(.vertical, 10)
                 
-                ForEach(channelViewModel.dmChannelsMapWithFriends) { map in
+                ForEach(channelViewModel.dmChannelsMapWithFriends, id: \.friend.id) { map in
                     let friend = map.friend
                     let channel = map.channel
                     let latestMessage = channel.lastMessage
                     
                     Button {
-                        selectedFriend = friend
+                        selectedDmChannel = channel
                         navViewModel.viewToShow = {
                             AnyView(
                                 DirectMessageView(channelInfo: channel)
@@ -97,32 +97,35 @@ struct MessageCenter: View {
                                     OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
                                 }
                             VStack(alignment: .leading, spacing: 0) {
-                                if let latestMessage = latestMessage {
+                                let displayName = friend.displayName
+                                let userName = friend.userName
+                                let nameToShow = displayName == "" ? userName : displayName
+                                
+                                if let latestMessage = latestMessage, let text = latestMessage.text {
                                     HStack {
-                                        Text(friend.displayName)
+                                        Text(nameToShow)
                                             .font(.subheadline)
                                             .bold()
                                         Spacer()
-                                        Text("\(latestMessage.timestamp.dateValue().formatted())")
+                                        Text(channelViewModel.formatLastMessageTime(time: latestMessage.timestamp.dateValue()))
                                             .font(.footnote)
                                     }
-                                    Text(latestMessage.text)
+                                    Text("\(latestMessage.senderId == friend.id ? nameToShow : "You"): \(text)")
                                         .font(.footnote)
                                         .lineLimit(1)
                                 } else {
-                                    Text(friend.displayName)
+                                    Text(nameToShow)
                                         .font(.subheadline)
                                         .bold()
-                                    Spacer()
                                 }
                             }
-                            .opacity(selectedFriend?.id == friend.id ? 1 : 0.4)
+                            .opacity(selectedDmChannel?.id == channel.id ? 1 : 0.4)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(10)
                         .background {
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(selectedFriend?.id == friend.id ? .white.opacity(0.1) : .clear)
+                                .fill(selectedDmChannel?.id == channel.id ? .white.opacity(0.1) : .clear)
                         }
                     }
                     .tint(.white)
@@ -131,12 +134,15 @@ struct MessageCenter: View {
         }
         .padding()
         .task {
-            guard let currentUser = userViewModel.user else { return }
-            channelViewModel.listenForChannels(userId: currentUser.id!, friends: friendViewModel.friends)
+            guard let currentUser = userViewModel.user, let userId = currentUser.id else { return }
+            channelViewModel.listenForChannels(userId: userId, friends: friendViewModel.friends)
+        }
+        .onAppear {
+            selectedDmChannel = channelViewModel.dmChannelsMapWithFriends.first?.channel
         }
         .onChange(of: channelViewModel.dmChannelsMapWithFriends) { oldMap, newMap in
-            if selectedFriend == nil, let first = newMap.first {
-                selectedFriend = first.friend
+            if selectedDmChannel == nil, let first = newMap.first {
+                selectedDmChannel = first.channel
                 navViewModel.viewToShow = {
                     AnyView(DirectMessageView(channelInfo: first.channel))
                 }

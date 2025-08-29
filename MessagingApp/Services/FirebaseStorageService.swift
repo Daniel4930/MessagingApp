@@ -10,6 +10,8 @@ import FirebaseStorage
 
 enum FirebaseStorageFolder {
     case images
+    case videos
+    case files
     case icons
 }
 
@@ -55,6 +57,10 @@ class FirebaseStorageService {
             path = "images/\(fileName)"
         case .icons:
             path = "icons/\(fileName)"
+        case .files:
+            path = "files/\(fileName)"
+        case .videos:
+            path = "videos/\(fileName)"
         }
         
         return storageRef.child(path)

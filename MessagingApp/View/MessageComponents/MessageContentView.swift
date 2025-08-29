@@ -28,20 +28,22 @@ struct MessageContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            AttributedTextView(text: message.text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
-                if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
-                    userToPresent = user
+            if let text = message.text {
+                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
+                    if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
+                        userToPresent = user
+                    }
                 }
-            }
-            .frame(height: customTextViewHeight)
-            .sheet(isPresented: $showSafari) {
-                if let url = URL(string: message.text) {
-                    SafariView(url: url)
+                .frame(height: customTextViewHeight)
+                .sheet(isPresented: $showSafari) {
+                    if let url = URL(string: text) {
+                        SafariView(url: url)
+                    }
                 }
-            }
-            .task {
-                if message.text.contains(linkRegexPattern) {
-                    retrieveMetaDataFromURL(url: message.text)
+                .task {
+                    if text.contains(linkRegexPattern) {
+                        retrieveMetaDataFromURL(url: text)
+                    }
                 }
             }
 

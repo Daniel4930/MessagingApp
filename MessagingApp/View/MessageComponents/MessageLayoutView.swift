@@ -11,7 +11,7 @@ struct MessageLayoutView: View {
     let messages: [Message]
     let time: Date
     
-    let iconDimension: (width: CGFloat, height: CGFloat) = (45, 45)
+    let iconDimension: CGSize = .init(width: 45, height: 45)
     static let messageTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "M/d/yy, hh:mm a"
@@ -20,29 +20,10 @@ struct MessageLayoutView: View {
     
     var body: some View {
         HStack(alignment: .top) {
-            let url = URL(string: user.icon)
-            
-            AsyncImage(url: url) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .frame(width: iconDimension.width, height: iconDimension.height)
-                        .clipShape(.circle)
-                } else if let _ = phase.error {
-                    Image(systemName: "person.fill")
-                        .resizable()
-                        .frame(width: iconDimension.width, height: iconDimension.height)
-                        .clipShape(.circle)
-                } else {
-                    Image(systemName: "person.fill")
-                        .resizable()
-                        .frame(width: iconDimension.width, height: iconDimension.height)
-                        .clipShape(.circle)
-                }
-            }
+            UserIconView(user: user, iconDimension: iconDimension)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    Text(user.displayName)
+                    Text(user.displayName == "" ? user.userName : user.displayName)
                         .font(.title3)
                         .bold()
                     Text(MessageLayoutView.messageTimeFormatter.string(from: time))
