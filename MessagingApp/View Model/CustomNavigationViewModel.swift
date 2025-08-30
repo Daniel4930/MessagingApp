@@ -13,7 +13,7 @@ class CustomNavigationViewModel: ObservableObject  {
     @Published var endingXOffset: CGFloat
     @Published var gestureDisabled: Bool
     @Published var viewToShow: (() -> AnyView)?
-    
+    @Published var exitSwipeAction: (() -> Void)?
     
     init() {
         self.currentXOffset = .zero
@@ -45,6 +45,9 @@ class CustomNavigationViewModel: ObservableObject  {
                 self.endingXOffset = -CustomNavigationViewModel.maxOffset
             } else if self.currentXOffset >= CustomNavigationViewModel.threshold {
                 self.endingXOffset = 0
+                if let exitSwipeAction {
+                    exitSwipeAction()
+                }
             }
             self.currentXOffset = 0
         }

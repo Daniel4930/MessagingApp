@@ -11,7 +11,6 @@
 		7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AA2E4FCC0C00429722 /* FirebaseCore */; };
 		7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AE2E4FDC8F00429722 /* FirebaseStorage */; };
 		7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0B02E4FDCE600429722 /* FirebaseAuth */; };
-		7A70E0B52E50221600429722 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0B42E50221600429722 /* FirebaseDatabase */; };
 		7A70E0BB2E506DF600429722 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0BA2E506DF600429722 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
@@ -77,7 +76,6 @@
 				7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */,
 				7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */,
 				7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */,
-				7A70E0B52E50221600429722 /* FirebaseDatabase in Frameworks */,
 				7A70E0BB2E506DF600429722 /* FirebaseFirestore in Frameworks */,
 				7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */,
 			);
@@ -143,7 +141,6 @@
 				7A70E0AA2E4FCC0C00429722 /* FirebaseCore */,
 				7A70E0AE2E4FDC8F00429722 /* FirebaseStorage */,
 				7A70E0B02E4FDCE600429722 /* FirebaseAuth */,
-				7A70E0B42E50221600429722 /* FirebaseDatabase */,
 				7A70E0BA2E506DF600429722 /* FirebaseFirestore */,
 				7A2B2C4F2E610B5F00C54E3A /* Kingfisher */,
 			);
@@ -644,11 +641,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
-		};
-		7A70E0B42E50221600429722 /* FirebaseDatabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseDatabase;
 		};
 		7A70E0BA2E506DF600429722 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -10,6 +10,8 @@ import SwiftUI
 struct MessageCenter: View {
     @State private var selectedDmChannel: Channel?
     @State private var selectedFriendIcon: User?
+    @State private var showSearchUser = false
+    @State private var showAddFriend = false
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
@@ -36,7 +38,10 @@ struct MessageCenter: View {
                 }
                 
                 Button {
-                    print("Add friends")
+                    showAddFriend = true
+                    navViewModel.exitSwipeAction = {
+                        showAddFriend = false
+                    }
                 } label: {
                     HStack {
                         Image(systemName: "person.fill.badge.plus")
@@ -145,6 +150,21 @@ struct MessageCenter: View {
                 selectedDmChannel = first.channel
                 navViewModel.viewToShow = {
                     AnyView(DirectMessageView(channelInfo: first.channel))
+                }
+            }
+        }
+        .onChange(of: showAddFriend) { oldValue, newValue in
+            if newValue {
+                navViewModel.viewToShow = {
+                    AnyView(AddFriendView(showAddFriend: $showAddFriend))
+                }
+                navViewModel.showView()
+            } else {
+                if let selectedDmChannel {
+                    navViewModel.hideView()
+                    navViewModel.viewToShow = {
+                        AnyView(DirectMessageView(channelInfo: selectedDmChannel))
+                    }
                 }
             }
         }

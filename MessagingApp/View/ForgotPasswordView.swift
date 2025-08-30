@@ -10,9 +10,9 @@ import SwiftUI
 struct ForgotPasswordView: View {
     @State private var email: String = ""
     @State private var emailErrorMessage: String = ""
-    @State private var generalMessage: String = ""
-    @State private var generalMessageColor: Color = .clear
-    @State private var generalMessageHeight: CGFloat = .zero
+    @State private var alertMessage: String = ""
+    @State private var alertBackgroundColor: Color = .clear
+    @State private var alertMessageHeight: CGFloat = .zero
     @State private var isLoading: Bool = false
     
     var body: some View {
@@ -25,7 +25,6 @@ struct ForgotPasswordView: View {
             
             VStack {
                 Text("A password reset link will be sent to your email.")
-                    .padding(.top, AlertMessageView.maxHeight)
                     .padding(.bottom)
                 
                 FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $emailErrorMessage, text: $email)
@@ -33,8 +32,9 @@ struct ForgotPasswordView: View {
                 Button {
                     hideKeyboard()
                     emailErrorMessage = ""
-                    generalMessage = ""
-                    generalMessageHeight = .zero
+                    alertBackgroundColor = .clear
+                    alertMessageHeight = .zero
+                    alertMessage = ""
                     isLoading = true
                     
                     if email.isEmpty {
@@ -50,10 +50,11 @@ struct ForgotPasswordView: View {
                 Spacer()
             }
             .padding(.horizontal)
-            .overlay(alignment: .top) {
-                AlertMessageView(text: $generalMessage, height: $generalMessageHeight, backgroundColor: $generalMessageColor)
-            }
         }
+        .overlay(alignment: .top) {
+            AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
+        }
+        .navigationBarBackButtonHidden(alertMessageHeight == AlertMessageView.maxHeight ? true : false)
     }
 }
 extension ForgotPasswordView {
@@ -63,17 +64,17 @@ extension ForgotPasswordView {
             case .invalidEmail:
                 emailErrorMessage = "Email is invalid"
             case .networkError:
-                generalMessage = "No internet connection. Please check your internet"
-                generalMessageHeight = AlertMessageView.maxHeight
-                generalMessageColor = .red
+                alertMessage = "No internet connection. Please check your internet"
+                alertBackgroundColor = .red
+                alertMessageHeight = AlertMessageView.maxHeight
             case .unknown:
-                generalMessage = "Unknown error. Please try again later"
-                generalMessageHeight = AlertMessageView.maxHeight
-                generalMessageColor = .red
+                alertMessage = "Unknown error. Please try again later"
+                alertBackgroundColor = .red
+                alertMessageHeight = AlertMessageView.maxHeight
             case nil:
-                generalMessage = "Reset password link sent. Please check your email"
-                generalMessageHeight = AlertMessageView.maxHeight
-                generalMessageColor = .green
+                alertMessage = "Reset password link sent. Please check your email"
+                alertBackgroundColor = .green
+                alertMessageHeight = AlertMessageView.maxHeight
             }
             isLoading = false
         }

@@ -19,9 +19,9 @@ struct SignupView: View {
     @State private var errorPasswordMessage: String = ""
     @State private var retypePassword: String = ""
     @State private var errorRetypePasswordMessage: String = ""
-    @State private var generalErrorMessage: String = ""
-    @State private var generalErrorMessageColor: Color = .clear
-    @State private var generalErrorMessageHeight: CGFloat = .zero
+    @State private var alertMessage: String = ""
+    @State private var alertBackgroundColor: Color = .clear
+    @State private var alertMessageHeight: CGFloat = .zero
     @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
@@ -37,7 +37,6 @@ struct SignupView: View {
                 VStack {
                     FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $errorEmailMessage, text: $email)
                         .padding(.bottom)
-                        .padding(.top, AlertMessageView.maxHeight)
                     
                     FormTextFieldView(formType: .password, formTitle: "Password", textFieldTitle: "Enter a password", errorMessage: $errorPasswordMessage, text: $password)
                     
@@ -59,7 +58,9 @@ struct SignupView: View {
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         errorRetypePasswordMessage = ""
-                        generalErrorMessage = ""
+                        alertBackgroundColor = .clear
+                        alertMessageHeight = .zero
+                        alertMessage = ""
                         isLoading = true
                         
                         if email.isEmpty {
@@ -88,12 +89,13 @@ struct SignupView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .overlay(alignment: .top) {
-                    AlertMessageView(text: $generalErrorMessage, height: $generalErrorMessageHeight, backgroundColor: $generalErrorMessageColor)
-                }
             }
         }
         .scrollDismissesKeyboard(.immediately)
+        .overlay(alignment: .top) {
+            AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
+        }
+        .navigationBarBackButtonHidden(alertMessageHeight == AlertMessageView.maxHeight ? true : false)
     }
 }
 
@@ -122,9 +124,9 @@ extension SignupView {
                         try await userViewModel.createNewUser(authId: authDataResult.user.uid, data: userInsert)
                     } catch {
                         isLoading = false
-                        generalErrorMessage = "Unable to sign up. Please try again"
-                        generalErrorMessageColor = .red
-                        generalErrorMessageHeight = AlertMessageView.maxHeight
+                        alertMessage = "Unable to sign up. Please try again"
+                        alertBackgroundColor = .red
+                        alertMessageHeight = AlertMessageView.maxHeight
                     }
                     await userViewModel.fetchCurrentUser(email: email)
                     
@@ -144,17 +146,17 @@ extension SignupView {
                     errorPasswordMessage = "Password is weak"
                     errorRetypePasswordMessage = "Password is weak"
                 case .operationNotAllowed:
-                    generalErrorMessage = "Server side error. Please try again"
-                    generalErrorMessageHeight = AlertMessageView.maxHeight
-                    generalErrorMessageColor = .red
+                    alertMessage = "Server side error. Please try again"
+                    alertBackgroundColor = .red
+                    alertMessageHeight = AlertMessageView.maxHeight
                 case .networkError:
-                    generalErrorMessage = "Not connected to the internet"
-                    generalErrorMessageHeight = AlertMessageView.maxHeight
-                    generalErrorMessageColor = .red
+                    alertMessage = "Not connected to the internet"
+                    alertBackgroundColor = .red
+                    alertMessageHeight = AlertMessageView.maxHeight
                 case .unknown:
-                    generalErrorMessage = "Unknown error"
-                    generalErrorMessageHeight = AlertMessageView.maxHeight
-                    generalErrorMessageColor = .red
+                    alertMessage = "Unknown error"
+                    alertBackgroundColor = .red
+                    alertMessageHeight = AlertMessageView.maxHeight
                 }
             }
         }

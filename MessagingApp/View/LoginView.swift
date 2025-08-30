@@ -14,8 +14,10 @@ struct LoginView: View {
     @State private var errorEmailMessage: String = ""
     @State private var password: String = ""
     @State private var errorPasswordMessage: String = ""
-    @State private var generalErrorMessage: String = ""
     @State private var isLoading: Bool = false
+    @State private var alertMessage: String = ""
+    @State private var alertMessageHeight: CGFloat = .zero
+    @State private var alertBackgroundColor: Color = .clear
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -31,11 +33,6 @@ struct LoginView: View {
                         hideKeyboard()
                     }
                 VStack {
-                    if !generalErrorMessage.isEmpty {
-                        Text(generalErrorMessage)
-                            .foregroundStyle(.red)
-                    }
-                    
                     FormTextFieldView(formType: .email, formTitle: "Email", textFieldTitle: "Enter an email", errorMessage: $errorEmailMessage, text: $email)
                         .padding(.bottom)
                     
@@ -60,7 +57,9 @@ struct LoginView: View {
                         hideKeyboard()
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
-                        generalErrorMessage = ""
+                        alertBackgroundColor = .clear
+                        alertMessageHeight = .zero
+                        alertMessage = ""
                         isLoading = true
                         
                         if email.isEmpty {
@@ -82,6 +81,9 @@ struct LoginView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
+            }
+            .overlay(alignment: .top) {
+                AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
             }
         }
     }
@@ -106,7 +108,9 @@ extension LoginView {
                         }
                     } else {
                         isLoading = false
-                        generalErrorMessage = "Failed to sign in. Please try again"
+                        alertBackgroundColor = .red
+                        alertMessageHeight = AlertMessageView.maxHeight
+                        alertMessage = "Failed to sign in. Please try again"
                     }
                 }
                 
@@ -115,18 +119,20 @@ extension LoginView {
                 DispatchQueue.main.async {
                     switch error {
                     case .wrongPassword, .invalidCredential:
-                        self.generalErrorMessage = "Either or both email and password are incorrect"
+                        self.alertMessage = "Either or both email and password are incorrect"
                     case .invalidEmail:
                         self.errorEmailMessage = "Email is invalid"
                     case .userDisabled:
-                        self.generalErrorMessage = "Your account has been disabled"
+                        self.alertMessage = "Your account has been disabled"
                     case .operationNotAllowed:
-                        self.generalErrorMessage = "Server side error. Please try again"
+                        self.alertMessage = "Server side error. Please try again"
                     case .networkError:
-                        self.generalErrorMessage = "Network error. Please check your internet connection"
+                        self.alertMessage = "Network error. Please check your internet connection"
                     case .unknown:
-                        self.generalErrorMessage = "Unknown error"
+                        self.alertMessage = "Unknown error"
                     }
+                    alertBackgroundColor = .red
+                    alertMessageHeight = AlertMessageView.maxHeight
                 }
             }
         }
