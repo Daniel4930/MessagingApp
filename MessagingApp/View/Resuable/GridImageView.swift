@@ -5,12 +5,12 @@
 //  Created by Daniel Le on 7/21/25.
 //
 import SwiftUI
+import Kingfisher
 
 struct GridImageView: View {
     let imageUrl: [String]
     let numImagePerRow = 3
     @State private var showImage = false
-    @State private var images: [Image] = []
     
     let firebaseStorageInstance = FirebaseStorageService.shared
     @EnvironmentObject var messageViewModel: MessageViewModel
@@ -26,39 +26,22 @@ struct GridImageView: View {
                     ForEach(startIndex..<endIndex, id: \.self) { index in
                         let photoUrl = URL(string: imageUrl[index])
 
-                        AsyncImage(url: photoUrl) { phase in
-                            if let image = phase.image {
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .onTapGesture {
-                                        showImage = true
-                                    }
-                                    .onAppear {
-                                        DispatchQueue.main.async {
-                                            self.images.append(image)
-                                        }
-                                    }
+                        KFImage(photoUrl)
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .onTapGesture {
+                                showImage = true
                             }
-                            else if let error = phase.error {
-                                Color.red
-                                    .onAppear {
-                                        print(error)
-                                    }
-                            } else {
-                                ProgressView()
-                                    .frame(width: 120, height: 120)
-                            }
-                        }
                     }
                 }
             }
         }
         .sheet(isPresented: $showImage) {
             TabView {
-                ForEach(0..<images.count, id: \.self) { index in
-                    images[index]
+                ForEach(0..<imageUrl.count, id: \.self) { index in
+                    let photoUrl = URL(string: imageUrl[index])
+                    KFImage(photoUrl)
                         .resizable()
                         .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 10))

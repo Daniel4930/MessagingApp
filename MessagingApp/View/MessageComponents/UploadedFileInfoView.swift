@@ -14,15 +14,13 @@ struct UploadedFileInfoView: View {
     
     var body: some View {
         ScrollView {            
-            if let dataToShow = messageComposerViewModel.dataToShow, let data = dataToShow.photoInfo?.image {
-                if let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: thumbnailSize.width, height: thumbnailSize.height)
-                        .padding(.vertical)
-                        .background(Color.primaryBackground)
-                }
+            if let dataToShow = messageComposerViewModel.dataToShow, let uiImage = dataToShow.photoInfo?.image {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: thumbnailSize.width, height: thumbnailSize.height)
+                    .padding(.vertical)
+                    .background(Color.primaryBackground)
                 
                 LineIndicator(color: .white, width: 70, height: 3)
                 

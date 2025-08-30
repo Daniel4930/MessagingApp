@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import Photos
+import FirebaseFirestore
 
 enum PhotoLibraryAccessStatus {
     case fullAccess
@@ -19,11 +20,10 @@ enum PhotoLibraryAccessStatus {
 
 struct SelectorView: View {
     let minHeight: CGFloat
+    let channelId: String
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var scrollToBottom: Bool
-    
-    let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
-    let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
+    @Binding var sendButton: Bool
     
     @State private var selectorHeight: CGFloat = .zero
     @State private var openCamera = false
@@ -31,29 +31,20 @@ struct SelectorView: View {
     @State private var accessStatus: PhotoLibraryAccessStatus?
     @State private var assets: [PHAsset] = []
     @State private var enableHighPriorityGesture = false
+    
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
+    
+    let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
+    let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     
     var gesture: some Gesture {
         DragGesture()
             .onChanged { dragValue in
-                if dragValue.translation.height < 0 && selectorHeight <= selectorMaxHeight {
-                    if selectorHeight + abs(dragValue.translation.height) <= selectorMaxHeight {
-                        selectorHeight += abs(dragValue.translation.height)
-                    }
-                }
-                if dragValue.translation.height > 0 && selectorHeight > minHeight {
-                    if selectorHeight + dragValue.translation.height > minHeight {
-                        selectorHeight -= dragValue.translation.height
-                    }
-                }
+                onDragChanged(dragValue)
             }
             .onEnded { dragValue in
-                if selectorHeight > threshold {
-                    selectorHeight = selectorMaxHeight
-                } else {
-                    selectorHeight = minHeight
-                }
+                onDragEnded(dragValue)
             }
     }
     
@@ -105,7 +96,7 @@ struct SelectorView: View {
             .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight)
             .overlay(alignment: .bottom) {
                 if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
-                    CustomSendButtonView(messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, minHeight: minHeight)
+                    CustomSendButtonView(channelId: channelId, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, sendButton: $sendButton, minHeight: minHeight)
                 }
             }
         }
@@ -125,6 +116,27 @@ struct SelectorView: View {
 }
 
 extension SelectorView {
+    func onDragChanged(_ dragValue: DragGesture.Value) {
+        if dragValue.translation.height < 0 && selectorHeight <= selectorMaxHeight {
+            if selectorHeight + abs(dragValue.translation.height) <= selectorMaxHeight {
+                selectorHeight += abs(dragValue.translation.height)
+            }
+        }
+        if dragValue.translation.height > 0 && selectorHeight > minHeight {
+            if selectorHeight + dragValue.translation.height > minHeight {
+                selectorHeight -= dragValue.translation.height
+            }
+        }
+    }
+    
+    func onDragEnded(_ dragValue: DragGesture.Value) {
+        if selectorHeight > threshold {
+            selectorHeight = selectorMaxHeight
+        } else {
+            selectorHeight = minHeight
+        }
+    }
+    
     func handlePhotoLibraryAccessRequest() {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
             switch status {
@@ -165,9 +177,11 @@ extension SelectorView {
 }
 
 struct CustomSendButtonView: View {
+    let channelId: String
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var scrollToBottom: Bool
     @Binding var height: CGFloat
+    @Binding var sendButton: Bool
     let minHeight: CGFloat
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
@@ -182,26 +196,32 @@ struct CustomSendButtonView: View {
             .allowsHitTesting(false)
                 .overlay(alignment: .bottomTrailing) {
                     SendButtonView {
-//                        messageViewModel.addMessage (
-//                            senderId: userViewModel.user!.id!,
-//                            text: messageComposerViewModel.finalizeText(),
-//                            images: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getPhotoURL(),
-//                            files: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getFileURL(),
-//                            videos: messageComposerViewModel.selectionData == [] ? [] : messageComposerViewModel.getVideoURL(),
-//                            channelId: .dm,
-//                            reaction: nil,
-//                            replyMessageId: nil,
-//                            forwardMessageId: nil,
-//                            edited: false
-//                        )
-                        messageComposerViewModel.uiTextView.text = ""
-                        messageComposerViewModel.selectionData = []
-                        messageComposerViewModel.showSendButton = false
-                        messageComposerViewModel.customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
-                        scrollToBottom = true
+                        Task {
+                            sendButton = true
+                            do {
+                                try await messageViewModel.uploadFilesAndSendMessage(
+                                    senderId: userViewModel.user?.id,
+                                    selectionData: messageComposerViewModel.selectionData,
+                                    channelId: channelId,
+                                    finalizedText: messageComposerViewModel.finalizeText()
+                                )
+                                
+                                // Reset composer state on success
+                                messageComposerViewModel.uiTextView.text = ""
+                                messageComposerViewModel.selectionData = []
+                                messageComposerViewModel.showSendButton = false
+                                messageComposerViewModel.customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
+                                scrollToBottom = true
+                            } catch {
+                                print("Error sending message: \(error.localizedDescription)")
+                                // TODO: Show an error alert to the user
+                            }
+                            sendButton = false
+                        }
                         height = minHeight
                     }
                     .padding([.trailing, .vertical], 20)
+                    .disabled(sendButton)
                 }
         }
         .frame(maxWidth: .infinity)

@@ -1,5 +1,5 @@
 //
-//  SelectedDataImagePreview.swift
+//  SelectedImagePreview.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 8/8/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SelectedDataImagePreview: View {
+struct SelectedImagePreview: View {
     let image: UIImage
     let index: Int
     @Binding var showPhotoAndFile: Bool

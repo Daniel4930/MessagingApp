@@ -116,4 +116,12 @@ extension FirebaseStorageService {
             }
         }
     }
+    
+    func uploadFile(reference: StorageReference, fileUrl: URL) async throws -> URL {
+        return try await withCheckedThrowingContinuation { continuation in
+            uploadFileToBucket(reference: reference, url: fileUrl) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
 }

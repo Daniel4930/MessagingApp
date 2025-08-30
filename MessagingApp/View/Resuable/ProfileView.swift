@@ -95,7 +95,7 @@ private extension ProfileView {
                 .font(.subheadline)
                 .bold()
                 .padding(.bottom, 4)
-            Text(user.registeredDate.dateValue().formatted(.dateTime.month(.abbreviated).day().year()))
+            Text(user.registeredDate!.dateValue().formatted(.dateTime.month(.abbreviated).day().year()))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

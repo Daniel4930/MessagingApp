@@ -15,6 +15,7 @@ struct MessageLayoutView: View {
     static let messageTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "M/d/yy, hh:mm a"
+        formatter.timeZone = .current
         return formatter
     }()
     
@@ -23,7 +24,7 @@ struct MessageLayoutView: View {
             UserIconView(user: user, iconDimension: iconDimension)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    Text(user.displayName == "" ? user.userName : user.displayName)
+                    Text(user.displayName.isEmpty ? user.userName : user.displayName)
                         .font(.title3)
                         .bold()
                     Text(MessageLayoutView.messageTimeFormatter.string(from: time))

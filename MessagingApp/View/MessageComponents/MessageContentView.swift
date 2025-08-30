@@ -18,8 +18,8 @@ struct MessageContentView: View {
     @State private var embededImage: UIImage?
     @State private var showEmbeded: Bool = false
     @State private var showSafari: Bool = false
-    @State private var embededImageDimension: (width: CGFloat, height: CGFloat) = (0, 0)
-    @State private var linkEmbededViewDimension: (width: CGFloat, height: CGFloat) = (0, 0)
+    @State private var embededImageDimension: CGSize = .zero
+    @State private var linkEmbededViewDimension: CGSize = .zero
     @State private var userToPresent: User?
     @State private var customTextViewHeight: CGFloat = .zero
     
@@ -34,17 +34,17 @@ struct MessageContentView: View {
                         userToPresent = user
                     }
                 }
-                .frame(height: customTextViewHeight)
-                .sheet(isPresented: $showSafari) {
-                    if let url = URL(string: text) {
-                        SafariView(url: url)
+                    .frame(height: customTextViewHeight)
+                    .sheet(isPresented: $showSafari) {
+                        if let url = URL(string: text) {
+                            SafariView(url: url)
+                        }
                     }
-                }
-                .task {
-                    if text.contains(linkRegexPattern) {
-                        retrieveMetaDataFromURL(url: text)
+                    .task {
+                        if text.contains(linkRegexPattern) {
+                            retrieveMetaDataFromURL(url: text)
+                        }
                     }
-                }
             }
 
             if showEmbeded {

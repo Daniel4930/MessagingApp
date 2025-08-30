@@ -27,14 +27,14 @@ struct UploadedFile: Equatable {
 
 struct PhotoFile {
     let name: String
-    let image: Data
+    let image: UIImage
 }
 
 struct VideoFile {
     let name: String
     let duration: Double
-    let videoData: Data
-    let thumbnail: Data
+    let videoFileUrl: URL
+    let thumbnail: UIImage
 }
 
 struct FileData {

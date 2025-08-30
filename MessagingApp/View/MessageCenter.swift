@@ -99,7 +99,7 @@ struct MessageCenter: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 let displayName = friend.displayName
                                 let userName = friend.userName
-                                let nameToShow = displayName == "" ? userName : displayName
+                                let nameToShow = displayName.isEmpty ? userName : displayName
                                 
                                 if let latestMessage = latestMessage, let text = latestMessage.text {
                                     HStack {

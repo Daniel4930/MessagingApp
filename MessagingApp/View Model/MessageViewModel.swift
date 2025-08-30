@@ -14,6 +14,13 @@ struct MessageMap {
     var documentSnapshot: DocumentSnapshot?
 }
 
+enum UploadError: Error {
+    case missingData
+    case missingFileName
+    case missingUserInfo
+    case uploadFailed(String)
+}
+
 @MainActor
 class MessageViewModel: ObservableObject {
     @Published var messages: [MessageMap] = []
@@ -44,12 +51,92 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    func sendMessage(channelId: String, message: Message) async {
+    private func sendMessage(channelId: String, message: Message) async {
         do {
             try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
         } catch {
             print("Failed to send message \(error.localizedDescription)")
         }
+    }
+    
+    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channelId: String, finalizedText: String?) async throws {
+        guard let senderId = senderId else { throw UploadError.missingUserInfo }
+        
+        var photoUrls: [String] = []
+        var fileUrls: [String] = []
+        
+        try await withThrowingTaskGroup(of: (url: URL?, fileType: UploadedFile.FileType).self) { group in
+            for file in selectionData {
+                group.addTask {
+                    var fileData: Data?
+                    var fileUrl: URL?
+                    let fileName: String
+                    let storageFolder: FirebaseStorageFolder
+                    var downloadUrl: URL?
+                    
+                    // Extract data and metadata from the UploadedFile struct
+                    switch file.fileType {
+                    case .photo:
+                        guard let photoInfo = file.photoInfo else { throw UploadError.missingData }
+                        fileData = photoInfo.image.pngData()
+                        fileName = photoInfo.name
+                        storageFolder = .images
+                    case .video:
+                        guard let videoInfo = file.videoInfo else { throw UploadError.missingData }
+                        fileUrl = videoInfo.videoFileUrl
+                        fileName = videoInfo.name
+                        storageFolder = .videos
+                    case .file:
+                        guard let fileInfo = file.fileInfo else { throw UploadError.missingData }
+                        fileData = fileInfo.data
+                        fileName = fileInfo.name
+                        storageFolder = .files
+                    }
+                    
+                    let storageRef = FirebaseStorageService.shared.createChildReference(
+                        folder: storageFolder,
+                        fileName: fileName
+                    )
+                    
+                    if let fileUrl {
+                        downloadUrl = try await FirebaseStorageService.shared.uploadFile(reference: storageRef, fileUrl: fileUrl)
+                    } else if let fileData {
+                        downloadUrl = try await FirebaseStorageService.shared.uploadData(reference: storageRef, data: fileData)
+                    }
+                    return (url: downloadUrl, fileType: file.fileType)
+                }
+            }
+            
+            for try await result in group {
+                if let url = result.url {
+                    switch result.fileType {
+                    case .photo:
+                        photoUrls.append(url.absoluteString)
+                    case .video, .file:
+                        fileUrls.append(url.absoluteString)
+                    }
+                }
+            }
+        }
+        
+        guard finalizedText != nil || !photoUrls.isEmpty || !fileUrls.isEmpty else {
+            print("Cannot send an empty message")
+            return
+        }
+        
+        let message = Message (
+            senderId: senderId,
+            text: finalizedText,
+            photoUrls: photoUrls,
+            fileUrls: fileUrls,
+            date: Timestamp(),
+            edited: false,
+            reaction: nil,
+            forwardMessageId: nil,
+            replayMessageId: nil
+        )
+        
+        await sendMessage(channelId: channelId, message: message)
     }
 
     // MARK: - Message Grouping
@@ -80,8 +167,10 @@ class MessageViewModel: ObservableObject {
         var result: [Date: [Message]] = [:]
         
         for message in messages {
-            let date = Calendar.current.startOfDay(for: message.date.dateValue())
-            result[date, default: []].append(message)
+            if let date = message.date {
+                let date = Calendar.current.startOfDay(for: date.dateValue())
+                result[date, default: []].append(message)
+            }
         }
         return result.sorted { $0.key < $1.key }
     }
@@ -91,9 +180,11 @@ class MessageViewModel: ObservableObject {
         let calendar = Calendar.current
         
         for message in messages {
-            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: message.date.dateValue())
-            if let date = calendar.date(from: components) {
-                result[date, default: []].append(message)
+            if let date = message.date {
+                let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date.dateValue())
+                if let date = calendar.date(from: components) {
+                    result[date, default: []].append(message)
+                }
             }
         }
         return result.sorted { $0.key < $1.key }
@@ -105,9 +196,9 @@ class MessageViewModel: ObservableObject {
         
         var currentGroup: [Message] = []
         for message in messages {
-            if let lastMessage = currentGroup.last {
+            if let lastMessage = currentGroup.last, let date = message.date, let lastMessageDate = lastMessage.date {
                 let sameUser = lastMessage.senderId == message.senderId
-                let sameMinute = Calendar.current.isDate(lastMessage.date.dateValue(), equalTo: message.date.dateValue(), toGranularity: .minute)
+                let sameMinute = Calendar.current.isDate(lastMessageDate.dateValue(), equalTo: date.dateValue(), toGranularity: .minute)
                 
                 if sameUser && sameMinute {
                     currentGroup.append(message)

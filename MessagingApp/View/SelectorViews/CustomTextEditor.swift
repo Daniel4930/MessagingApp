@@ -36,7 +36,7 @@ struct CustomTextEditor: View {
             if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
                 let displayName = friend.displayName
                 
-                Text("Message @\(displayName == "" ? friend.userName : displayName)")
+                Text("Message @\(displayName.isEmpty ? friend.userName : displayName)")
                     .padding(.horizontal)
                     .foregroundStyle(.gray)
             }

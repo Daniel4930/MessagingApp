@@ -17,11 +17,11 @@ struct PhotoAndFileHoriScrollView: View {
         ScrollView([.horizontal]) {
             HStack {
                 ForEach(Array(messageComposerViewModel.selectionData.enumerated()), id: \.offset) { index, uploadData in
-                    if uploadData.fileType == .photo, let photoInfo = uploadData.photoInfo, let uiImage = UIImage(data: photoInfo.image) {
-                        SelectedDataImagePreview(image: uiImage, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
+                    if uploadData.fileType == .photo, let photoInfo = uploadData.photoInfo {
+                        SelectedImagePreview(image: photoInfo.image, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                     }
-                    else if uploadData.fileType == .video, let videoInfo = uploadData.videoInfo, let uiImage = UIImage(data: videoInfo.thumbnail) {
-                        SelectedDataImagePreview(image: uiImage, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
+                    else if uploadData.fileType == .video, let videoInfo = uploadData.videoInfo {
+                        SelectedImagePreview(image: videoInfo.thumbnail, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                             .overlay(alignment: .bottomLeading) {
                                 Image(systemName: "play.fill")
                                     .resizable()

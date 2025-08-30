@@ -93,7 +93,7 @@ class FirebaseCloudStoreService {
     func listenForMessages(channelId: String, limit: Int = 10) -> AsyncThrowingStream<(messages: [Message], documentSnapshot: DocumentSnapshot?), Error> {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
-                .order(by: "date", descending: true)
+                .order(by: "date", descending: false)
                 .limit(to: limit)
                 .addSnapshotListener { querySnapshot, error in
                     if let error = error {
@@ -134,14 +134,19 @@ class FirebaseCloudStoreService {
         let batch = db.batch()
         
         // 1. Create the new message document in the subcollection
-        let messageRef = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue).document()
-        let messageData = try Firestore.Encoder().encode(message)
+        let messageRef = db
+            .collection(FirebaseCloudStoreCollection.channels.rawValue)
+            .document(channelId)
+            .collection(FirebaseCloudStoreCollection.messages.rawValue)
+            .document()
+        var messageData = try Firestore.Encoder().encode(message)
+        messageData["date"] = FieldValue.serverTimestamp()
         batch.setData(messageData, forDocument: messageRef)
         
         // 2. Update the parent channel document
         let channelRef = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId)
         let lastMessageData = try Firestore.Encoder().encode(lastMessage)
-        batch.updateData(["lastMessage": lastMessageData, "lastActivity": message.date], forDocument: channelRef)
+        batch.updateData(["lastMessage": lastMessageData, "lastActivity": message.date as Any], forDocument: channelRef)
         
         try await batch.commit()
     }
@@ -176,6 +181,6 @@ extension LastMessage {
     init?(from message: Message) {
         self.senderId = message.senderId
         self.text = message.text
-        self.timestamp = message.date
+        self.timestamp = message.date!
     }
 }

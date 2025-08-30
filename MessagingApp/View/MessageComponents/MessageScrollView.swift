@@ -20,19 +20,16 @@ struct MessageScrollView: View {
         let dayGroups = messageViewModel.groupedMessages(for: channelInfo.id!)
         
         ScrollView {
-            if dayGroups.isEmpty {
-                EmptyMessageView()
-            } else {
-                ForEach(dayGroups, id: \.date) { dayGroup in
-                    VStack(alignment: .leading) {
+            LazyVStack(alignment: .leading) {
+                if dayGroups.isEmpty {
+                    EmptyMessageView()
+                } else {
+                    ForEach(dayGroups, id: \.date) { dayGroup in
                         MessageDateView(date: dayGroup.date)
                             .padding(.horizontal, 13)
                         
                         ForEach(dayGroup.messageGroups, id: \.time) { messageGroup in
                             ForEach(messageGroup.userGroups, id: \.userId) { userGroup in
-                                // The user object should be available now after the .task modifier fetches it.
-                                // If it's nil for a brief moment, SwiftUI will simply not render this part
-                                // and will update once the user is fetched and published.
                                 if let user = friendViewModel.getUser(withId: userGroup.userId, currentUser: userViewModel.user) {
                                     MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time)
                                 }

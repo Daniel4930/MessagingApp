@@ -16,6 +16,7 @@ struct DirectMessageView: View {
     @State private var scrollToBottom: Bool = false
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
+    @State private var sendButton = false
     @StateObject private var messageComposerViewModel = MessageComposerViewModel()
     @FocusState private var focusedField: Field?
     @EnvironmentObject var keyboardProvider: KeyboardProvider
@@ -41,7 +42,7 @@ struct DirectMessageView: View {
                     PhotoAndFileHoriScrollView(messageComposerViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
-                MessagingBarLayoutView(channelId: channelInfo.id!, showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
+                MessagingBarLayoutView(channelId: channelInfo.id!, sendButton: $sendButton, showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
             }
             .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
             .onChange(of: focusedField) { oldValue, newValue in
@@ -51,7 +52,7 @@ struct DirectMessageView: View {
             }
             .overlay(alignment: .bottom) {
                 if showFileAndImageSelector {
-                    SelectorView(minHeight: keyboardProvider.height, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom)
+                    SelectorView(minHeight: keyboardProvider.height, channelId: channelInfo.id!, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, sendButton: $sendButton)
                         .offset(y: proxy.safeAreaInsets.bottom)
                         .onAppear {
                             hideKeyboard()

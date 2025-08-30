@@ -21,7 +21,7 @@ struct User: Codable, Identifiable, Equatable {
     let email: String
     let userName: String // Unique
     let displayName: String
-    let registeredDate: Timestamp
+    @ServerTimestamp var registeredDate: Timestamp?
     let icon: String // Get the image from firebase storage (path)
     let onlineStatus: OnlineStatus.RawValue
     let aboutMe: String

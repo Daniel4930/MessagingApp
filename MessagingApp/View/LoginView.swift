@@ -99,13 +99,7 @@ extension LoginView {
                         if user.userName.isEmpty {
                             isLoading = false
                             currentView = .newUser
-                        } else {
-                            guard let userId = user.id else {
-                                isLoading = false
-                                generalErrorMessage = "Failed to sign in. Please try again"
-                                return
-                            }
-                            
+                        } else {                            
                             await friendViewModel.fetchFriends(for: user)
                             isLoading = false
                             currentView = .content

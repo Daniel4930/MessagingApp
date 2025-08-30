@@ -11,7 +11,7 @@ struct EmbededLinkLayoutView: View {
     let embededTitle: String
     let embededDescription: String
     let embededImage: UIImage?
-    @Binding var embededImageDimension: (width: CGFloat, height: CGFloat)
+    @Binding var embededImageDimension: CGSize
     
     var body: some View {
         VStack(alignment: .leading) {

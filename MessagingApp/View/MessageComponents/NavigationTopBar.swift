@@ -34,7 +34,7 @@ struct NavigationTopBar: View {
                             OnlineStatusCircle(status: friend.onlineStatus, color: Color("PrimaryBackgroundColor"))
                         }
                     
-                    Text(friend.displayName)
+                    Text(friend.displayName.isEmpty ? friend.userName : friend.displayName)
                         .font(.title3)
                         .bold()
                     Image(systemName: "chevron.right")
