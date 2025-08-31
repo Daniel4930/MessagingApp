@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseMessaging
 
 @MainActor
 struct SignupView: View {
@@ -165,6 +166,15 @@ extension SignupView {
     func setupUserInsert(authDataResult: AuthDataResult) -> User? {
         guard let email = authDataResult.user.email else { return nil }
         guard let registeredDate = authDataResult.user.metadata.creationDate else { return nil }
+        var fmcToken: String?
+        
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("Error fetching FCM registration token: \(error.localizedDescription)")
+            } else if let token = token {
+                fmcToken = token
+            }
+        }
         
         let user = User (
             email: email,
@@ -176,7 +186,8 @@ extension SignupView {
             aboutMe: "",
             bannerColor: "",
             friends: [],
-            channelId: []
+            channelId: [],
+            fcmToken: fmcToken
         )
         return user
     }

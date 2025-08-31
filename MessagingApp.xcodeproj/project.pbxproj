@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 7A2B2C4F2E610B5F00C54E3A /* Kingfisher */; };
+		7A4309472E63B8DB0052D45C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7A4309462E63B8DB0052D45C /* FirebaseMessaging */; };
 		7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AA2E4FCC0C00429722 /* FirebaseCore */; };
 		7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AE2E4FDC8F00429722 /* FirebaseStorage */; };
 		7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0B02E4FDCE600429722 /* FirebaseAuth */; };
 		7A70E0BB2E506DF600429722 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0BA2E506DF600429722 /* FirebaseFirestore */; };
+		7AB4713D2E64F3D0006597F9 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7AB4713C2E64F3D0006597F9 /* FirebaseFunctions */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +75,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A4309472E63B8DB0052D45C /* FirebaseMessaging in Frameworks */,
+				7AB4713D2E64F3D0006597F9 /* FirebaseFunctions in Frameworks */,
 				7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */,
 				7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */,
 				7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */,
@@ -143,6 +147,8 @@
 				7A70E0B02E4FDCE600429722 /* FirebaseAuth */,
 				7A70E0BA2E506DF600429722 /* FirebaseFirestore */,
 				7A2B2C4F2E610B5F00C54E3A /* Kingfisher */,
+				7A4309462E63B8DB0052D45C /* FirebaseMessaging */,
+				7AB4713C2E64F3D0006597F9 /* FirebaseFunctions */,
 			);
 			productName = MessagingApp;
 			productReference = 7A843DC72E1E6908003B69F4 /* MessagingApp.app */;
@@ -428,12 +434,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MessagingApp/MessagingApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4GFZH8QBGY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MessagingApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take pictures and videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record audio for videos";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app requires Photo Library access to manage photos and videos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -463,12 +473,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MessagingApp/MessagingApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4GFZH8QBGY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MessagingApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take pictures and videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record audio for videos";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app requires Photo Library access to manage photos and videos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -627,6 +641,11 @@
 			package = 7A2B2C4E2E610B5F00C54E3A /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
 		};
+		7A4309462E63B8DB0052D45C /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
 		7A70E0AA2E4FCC0C00429722 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -646,6 +665,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		7AB4713C2E64F3D0006597F9 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

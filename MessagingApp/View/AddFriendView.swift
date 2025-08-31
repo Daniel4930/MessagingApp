@@ -19,12 +19,14 @@ struct AddFriendView: View {
     var body: some View {
         ZStack {
             Color.clear
+                .contentShape(Rectangle())
                 .onTapGesture {
                     hideKeyboard()
                 }
             VStack {
                 ZStack {
                     Button {
+                        hideKeyboard()
                         showAddFriend = false
                     } label: {
                         Image(systemName: "arrow.left")

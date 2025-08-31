@@ -28,4 +28,5 @@ struct User: Codable, Identifiable, Equatable {
     let bannerColor: String // in hex
     var friends: [String]
     let channelId: [String]
+    var fcmToken: String?
 }

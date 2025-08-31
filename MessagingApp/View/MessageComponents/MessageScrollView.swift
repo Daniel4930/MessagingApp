@@ -17,7 +17,7 @@ struct MessageScrollView: View {
     @EnvironmentObject var friendViewModel: FriendViewModel
     
     var body: some View {
-        let dayGroups = messageViewModel.groupedMessages(for: channelInfo.id!)
+        let dayGroups = channelInfo.id == nil ? [] : messageViewModel.groupedMessages(for: channelInfo.id!)
         
         ScrollView {
             LazyVStack(alignment: .leading) {

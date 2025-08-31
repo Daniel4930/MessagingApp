@@ -42,7 +42,7 @@ struct DirectMessageView: View {
                     PhotoAndFileHoriScrollView(messageComposerViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
                 }
                 
-                MessagingBarLayoutView(channelId: channelInfo.id!, sendButton: $sendButton, showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
+                MessagingBarLayoutView(channel: channelInfo, sendButton: $sendButton, showFileAndImageSelector: $showFileAndImageSelector, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
             }
             .padding(.bottom, (focusedField != nil || showFileAndImageSelector) ? keyboardProvider.height - proxy.safeAreaInsets.bottom : 0)
             .onChange(of: focusedField) { oldValue, newValue in
@@ -52,7 +52,7 @@ struct DirectMessageView: View {
             }
             .overlay(alignment: .bottom) {
                 if showFileAndImageSelector {
-                    SelectorView(minHeight: keyboardProvider.height, channelId: channelInfo.id!, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, sendButton: $sendButton)
+                    SelectorView(minHeight: keyboardProvider.height, channel: channelInfo, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, sendButton: $sendButton)
                         .offset(y: proxy.safeAreaInsets.bottom)
                         .onAppear {
                             hideKeyboard()
@@ -63,7 +63,7 @@ struct DirectMessageView: View {
                 UploadedFileInfoView(messageComposerViewModel: messageComposerViewModel)
                     .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
-            .onAppear {
+            .task(id: channelInfo.id) {
                 guard let id = channelInfo.id else {
                     print("Channel id is nil")
                     return

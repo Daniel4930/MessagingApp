@@ -16,6 +16,7 @@ struct NavigationTopBar: View {
     var body: some View {
         HStack {
             Button {
+                hideKeyboard()
                 navViewModel.hideView()
             } label: {
                 Image(systemName: "arrow.left")

@@ -20,7 +20,7 @@ enum PhotoLibraryAccessStatus {
 
 struct SelectorView: View {
     let minHeight: CGFloat
-    let channelId: String
+    let channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var scrollToBottom: Bool
     @Binding var sendButton: Bool
@@ -96,7 +96,7 @@ struct SelectorView: View {
             .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight)
             .overlay(alignment: .bottom) {
                 if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
-                    CustomSendButtonView(channelId: channelId, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, sendButton: $sendButton, minHeight: minHeight)
+                    CustomSendButtonView(channel: channel, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, sendButton: $sendButton, minHeight: minHeight)
                 }
             }
         }
@@ -177,7 +177,7 @@ extension SelectorView {
 }
 
 struct CustomSendButtonView: View {
-    let channelId: String
+    let channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var scrollToBottom: Bool
     @Binding var height: CGFloat
@@ -202,7 +202,7 @@ struct CustomSendButtonView: View {
                                 try await messageViewModel.uploadFilesAndSendMessage(
                                     senderId: userViewModel.user?.id,
                                     selectionData: messageComposerViewModel.selectionData,
-                                    channelId: channelId,
+                                    channel: channel,
                                     finalizedText: messageComposerViewModel.finalizeText()
                                 )
                                 

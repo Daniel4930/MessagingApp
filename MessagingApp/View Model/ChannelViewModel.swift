@@ -76,28 +76,16 @@ class ChannelViewModel: ObservableObject {
             return existingChannel
         }
         
-        // If not, create a new one.
+        // If not, create a new local (temporary) channel.
         guard let otherUserId = otherUser.id else { return nil }
         
-        let newChannel = ChannelInsert(
+        let temporaryChannel = Channel(
+            id: nil, // No ID yet, as it's not in Firestore
             memberIds: [currentUserId, otherUserId],
-            type: ChannelType.dm.rawValue
+            type: ChannelType.dm.rawValue,
+            lastActivity: nil,
+            lastMessage: nil
         )
-        
-        do {
-            let documentId = try await FirebaseCloudStoreService.shared.addDocument(
-                collection: .channels,
-                data: newChannel
-            )
-            
-            // The active listener will pick up the new channel automatically.
-            // For immediate UI updates, we can return a temporary local copy of the channel.
-            var temporaryChannel = Channel(id: nil, memberIds: newChannel.memberIds, type: newChannel.type, lastActivity: nil, lastMessage: nil)
-            temporaryChannel.id = documentId
-            return temporaryChannel
-        } catch {
-            print("Error creating DM channel: \(error.localizedDescription)")
-            return nil
-        }
+        return temporaryChannel
     }
 }

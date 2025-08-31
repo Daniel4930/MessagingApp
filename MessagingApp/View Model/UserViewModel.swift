@@ -31,4 +31,9 @@ class UserViewModel: ObservableObject {
             return friends.first(where: { $0.userName == name })
         }
     }
+    
+    func updateUserFCMToken(_ token: String) async {
+        guard let userId = user?.id else { return }
+        await FirebaseCloudStoreService.shared.updateUserFCMToken(userId: userId, token: token)
+    }
 }

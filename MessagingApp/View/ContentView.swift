@@ -14,17 +14,31 @@ enum CurrentView {
 }
 
 struct ContentView: View {
+    @EnvironmentObject var userViewModel: UserViewModel
     @State private var currentView: CurrentView = .login
     
     var body: some View {
-        switch currentView {
-        case .login:
-            LoginView(currentView: $currentView)
-        case .content:
-            TabsView()
-        case .newUser:
-            NewUserView(currentView: $currentView)
-        }
+//        Group {
+            switch currentView {
+            case .login:
+                LoginView(currentView: $currentView)
+            case .content:
+                TabsView()
+            case .newUser:
+                NewUserView(currentView: $currentView)
+            }
+//        }
+//        .onAppear(perform: setupFCMTokenObserver)
     }
+    
+//    private func setupFCMTokenObserver() {
+//        NotificationCenter.default.addObserver(forName: Notification.Name("FCMToken"), object: nil, queue: .main) { notification in
+//            if let token = notification.userInfo?["token"] as? String {
+//                Task {
+//                    await userViewModel.updateUserFCMToken(token)
+//                }
+//            }
+//        }
+//    }
 }
 

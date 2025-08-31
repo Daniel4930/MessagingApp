@@ -174,6 +174,14 @@ class FirebaseCloudStoreService {
         }
         return nil
     }
+    
+    func updateUserFCMToken(userId: String, token: String) async {
+        do {
+            try await updateData(collection: .users, documentId: userId, newData: ["fcmToken": token])
+        } catch {
+            print("Error updating FCM token: \(error.localizedDescription)")
+        }
+    }
 }
 
 // Helper to create a LastMessage from a Message

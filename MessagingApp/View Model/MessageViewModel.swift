@@ -44,7 +44,6 @@ class MessageViewModel: ObservableObject {
                         self.messages.append(MessageMap(channelId: channelId, messages: newMessagesData.messages, documentSnapshot: newMessagesData.documentSnapshot))
                     }
                 }
-                
             } catch {
                 print("Error listening for messages: \(error.localizedDescription)")
             }
@@ -59,9 +58,32 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channelId: String, finalizedText: String?) async throws {
+    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channel: Channel, finalizedText: String?) async throws {
         guard let senderId = senderId else { throw UploadError.missingUserInfo }
         
+        var currentChannel = channel
+        
+        // If the channel doesn't have an ID, it's a draft. Create it first.
+        if currentChannel.id == nil {
+            let newChannel = ChannelInsert(
+                memberIds: currentChannel.memberIds,
+                type: currentChannel.type
+            )
+            do {
+                let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel)
+                currentChannel.id = documentId
+            } catch {
+                print("Error creating channel: \(error.localizedDescription)")
+                // Handle or rethrow the error as needed
+                return
+            }
+        }
+        
+        guard let channelId = currentChannel.id else {
+            print("Channel ID is still nil after creation attempt.")
+            return
+        }
+
         var photoUrls: [String] = []
         var fileUrls: [String] = []
         
@@ -176,18 +198,17 @@ class MessageViewModel: ObservableObject {
     }
     
     private func groupMessagesByHourMinute(messages: [Message]) -> [(Date, [Message])] {
-        var result: [Date: [Message]] = [:]
         let calendar = Calendar.current
-        
-        for message in messages {
-            if let date = message.date {
-                let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date.dateValue())
-                if let date = calendar.date(from: components) {
-                    result[date, default: []].append(message)
-                }
-            }
+        let groupedByMinute = Dictionary(grouping: messages) { message -> Date in
+            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: message.date!.dateValue())
+            return calendar.date(from: components)!
         }
-        return result.sorted { $0.key < $1.key }
+
+        let sortedGroups = groupedByMinute.mapValues { messagesInMinute -> [Message] in
+            return messagesInMinute.sorted { $0.date!.dateValue() < $1.date!.dateValue() }
+        }
+
+        return sortedGroups.sorted { $0.key < $1.key }
     }
     
     private func groupMessagesByUser(messages: [Message]) -> [(String, [Message])] {
