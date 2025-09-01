@@ -8,7 +8,6 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseMessaging
-import FirebaseFunctions
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
@@ -23,8 +22,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         application.registerForRemoteNotifications()
         Messaging.messaging().delegate = self
-        
-        Functions.functions().useEmulator(withHost: "localhost", port: 5001)
         
         return true
     }

@@ -26,6 +26,8 @@ struct MessageDateView: View {
                 .fontWeight(.bold)
                 .font(.footnote)
                 .padding(.horizontal, 8)
+                .lineLimit(1)
+                .layoutPriority(1)
             
             DividerView(color: .gray, thickness: dividerLineThickness)
         }

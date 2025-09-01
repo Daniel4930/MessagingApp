@@ -93,6 +93,7 @@ extension LoginView {
         FirebaseAuthService.shared.signInAUser(email: email, password: password) { result in
             switch result {
             case .success(let authData):
+                KeychainService.shared.save(email: self.email, password: self.password)
                 Task {
                     if let email = authData.user.email {
                         await userViewModel.fetchCurrentUser(email: email)

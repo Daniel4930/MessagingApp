@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 7A2B2C4F2E610B5F00C54E3A /* Kingfisher */; };
+		7A3AB5A82E658A2B0043CAA6 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 7A3AB5A72E658A2B0043CAA6 /* KeychainAccess */; };
 		7A4309472E63B8DB0052D45C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7A4309462E63B8DB0052D45C /* FirebaseMessaging */; };
 		7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AA2E4FCC0C00429722 /* FirebaseCore */; };
 		7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AE2E4FDC8F00429722 /* FirebaseStorage */; };
@@ -79,6 +80,7 @@
 				7AB4713D2E64F3D0006597F9 /* FirebaseFunctions in Frameworks */,
 				7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */,
 				7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */,
+				7A3AB5A82E658A2B0043CAA6 /* KeychainAccess in Frameworks */,
 				7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */,
 				7A70E0BB2E506DF600429722 /* FirebaseFirestore in Frameworks */,
 				7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */,
@@ -149,6 +151,7 @@
 				7A2B2C4F2E610B5F00C54E3A /* Kingfisher */,
 				7A4309462E63B8DB0052D45C /* FirebaseMessaging */,
 				7AB4713C2E64F3D0006597F9 /* FirebaseFunctions */,
+				7A3AB5A72E658A2B0043CAA6 /* KeychainAccess */,
 			);
 			productName = MessagingApp;
 			productReference = 7A843DC72E1E6908003B69F4 /* MessagingApp.app */;
@@ -235,6 +238,7 @@
 			packageReferences = (
 				7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				7A2B2C4E2E610B5F00C54E3A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				7A3AB5A62E658A2B0043CAA6 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7A843DC82E1E6908003B69F4 /* Products */;
@@ -625,6 +629,14 @@
 				minimumVersion = 8.5.0;
 			};
 		};
+		7A3AB5A62E658A2B0043CAA6 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -640,6 +652,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7A2B2C4E2E610B5F00C54E3A /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		7A3AB5A72E658A2B0043CAA6 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A3AB5A62E658A2B0043CAA6 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
 		};
 		7A4309462E63B8DB0052D45C /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -34,14 +34,27 @@ class MessageViewModel: ObservableObject {
         messageListenerTask?.cancel()
         messageListenerTask = Task {
             do {
-                let stream = FirebaseCloudStoreService.shared.listenForMessages(channelId: channelId)
+                // Fetch the last 10 messages
+                let (initialMessages, lastDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId)
                 
-                for try await newMessagesData in stream {
+                if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                    self.messages[index].messages = initialMessages
+                    self.messages[index].documentSnapshot = lastDocument
+                } else {
+                    self.messages.append(MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument))
+                }
+                
+                // Get the date of the last message
+                guard let lastMessageDate = initialMessages.last?.date?.dateValue() else { return }
+                
+                // Listen for new messages after the last message date
+                let stream = FirebaseCloudStoreService.shared.listenForNewMessages(channelId: channelId, after: lastMessageDate)
+                
+                for try await newMessages in stream {
                     if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                        self.messages[index].messages = newMessagesData.messages
-                        self.messages[index].documentSnapshot = newMessagesData.documentSnapshot
-                    } else {
-                        self.messages.append(MessageMap(channelId: channelId, messages: newMessagesData.messages, documentSnapshot: newMessagesData.documentSnapshot))
+                        let combinedMessages = self.messages[index].messages + newMessages
+                        let uniqueMessages = Array(Set(combinedMessages))
+                        self.messages[index].messages = uniqueMessages.sorted { ($0.date?.dateValue() ?? Date.distantPast) < ($1.date?.dateValue() ?? Date.distantPast) }
                     }
                 }
             } catch {

@@ -26,7 +26,7 @@ def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) ->
     """
     Sends a push notification to users in a channel when a new message is created.
     """
-    db = firestore.client()
+    db = firestore.client(database_id="messaging-app")
 
     channel_id = event.params["channelId"]
     message_data = event.data.to_dict()
@@ -56,12 +56,9 @@ def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) ->
     
     sender_data = sender_snapshot.to_dict()
 
-    sender_displayName = sender_data.get("displayName")
-    sender_userName = sender_data.get("userName")
-    if sender_displayName == "":
-        sender_name = sender_displayName
-    else:
-        sender_name = sender_userName
+    sender_displayName = sender_data.get("displayName", "").strip()
+    sender_userName = sender_data.get("userName", "")
+    sender_name = sender_displayName if sender_displayName else sender_userName
 
     # Get the recipients' FCM tokens
     recipient_ids = [uid for uid in member_ids if uid != sender_id]
@@ -86,6 +83,11 @@ def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) ->
                 message = messaging.Message(
                     notification=notification,
                     token=fcm_token,
+                    apns=messaging.APNSConfig(
+                        payload=messaging.APNSPayload(
+                            aps=messaging.Aps(sound="default"),
+                        ),
+                    ),
                 )
                 try:
                     messaging.send(message)

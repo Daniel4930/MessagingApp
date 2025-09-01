@@ -7,7 +7,7 @@
 
 import FirebaseFirestore
 
-struct Message: Codable, Identifiable {
+struct Message: Codable, Identifiable, Hashable {
     @DocumentID var id: String?
     let senderId: String
     let text: String?
@@ -18,4 +18,13 @@ struct Message: Codable, Identifiable {
     let reaction: String?
     let forwardMessageId: String?
     let replayMessageId: String?
+    
+    // Implement Hashable
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: Message, rhs: Message) -> Bool {
+        lhs.id == rhs.id
+    }
 }

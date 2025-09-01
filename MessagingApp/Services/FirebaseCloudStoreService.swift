@@ -90,29 +90,39 @@ class FirebaseCloudStoreService {
     }
 
     /// Listens for the latest messages in a specific channel.
-    func listenForMessages(channelId: String, limit: Int = 10) -> AsyncThrowingStream<(messages: [Message], documentSnapshot: DocumentSnapshot?), Error> {
+    func fetchLastMessages(channelId: String, limit: Int = 10) async throws -> ([Message], DocumentSnapshot?) {
+        let snapshot = try await db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
+            .order(by: "date", descending: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        let messages = snapshot.documents.compactMap { try? $0.data(as: Message.self) }
+        return (messages.reversed(), snapshot.documents.last)
+    }
+    
+    func listenForNewMessages(channelId: String, after lastMessageDate: Date) -> AsyncThrowingStream<[Message], Error> {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
+                .whereField("date", isGreaterThan: lastMessageDate)
                 .order(by: "date", descending: false)
-                .limit(to: limit)
                 .addSnapshotListener { querySnapshot, error in
                     if let error = error {
                         continuation.finish(throwing: error)
                         return
                     }
                     guard let documents = querySnapshot?.documents else {
-                        continuation.yield(([], nil))
+                        continuation.yield([])
                         return
                     }
                     let messages = documents.compactMap { try? $0.data(as: Message.self) }
-                    continuation.yield((messages.reversed(), documents.last))
+                    continuation.yield(messages)
                 }
             continuation.onTermination = { @Sendable _ in
                 listener.remove()
             }
         }
     }
-    
+
     /// Fetches an older batch of messages for pagination.
     func fetchMoreMessages(channelId: String, lastDocumentSnapshot: DocumentSnapshot, limit: Int = 20) async throws -> ([Message], DocumentSnapshot?) {
         let snapshot = try await db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
