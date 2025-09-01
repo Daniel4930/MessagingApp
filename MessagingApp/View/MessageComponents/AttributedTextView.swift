@@ -57,10 +57,10 @@ struct AttributedTextView: UIViewRepresentable {
             else if word.hasPrefix("@"), let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst()), friends: friendViewModel.friends),
                     let url = URL(string: "mention://\(user.userName)") {
                 
-                let displayName = user.displayName
+                let name = user.displayName.isEmpty ? user.userName : user.displayName
                 
-                // Build mention string with '@' + displayName
-                let mentionString = "@" + displayName
+                // Build mention string with '@' + name
+                let mentionString = "@" + name
                 
                 // Create attributed string for mention
                 let mentionAttr = NSMutableAttributedString(string: mentionString, attributes: [
@@ -128,7 +128,7 @@ struct AttributedTextView: UIViewRepresentable {
                     }
                 }
                 
-                else if url.scheme == "https" || url.scheme == "https" {
+                else if url.scheme == "https" || url.scheme == "http" {
                     return UIAction(title: "Show Link") { _ in
                         self.parent.showSafari = true
                     }

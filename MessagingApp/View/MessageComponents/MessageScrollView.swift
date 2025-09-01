@@ -11,6 +11,7 @@ struct MessageScrollView: View {
     let channelInfo: Channel
     @Binding var scrollToBottom: Bool
     @FocusState.Binding var focusedField: Field?
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @State private var scrollPosition = ScrollPosition()
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
@@ -31,7 +32,7 @@ struct MessageScrollView: View {
                         ForEach(dayGroup.messageGroups, id: \.time) { messageGroup in
                             ForEach(messageGroup.userGroups, id: \.userId) { userGroup in
                                 if let user = friendViewModel.getUser(withId: userGroup.userId, currentUser: userViewModel.user) {
-                                    MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time)
+                                    MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time, messageComposerViewModel: messageComposerViewModel)
                                 }
                             }
                         }

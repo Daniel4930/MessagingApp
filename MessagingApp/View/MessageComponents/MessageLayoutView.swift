@@ -10,6 +10,7 @@ struct MessageLayoutView: View {
     let user: User
     let messages: [Message]
     let time: Date
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     
     let iconDimension: CGSize = .init(width: 45, height: 45)
     static let messageTimeFormatter: DateFormatter = {
@@ -22,17 +23,23 @@ struct MessageLayoutView: View {
     var body: some View {
         HStack(alignment: .top) {
             UserIconView(user: user, iconDimension: iconDimension)
+                .onTapGesture {
+                    messageComposerViewModel.userProfile = user
+                }
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
                     Text(user.displayName.isEmpty ? user.userName : user.displayName)
                         .font(.title3)
                         .bold()
+                        .onTapGesture {
+                            messageComposerViewModel.userProfile = user
+                        }
                     Text(MessageLayoutView.messageTimeFormatter.string(from: time))
                         .font(.footnote)
                         .foregroundStyle(.gray)
                 }
                 ForEach(messages) { message in
-                    MessageContentView(message: message)
+                    MessageContentView(message: message, messageComposerViewModel: messageComposerViewModel)
                 }
             }
         }

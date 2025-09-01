@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PhotosUI
+import FirebaseMessaging
 
 @MainActor
 struct NewUserView: View {
@@ -196,6 +197,11 @@ extension NewUserView {
                     "userName": username,
                     "displayName": displayName
                 ]
+            }
+            
+            // Fetch and add FCM token to the user's data
+            if let fcmToken = try? await Messaging.messaging().token() {
+                dataToUpload["fcmToken"] = fcmToken
             }
             
             if let user = userViewModel.user, let id = user.id {

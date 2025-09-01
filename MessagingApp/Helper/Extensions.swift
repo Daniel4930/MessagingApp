@@ -125,3 +125,26 @@ extension FirebaseStorageService {
         }
     }
 }
+
+// Helper to create a LastMessage from a Message
+extension LastMessage {
+    init?(from message: Message) {
+        // A last message must have a timestamp. If not, fail initialization.
+        guard let timestamp = message.date else {
+            return nil
+        }
+        
+        self.senderId = message.senderId
+        self.timestamp = timestamp
+        
+        // Only set the text property if the message text is not nil and not empty.
+        // Otherwise, it's nil, implying an attachment.
+        if let text = message.text, !text.isEmpty {
+            self.text = text
+        } else if !message.photoUrls.isEmpty || !message.fileUrls.isEmpty {
+            self.text = "Attachment"
+        } else {
+            self.text = nil
+        }
+    }
+}

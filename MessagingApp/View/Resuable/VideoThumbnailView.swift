@@ -40,11 +40,6 @@ struct VideoThumbnailView: View {
             .overlay(alignment: .topTrailing) {
                 if dataExistInSelection {
                     Image(systemName: "checkmark.circle.fill")
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if dataExistInSelection {
-                    Image(systemName: "checkmark.circle.fill")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)

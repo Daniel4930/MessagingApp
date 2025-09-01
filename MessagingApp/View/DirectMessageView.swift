@@ -30,7 +30,7 @@ struct DirectMessageView: View {
                 
                 DividerView()
                 
-                MessageScrollView(channelInfo: channelInfo, scrollToBottom: $scrollToBottom, focusedField: $focusedField)
+                MessageScrollView(channelInfo: channelInfo, scrollToBottom: $scrollToBottom, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
                     .onTapGesture {
                         showFileAndImageSelector = false
                         hideKeyboard()
@@ -63,6 +63,10 @@ struct DirectMessageView: View {
                 UploadedFileInfoView(messageComposerViewModel: messageComposerViewModel)
                     .presentationDetents([.fraction(0.6), .fraction(0.945)])
             }
+            .sheet(item: $messageComposerViewModel.userProfile) { user in
+                ProfileView(user: user)
+                    .presentationDetents([.fraction(0.95)])
+            }
             .task(id: channelInfo.id) {
                 guard let id = channelInfo.id else {
                     print("Channel id is nil")
@@ -70,6 +74,7 @@ struct DirectMessageView: View {
                 }
                 messageViewModel.listenForMessages(channelId: id)
             }
+            
         }
         .ignoresSafeArea(.keyboard)
         .background(Color("PrimaryBackgroundColor"))

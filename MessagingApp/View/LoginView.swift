@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseMessaging
 
 struct LoginView: View {
     @Binding var currentView: CurrentView
@@ -90,51 +91,61 @@ struct LoginView: View {
 }
 extension LoginView {
     func signIn() {
-        FirebaseAuthService.shared.signInAUser(email: email, password: password) { result in
-            switch result {
-            case .success(let authData):
+        Task {
+            do {
+                let authData = try await FirebaseAuthService.shared.signInAUser(email: email, password: password)
+                
                 KeychainService.shared.save(email: self.email, password: self.password)
-                Task {
-                    if let email = authData.user.email {
-                        await userViewModel.fetchCurrentUser(email: email)
-                    }
-                    if let user = userViewModel.user {
-                        if user.userName.isEmpty {
-                            isLoading = false
-                            currentView = .newUser
-                        } else {                            
-                            await friendViewModel.fetchFriends(for: user)
-                            isLoading = false
-                            currentView = .content
+                
+                if let email = authData.user.email {
+                    await userViewModel.fetchCurrentUser(email: email)
+                    
+                    if let newToken = try? await Messaging.messaging().token() {
+                        if userViewModel.user?.fcmToken != newToken {
+                            await userViewModel.updateUserFCMToken(newToken)
                         }
-                    } else {
-                        isLoading = false
-                        alertBackgroundColor = .red
-                        alertMessageHeight = AlertMessageView.maxHeight
-                        alertMessage = "Failed to sign in. Please try again"
                     }
                 }
                 
-            case .failure(let error):
-                isLoading = false
-                DispatchQueue.main.async {
-                    switch error {
-                    case .wrongPassword, .invalidCredential:
-                        self.alertMessage = "Either or both email and password are incorrect"
-                    case .invalidEmail:
-                        self.errorEmailMessage = "Email is invalid"
-                    case .userDisabled:
-                        self.alertMessage = "Your account has been disabled"
-                    case .operationNotAllowed:
-                        self.alertMessage = "Server side error. Please try again"
-                    case .networkError:
-                        self.alertMessage = "Network error. Please check your internet connection"
-                    case .unknown:
-                        self.alertMessage = "Unknown error"
+                if let user = userViewModel.user {
+                    if user.userName.isEmpty {
+                        isLoading = false
+                        currentView = .newUser
+                    } else {
+                        await friendViewModel.fetchFriends(for: user)
+                        isLoading = false
+                        currentView = .content
                     }
+                } else {
+                    isLoading = false
                     alertBackgroundColor = .red
                     alertMessageHeight = AlertMessageView.maxHeight
+                    alertMessage = "Failed to sign in. Please try again"
                 }
+                
+            } catch let error as FirebaseSignInError {
+                isLoading = false
+                switch error {
+                case .wrongPassword, .invalidCredential:
+                    self.alertMessage = "Either or both email and password are incorrect"
+                case .invalidEmail:
+                    self.errorEmailMessage = "Email is invalid"
+                case .userDisabled:
+                    self.alertMessage = "Your account has been disabled"
+                case .operationNotAllowed:
+                    self.alertMessage = "Server side error. Please try again"
+                case .networkError:
+                    self.alertMessage = "Network error. Please check your internet connection"
+                case .unknown:
+                    self.alertMessage = "Unknown error"
+                }
+                alertBackgroundColor = .red
+                alertMessageHeight = AlertMessageView.maxHeight
+            } catch {
+                isLoading = false
+                self.alertMessage = "An unexpected error occurred: \(error.localizedDescription)"
+                alertBackgroundColor = .red
+                alertMessageHeight = AlertMessageView.maxHeight
             }
         }
     }

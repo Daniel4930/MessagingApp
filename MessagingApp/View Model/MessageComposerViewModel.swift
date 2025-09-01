@@ -16,6 +16,7 @@ class MessageComposerViewModel: ObservableObject {
     @Published var showMention: Bool = false
     @Published var mathchUsers: [User] = []
     @Published var customTextEditorHeight: CGFloat = MessageComposerViewModel.customTextEditorMinHeight
+    @Published var userProfile: User?
     
     static let maxSelection = 10
     static let customTextEditorMaxHeight = UIScreen.main.bounds.height / 5

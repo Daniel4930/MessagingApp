@@ -65,9 +65,24 @@ class MessageViewModel: ObservableObject {
     
     private func sendMessage(channelId: String, message: Message) async {
         do {
+            // Send the message
             try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
+            
+            // After sending, create the LastMessage object and update the channel
+            if let lastMessage = LastMessage(from: message) {
+                let lastMessageData = try Firestore.Encoder().encode(lastMessage)
+                let channelUpdateData: [String: Any] = [
+                    "lastMessage": lastMessageData,
+                    "lastActivity": FieldValue.serverTimestamp()
+                ]
+                try await FirebaseCloudStoreService.shared.updateData(
+                    collection: .channels,
+                    documentId: channelId,
+                    newData: channelUpdateData
+                )
+            }
         } catch {
-            print("Failed to send message \(error.localizedDescription)")
+            print("Failed to send message or update channel: \(error.localizedDescription)")
         }
     }
     

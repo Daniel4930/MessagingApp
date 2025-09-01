@@ -193,12 +193,3 @@ class FirebaseCloudStoreService {
         }
     }
 }
-
-// Helper to create a LastMessage from a Message
-extension LastMessage {
-    init?(from message: Message) {
-        self.senderId = message.senderId
-        self.text = message.text
-        self.timestamp = message.date!
-    }
-}

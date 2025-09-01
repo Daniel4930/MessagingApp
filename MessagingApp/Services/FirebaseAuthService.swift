@@ -66,6 +66,36 @@ class FirebaseAuthService {
         }
     }
     
+    func signInAUser(email: String, password: String) async throws -> AuthDataResult {
+        do {
+            let authResult = try await Auth.auth().signIn(withEmail: email, password: password)
+            return authResult
+        } catch let error as NSError {
+            if let authError = AuthErrorCode(rawValue: error.code) {
+                switch authError {
+                case .invalidCredential:
+                    throw FirebaseSignInError.invalidCredential
+                case .invalidEmail:
+                    throw FirebaseSignInError.invalidEmail
+                case .userDisabled:
+                    throw FirebaseSignInError.userDisabled
+                case .operationNotAllowed:
+                    throw FirebaseSignInError.operationNotAllowed
+                case .wrongPassword:
+                    throw FirebaseSignInError.wrongPassword
+                case .networkError:
+                    throw FirebaseSignInError.networkError
+                default:
+                    print("Failed to sign in with unknown error: \(error.localizedDescription)")
+                    throw FirebaseSignInError.unknown
+                }
+            } else {
+                print("Failed to sign in with unknown error: \(error.localizedDescription)")
+                throw FirebaseSignInError.unknown
+            }
+        }
+    }
+    
     func signInAUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, FirebaseSignInError>) -> Void) {
         Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
             if let error = error as NSError? {

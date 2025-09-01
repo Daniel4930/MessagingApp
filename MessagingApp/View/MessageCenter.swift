@@ -82,10 +82,9 @@ struct MessageCenter: View {
                 .scrollIndicators(.hidden)
                 .padding(.vertical, 10)
                 
-                ForEach(channelViewModel.dmChannelsMapWithFriends, id: \.friend.id) { map in
+                ForEach(channelViewModel.dmChannelsMapWithFriends, id: \.channel.id) { map in
                     let friend = map.friend
                     let channel = map.channel
-                    let latestMessage = channel.lastMessage
                     
                     Button {
                         selectedDmChannel = channel
@@ -101,27 +100,31 @@ struct MessageCenter: View {
                                 .overlay(alignment: .bottomTrailing) {
                                     OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
                                 }
+                            
                             VStack(alignment: .leading, spacing: 0) {
-                                let displayName = friend.displayName
-                                let userName = friend.userName
-                                let nameToShow = displayName.isEmpty ? userName : displayName
+                                let nameToShow = friend.displayName.isEmpty ? friend.userName : friend.displayName
                                 
-                                if let latestMessage = latestMessage, let text = latestMessage.text {
-                                    HStack {
-                                        Text(nameToShow)
-                                            .font(.subheadline)
-                                            .bold()
-                                        Spacer()
-                                        Text(channelViewModel.formatLastMessageTime(time: latestMessage.timestamp.dateValue()))
-                                            .font(.footnote)
-                                    }
-                                    Text("\(latestMessage.senderId == friend.id ? nameToShow : "You"): \(text)")
-                                        .font(.footnote)
-                                        .lineLimit(1)
-                                } else {
+                                HStack {
                                     Text(nameToShow)
                                         .font(.subheadline)
                                         .bold()
+                                    Spacer()
+                                    if let latestMessage = channel.lastMessage {
+                                        Text(channelViewModel.formatLastMessageTime(time: latestMessage.timestamp.dateValue()))
+                                            .font(.footnote)
+                                    }
+                                }
+                                
+                                if let latestMessage = channel.lastMessage {
+                                    let sender = latestMessage.senderId == friend.id ? nameToShow : "You"
+                                    if let text = latestMessage.text {
+                                        Text("\(sender): \(text)")
+                                            .font(.footnote)
+                                            .lineLimit(1)
+                                    }
+                                } else {
+                                    Text("No messages yet.")
+                                        .font(.footnote)
                                 }
                             }
                             .opacity(selectedDmChannel?.id == channel.id ? 1 : 0.4)

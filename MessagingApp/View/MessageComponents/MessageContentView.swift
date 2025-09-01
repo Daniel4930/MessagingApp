@@ -10,6 +10,7 @@ import UIKit
 
 struct MessageContentView: View {
     let message: Message
+    @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     let linkMetadataService = LinkMetadataService()
@@ -20,7 +21,6 @@ struct MessageContentView: View {
     @State private var showSafari: Bool = false
     @State private var embededImageDimension: CGSize = .zero
     @State private var linkEmbededViewDimension: CGSize = .zero
-    @State private var userToPresent: User?
     @State private var customTextViewHeight: CGFloat = .zero
     
     @EnvironmentObject var userViewModel: UserViewModel
@@ -31,7 +31,7 @@ struct MessageContentView: View {
             if let text = message.text {
                 AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
                     if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
-                        userToPresent = user
+                        messageComposerViewModel.userProfile = user
                     }
                 }
                     .frame(height: customTextViewHeight)
@@ -73,10 +73,6 @@ struct MessageContentView: View {
                     EmbededFileLayoutView(url: message.fileUrls[index])
                 }
             }
-        }
-        .sheet(item: $userToPresent) { user in
-            ProfileView(user: user)
-                .presentationDetents([.fraction(0.95)])
         }
     }
 }
@@ -140,9 +136,10 @@ extension MessageContentView {
         for (index, substr) in separateMentionedNameAndMessage(text: text).enumerated() {
             var attributedSubstring = AttributedString()
             if substr.first == "@", let user = userViewModel.fetchUserByUsername(name: String(substr.dropFirst()), friends: friendViewModel.friends) {
-                let displayName = user.displayName
-                var tempAttributedString = AttributedString("@\(displayName)")
+                let name = user.displayName.isEmpty ? user.userName : user.displayName
+                var tempAttributedString = AttributedString("@\(name)")
                 tempAttributedString.font = Font.system(.body).bold()
+                tempAttributedString.foregroundColor = Color.white
                 tempAttributedString.backgroundColor = .blue.opacity(0.5)
                 attributedSubstring.append(tempAttributedString)
                 attributedSubstring.append(AttributedString(" "))
