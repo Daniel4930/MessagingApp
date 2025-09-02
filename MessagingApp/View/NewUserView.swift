@@ -106,11 +106,11 @@ extension NewUserView {
             isLoading = false
         }
         else if username.contains(where: { $0 == " " }) {
-            usernameErrorMessage = "Username can't contain a space"
+            usernameErrorMessage = "Username can't contain spaces"
             isLoading = false
         }
         if displayName.contains(where: { $0 == " "}) {
-            displayNameErrorMessage = "Display name can't contain a space"
+            displayNameErrorMessage = "Display name can't contain spaces"
             isLoading = false
         }
         
@@ -174,51 +174,45 @@ extension NewUserView {
     }
     
     func checkUsernameAlreadyExists() async {
-        guard let exists = await FirebaseCloudStoreService.shared.checkIfUsernameExists(username: username) else {
-            setupErrorMessage(message: "Internal Error")
+        if let _ = await FirebaseCloudStoreService.shared.fetchUserByUsername(username: username) {
+            usernameErrorMessage = "Username is taken"
             isLoading = false
             return
         }
+        var dataToUpload: [String: Any] = [:]
         
-        if exists {
-            usernameErrorMessage = "Username is taken"
-            isLoading = false
+        if let imageUrl = await handleUploadImageToStorage() {
+            dataToUpload = [
+                "userName": username,
+                "displayName": displayName,
+                "icon": imageUrl
+            ]
         } else {
-            var dataToUpload: [String: Any] = [:]
-            
-            if let imageUrl = await handleUploadImageToStorage() {
-                dataToUpload = [
-                    "userName": username,
-                    "displayName": displayName,
-                    "icon": imageUrl
-                ]
-            } else {
-                dataToUpload = [
-                    "userName": username,
-                    "displayName": displayName
-                ]
-            }
-            
-            // Fetch and add FCM token to the user's data
-            if let fcmToken = try? await Messaging.messaging().token() {
-                dataToUpload["fcmToken"] = fcmToken
-            }
-            
-            if let user = userViewModel.user, let id = user.id {
-                do {
-                    try await FirebaseCloudStoreService.shared.updateData(collection: FirebaseCloudStoreCollection.users, documentId: id, newData: dataToUpload)
-                    
-                    await userViewModel.fetchCurrentUser(email: user.email)
-                    isLoading = false
-                    currentView = .content
-                } catch {
-                    setupErrorMessage(message: "Failed to create user's information. Please try again")
-                    isLoading = false
-                }
-            } else {
-                setupErrorMessage(message: "Can't update user because userInfo is nil")
+            dataToUpload = [
+                "userName": username,
+                "displayName": displayName
+            ]
+        }
+        
+        // Fetch and add FCM token to the user's data
+        if let fcmToken = try? await Messaging.messaging().token() {
+            dataToUpload["fcmToken"] = fcmToken
+        }
+        
+        if let user = userViewModel.user, let id = user.id {
+            do {
+                try await FirebaseCloudStoreService.shared.updateData(collection: FirebaseCloudStoreCollection.users, documentId: id, newData: dataToUpload)
+                
+                await userViewModel.fetchCurrentUser(email: user.email)
+                isLoading = false
+                currentView = .content
+            } catch {
+                setupErrorMessage(message: "Failed to create user's information. Please try again")
                 isLoading = false
             }
+        } else {
+            setupErrorMessage(message: "Can't update user because userInfo is nil")
+            isLoading = false
         }
     }
     

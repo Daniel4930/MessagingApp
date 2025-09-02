@@ -68,7 +68,7 @@ struct MessageCenter: View {
                             } label: {
                                 UserIconView(user: friend, iconDimension: .init(width: 45, height: 45))
                                     .overlay(alignment: .bottomTrailing) {
-                                        OnlineStatusCircle(status: friend.onlineStatus, color: .primaryBackground)
+                                        OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: .primaryBackground)
                                     }
                                     .padding()
                                     .background {
@@ -98,7 +98,7 @@ struct MessageCenter: View {
                         HStack {
                             UserIconView(user: friend)
                                 .overlay(alignment: .bottomTrailing) {
-                                    OnlineStatusCircle(status: friend.onlineStatus, color: .secondaryBackground)
+                                    OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: .secondaryBackground)
                                 }
                             
                             VStack(alignment: .leading, spacing: 0) {
@@ -159,16 +159,25 @@ struct MessageCenter: View {
         .onChange(of: showAddFriend) { oldValue, newValue in
             if newValue {
                 navViewModel.viewToShow = {
-                    AnyView(AddFriendView(showAddFriend: $showAddFriend))
+                    AnyView(
+                        AddFriendView(showAddFriend: $showAddFriend)
+                            .background(Color.primaryBackground)
+                            .onTapGesture {
+                                hideKeyboard()
+                            }
+                    )
                 }
                 navViewModel.showView()
             } else {
                 if let selectedDmChannel {
-                    navViewModel.hideView()
                     navViewModel.viewToShow = {
                         AnyView(DirectMessageView(channelInfo: selectedDmChannel))
                     }
+                } else {
+                    navViewModel.viewToShow = nil
                 }
+                hideKeyboard()
+                navViewModel.hideView()
             }
         }
         .sheet(item: $selectedFriendIcon) { friend in

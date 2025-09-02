@@ -44,10 +44,7 @@ struct MessagingBarLayoutView: View {
                             )
                             
                             // Reset composer state on success
-                            messageComposerViewModel.uiTextView.text = ""
-                            messageComposerViewModel.selectionData = []
-                            messageComposerViewModel.showSendButton = false
-                            messageComposerViewModel.customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
+                            messageComposerViewModel.resetInputs()
                             scrollToBottom = true
                             
                         } catch {

@@ -13,7 +13,7 @@ class UserViewModel: ObservableObject {
     
     func createNewUser(authId: String, data: User) async throws {
         do {
-            let _ = try await FirebaseCloudStoreService.shared.addDocument(collection: FirebaseCloudStoreCollection.users, documentId: authId, data: data)
+            let _ = try await FirebaseCloudStoreService.shared.addDocument(collection: FirebaseCloudStoreCollection.users, documentId: authId, data: data, additionalData: nil)
         } catch {
             print(error)
             throw(error)
@@ -21,7 +21,7 @@ class UserViewModel: ObservableObject {
     }
     
     func fetchCurrentUser(email: String) async {
-        self.user = await FirebaseCloudStoreService.shared.fetchUser(email: email)
+        self.user = await FirebaseCloudStoreService.shared.fetchUserByEmail(email: email)
     }
     
     func fetchUserByUsername(name: String, friends: [User]) -> User? {

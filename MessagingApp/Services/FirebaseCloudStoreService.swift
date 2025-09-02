@@ -17,6 +17,7 @@ enum FirebaseCloudStoreCollection: String {
     case users = "users"
     case channels = "channels"
     case messages = "messages"
+    case notifications = "notifications"
 }
 
 class FirebaseCloudStoreService {
@@ -25,9 +26,14 @@ class FirebaseCloudStoreService {
 
     // MARK: - Generic CRUD Operations (Refactored)
 
-    func addDocument<T: Encodable>(collection: FirebaseCloudStoreCollection, documentId: String? = nil, data: T) async throws -> String {
+    func addDocument<T: Encodable>(collection: FirebaseCloudStoreCollection, documentId: String? = nil, data: T, additionalData: [String:Any]?) async throws -> String {
         do {
-            let dataDict = try Firestore.Encoder().encode(data)
+            var dataDict = try Firestore.Encoder().encode(data)
+            if let additionalData = additionalData {
+                for key in additionalData.keys {
+                    dataDict[key] = additionalData[key]
+                }
+            }
 
             let collectionRef = db.collection(collection.rawValue)
             if let documentId = documentId {
@@ -48,6 +54,14 @@ class FirebaseCloudStoreService {
             try await db.collection(collection.rawValue).document(documentId).updateData(newData)
         } catch {
             throw FirebaseError.operationFailed("Error updating document: \(error.localizedDescription)")
+        }
+    }
+    
+    func deleteDocument(collection: FirebaseCloudStoreCollection, documentId: String) async throws {
+        do {
+            try await db.collection(collection.rawValue).document(documentId).delete()
+        } catch {
+            throw FirebaseError.operationFailed("Error removing document: \(error.localizedDescription)")
         }
     }
     
@@ -161,9 +175,41 @@ class FirebaseCloudStoreService {
         try await batch.commit()
     }
 
-    // MARK: - User Functions (Unchanged)
+    // MARK: - NotificationContent Functions
+    func fetchNotifications(userId: String) async throws -> [NotificationContent]? {
+        
+        do {
+            let snapshot = try await db.collection(FirebaseCloudStoreCollection.notifications.rawValue)
+                .whereField("recipientId", isEqualTo: userId)
+                .order(by: "timestamp", descending: true)
+                .getDocuments()
+            
+            return snapshot.documents.compactMap({ try? $0.data(as: NotificationContent.self) })
+        } catch {
+            print("Error fetching notifications \(error.localizedDescription)")
+        }
+        return nil
+    }
     
-    func fetchUser(email: String) async -> User? {
+    func fetchFriendRequest(recipientId: String, senderName: String) async throws -> [NotificationContent]? {
+        
+        do {
+            let snapshot = try await db.collection(FirebaseCloudStoreCollection.notifications.rawValue)
+                .whereField("type", isEqualTo: NotificationType.friendRequest.rawValue)
+                .whereField("recipientId", isEqualTo: recipientId)
+                .whereField("senderName", isEqualTo: senderName)
+                .getDocuments()
+            
+            return snapshot.documents.compactMap({ try? $0.data(as: NotificationContent.self) })
+        } catch {
+            print("Error fetching friend request \(error.localizedDescription)")
+        }
+        return nil
+    }
+    
+    // MARK: - User Functions (Unchanged)
+        
+    func fetchUserByEmail(email: String) async -> User? {
         do {
             let snapshot = try await db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField("email", isEqualTo: email).getDocuments()
             if let document = snapshot.documents.first {
@@ -175,12 +221,14 @@ class FirebaseCloudStoreService {
         return nil
     }
     
-    func checkIfUsernameExists(username: String) async -> Bool? {
+    func fetchUserByUsername(username: String) async -> User? {
         do {
             let snapshot = try await db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField("userName", isEqualTo: username).getDocuments()
-            return !snapshot.documents.isEmpty
+            if let document = snapshot.documents.first {
+                return try document.data(as: User.self)
+            }
         } catch {
-            print("Error checking user's existing: \(error.localizedDescription)")
+            print("Error fetching user: \(error.localizedDescription)")
         }
         return nil
     }

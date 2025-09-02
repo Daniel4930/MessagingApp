@@ -120,7 +120,7 @@ struct CustomUITextView: UIViewRepresentable {
             let displayName = user.displayName
             let friends = parent.friendViewModel.friends
             
-            var pattern = "@(\(userName)|\(displayName)"
+            var pattern = "@(\(userName)\(displayName.isEmpty ? "" : "|\(displayName)")"
             
             for friend in friends {
                 if !friend.displayName.isEmpty {

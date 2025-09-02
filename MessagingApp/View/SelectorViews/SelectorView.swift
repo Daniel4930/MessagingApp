@@ -8,7 +8,6 @@
 import SwiftUI
 import PhotosUI
 import Photos
-import FirebaseFirestore
 
 enum PhotoLibraryAccessStatus {
     case fullAccess
@@ -207,10 +206,7 @@ struct CustomSendButtonView: View {
                                 )
                                 
                                 // Reset composer state on success
-                                messageComposerViewModel.uiTextView.text = ""
-                                messageComposerViewModel.selectionData = []
-                                messageComposerViewModel.showSendButton = false
-                                messageComposerViewModel.customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
+                                messageComposerViewModel.resetInputs()
                                 scrollToBottom = true
                             } catch {
                                 print("Error sending message: \(error.localizedDescription)")

@@ -98,7 +98,7 @@ class MessageViewModel: ObservableObject {
                 type: currentChannel.type
             )
             do {
-                let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel)
+                let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel, additionalData: nil)
                 currentChannel.id = documentId
             } catch {
                 print("Error creating channel: \(error.localizedDescription)")

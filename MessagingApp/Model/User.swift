@@ -9,11 +9,11 @@ import Foundation
 import FirebaseFirestore
 
 enum OnlineStatus: String, Codable {
-    case online = "online"
-    case offline = "offline"
-    case invisible = "invisible"
-    case doNotDisturb = "doNotDisturb"
-    case idle = "idle"
+    case online
+    case offline
+    case invisible
+    case doNotDisturb
+    case idle
 }
 
 struct User: Codable, Identifiable, Equatable {
@@ -23,7 +23,7 @@ struct User: Codable, Identifiable, Equatable {
     let displayName: String
     @ServerTimestamp var registeredDate: Timestamp?
     let icon: String // Get the image from firebase storage (path)
-    let onlineStatus: OnlineStatus.RawValue
+    let onlineStatus: OnlineStatus
     let aboutMe: String
     let bannerColor: String // in hex
     var friends: [String]

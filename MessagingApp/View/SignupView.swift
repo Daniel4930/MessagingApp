@@ -182,7 +182,7 @@ extension SignupView {
             displayName: "",
             registeredDate: Timestamp(date: registeredDate),
             icon: "",
-            onlineStatus: OnlineStatus.online.rawValue,
+            onlineStatus: OnlineStatus.online,
             aboutMe: "",
             bannerColor: "",
             friends: [],

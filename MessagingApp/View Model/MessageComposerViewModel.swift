@@ -77,4 +77,11 @@ class MessageComposerViewModel: ObservableObject {
         
         return uiImage
     }
+    
+    func resetInputs() {
+        uiTextView.text = ""
+        selectionData = []
+        showSendButton = false
+        customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
+    }
 }

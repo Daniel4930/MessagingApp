@@ -35,6 +35,7 @@ struct MessagingAppApp: App {
     @StateObject private var messageViewModel = MessageViewModel()
     @StateObject private var keyboardProvider = KeyboardProvider()
     @StateObject private var channelViewModel = ChannelViewModel()
+    @StateObject private var notificationViewModel = NotificationViewModel()
     @StateObject private var navViewModel = CustomNavigationViewModel()
 
     var body: some Scene {
@@ -46,6 +47,7 @@ struct MessagingAppApp: App {
                 .environmentObject(channelViewModel)
                 .environmentObject(keyboardProvider)
                 .environmentObject(navViewModel)
+                .environmentObject(notificationViewModel)
         }
     }
 }
@@ -57,8 +59,6 @@ extension AppDelegate: MessagingDelegate {
     }
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-      print("Firebase registration token: \(String(describing: fcmToken))")
-
       let dataDict: [String: String] = ["token": fcmToken ?? ""]
       NotificationCenter.default.post(
         name: Notification.Name("FCMToken"),
@@ -69,7 +69,7 @@ extension AppDelegate: MessagingDelegate {
 }
 
 
-//MARK - Notification delegate
+//MARK - NotificationContent delegate
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,

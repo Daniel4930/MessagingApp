@@ -57,8 +57,8 @@ class ChannelViewModel: ObservableObject {
                 let stream = FirebaseCloudStoreService.shared.listenForUserChannels(userId: userId)
                 for try await channels in stream {
                     // Partition the channels into DMs and Servers
-                    self.dmChannels = channels.filter { $0.type == ChannelType.dm.rawValue }
-                    self.serverChannels = channels.filter { $0.type != ChannelType.dm.rawValue }
+                    self.dmChannels = channels.filter { $0.type == ChannelType.dm }
+                    self.serverChannels = channels.filter { $0.type != ChannelType.dm }
                     
                     // After channels are updated, re-sort the DM/friend mapping
                     self.sortDmChannelWithFriends(currentUserId: userId, friends: friends)
@@ -82,7 +82,7 @@ class ChannelViewModel: ObservableObject {
         let temporaryChannel = Channel(
             id: nil, // No ID yet, as it's not in Firestore
             memberIds: [currentUserId, otherUserId],
-            type: ChannelType.dm.rawValue,
+            type: ChannelType.dm,
             lastActivity: nil,
             lastMessage: nil
         )

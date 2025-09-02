@@ -31,8 +31,12 @@ struct TabsView: View {
             case .home:
                 HomeView()
             case .notifications:
-                Text("Notifications")
-                Spacer()
+                if let id = userViewModel.user?.id {
+                    NotificationView(userId: id)
+                } else {
+                    Text("Can't load notifications")
+                    Spacer()
+                }
             case .account:
                 if let user = userViewModel.user {
                     ProfileView(user: user)
@@ -86,7 +90,7 @@ extension TabsView {
             )
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(
-                        status: user.onlineStatus,
+                        status: user.onlineStatus.rawValue,
                         color: Color.secondaryBackground.opacity(selection == tab ? 1 : 0.5)
                     )
                         .offset(x: 8, y: 5)

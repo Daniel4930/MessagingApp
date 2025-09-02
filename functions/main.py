@@ -2,11 +2,9 @@
 # To get started, simply uncomment the below code or create your own.
 # Deploy with `firebase deploy`
 
-from firebase_functions import https_fn, firestore_fn
+from firebase_functions import firestore_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app, firestore, messaging
-from firebase_admin.firestore import DocumentSnapshot
-
 
 # For cost control, you can set the maximum number of containers that can be
 # running at the same time. This helps mitigate the impact of unexpected
@@ -16,10 +14,6 @@ from firebase_admin.firestore import DocumentSnapshot
 set_global_options(max_instances=10)
 
 initialize_app()
-
-@https_fn.on_request()
-def on_request_example(req: https_fn.Request) -> https_fn.Response:
-    return https_fn.Response("Hello world!")
 
 @firestore_fn.on_document_created(document="channels/{channelId}/messages/{messageId}", database="messaging-app")
 def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) -> None:

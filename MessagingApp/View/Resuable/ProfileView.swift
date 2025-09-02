@@ -64,7 +64,7 @@ private extension ProfileView {
             UserIconView(user: user, iconDimension: CGSize(width: 100, height: 100))
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(
-                        status: user.onlineStatus,
+                        status: user.onlineStatus.rawValue,
                         color: Color("PrimaryBackgroundColor"),
                         outterDimension: .init(width: 26, height: 26),
                         innerDimension: .init(width: 20, height: 20)
@@ -110,6 +110,7 @@ private extension ProfileView {
         @EnvironmentObject var navViewModel: CustomNavigationViewModel
         @EnvironmentObject var channelViewModel: ChannelViewModel
         @EnvironmentObject var userViewModel: UserViewModel
+        @EnvironmentObject var friendViewModel: FriendViewModel
         @Environment(\.dismiss) var dismiss
         
         var body: some View {
@@ -128,13 +129,16 @@ private extension ProfileView {
                             navViewModel.showView()
                             dismiss()
                         } else {
-                            print("Failed to open a new dm")
+                            print("Failed to open a dm")
                         }
                     }
                 }
                 Spacer()
-                ProfileActionButton(systemImageName: "person.fill.badge.plus", label: "Add friend") {
-                    // Add friend action
+                
+                if friendViewModel.friends.contains(where: { $0.id != user.id }) {
+                    ProfileActionButton(systemImageName: "person.fill.badge.plus", label: "Add friend") {
+                        // Add friend action
+                    }
                 }
                 Spacer()
             }
