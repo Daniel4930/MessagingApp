@@ -12,6 +12,7 @@ struct MessageCenter: View {
     @State private var selectedFriendIcon: User?
     @State private var showSearchUser = false
     @State private var showAddFriend = false
+    @State private var showFriendList = false
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
@@ -139,6 +140,15 @@ struct MessageCenter: View {
                     .tint(.white)
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    showFriendList = true
+                } label: {
+                    Image(systemName: "plus.message.fill")
+                        .resizable()
+                        .frame(width: 45, height: 45)
+                }
+            }
         }
         .padding()
         .task {
@@ -169,6 +179,8 @@ struct MessageCenter: View {
                 }
                 navViewModel.showView()
             } else {
+                hideKeyboard()
+                navViewModel.hideView()
                 if let selectedDmChannel {
                     navViewModel.viewToShow = {
                         AnyView(DirectMessageView(channelInfo: selectedDmChannel))
@@ -176,13 +188,14 @@ struct MessageCenter: View {
                 } else {
                     navViewModel.viewToShow = nil
                 }
-                hideKeyboard()
-                navViewModel.hideView()
             }
         }
         .sheet(item: $selectedFriendIcon) { friend in
             ProfileView(user: friend)
                 .presentationDetents([.fraction(0.95)])
+        }
+        .sheet(isPresented: $showFriendList) {
+            FriendListView(selectedDmChannel: $selectedDmChannel)
         }
     }
 }

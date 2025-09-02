@@ -54,26 +54,4 @@ class NotificationViewModel: ObservableObject {
             throw error
         }
     }
-
-    func markAsRead(notificationId: String) {
-        guard let index = notifications.firstIndex(where: { $0.id == notificationId }), !notifications[index].isRead else {
-            return
-        }
-        
-        notifications[index].isRead = true
-        unreadCount = notifications.filter { !$0.isRead }.count
-
-        Task {
-            do {
-                try await cloudStoreService.updateData(collection: .notifications, documentId: notificationId, newData: ["isRead": true])
-            } catch {
-                print("Error marking notification as read: \(error.localizedDescription)")
-                // Revert the local change if the update fails
-                DispatchQueue.main.async {
-                    self.notifications[index].isRead = false
-                    self.unreadCount = self.notifications.filter { !$0.isRead }.count
-                }
-            }
-        }
-    }
 }

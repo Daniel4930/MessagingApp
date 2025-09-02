@@ -24,43 +24,59 @@ enum UploadError: Error {
 @MainActor
 class MessageViewModel: ObservableObject {
     @Published var messages: [MessageMap] = []
-    private var messageListenerTask: Task<Void, Never>? = nil
+    private var messageListenerTasks: [String: Task<Void, Never>] = [:]
     
     deinit {
-        messageListenerTask?.cancel()
+        messageListenerTasks.values.forEach { $0.cancel() }
+    }
+    
+    func stopListening(channelId: String?) {
+        if let channelId {
+            messageListenerTasks[channelId]?.cancel()
+            messageListenerTasks[channelId] = nil
+        }
     }
     
     func listenForMessages(channelId: String) {
-        messageListenerTask?.cancel()
-        messageListenerTask = Task {
+        guard messageListenerTasks[channelId] == nil else {
+            return
+        }
+        
+        let task = Task {
             do {
-                // Fetch the last 10 messages
                 let (initialMessages, lastDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId)
                 
-                if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                    self.messages[index].messages = initialMessages
-                    self.messages[index].documentSnapshot = lastDocument
-                } else {
-                    self.messages.append(MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument))
+                await MainActor.run {
+                    if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                        self.messages[index].messages = initialMessages
+                        self.messages[index].documentSnapshot = lastDocument
+                    } else {
+                        self.messages.append(MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument))
+                    }
                 }
                 
-                // Get the date of the last message
-                guard let lastMessageDate = initialMessages.last?.date?.dateValue() else { return }
+                let lastMessageDate = initialMessages.last?.date?.dateValue() ?? Date()
                 
-                // Listen for new messages after the last message date
                 let stream = FirebaseCloudStoreService.shared.listenForNewMessages(channelId: channelId, after: lastMessageDate)
                 
                 for try await newMessages in stream {
-                    if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                        let combinedMessages = self.messages[index].messages + newMessages
-                        let uniqueMessages = Array(Set(combinedMessages))
-                        self.messages[index].messages = uniqueMessages.sorted { ($0.date?.dateValue() ?? Date.distantPast) < ($1.date?.dateValue() ?? Date.distantPast) }
+                    await MainActor.run {
+                        if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                            let combinedMessages = self.messages[index].messages + newMessages
+                            let uniqueMessages = Array(Set(combinedMessages))
+                            self.messages[index].messages = uniqueMessages.sorted { ($0.date?.dateValue() ?? Date.distantPast) < ($1.date?.dateValue() ?? Date.distantPast) }
+                        }
                     }
                 }
             } catch {
-                print("Error listening for messages: \(error.localizedDescription)")
+                if error is CancellationError {
+                    // This is expected when the task is cancelled.
+                } else {
+                    print("Error listening for messages on channel \(channelId): \(error.localizedDescription)")
+                }
             }
         }
+        messageListenerTasks[channelId] = task
     }
     
     private func sendMessage(channelId: String, message: Message) async {
@@ -100,6 +116,20 @@ class MessageViewModel: ObservableObject {
             do {
                 let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel, additionalData: nil)
                 currentChannel.id = documentId
+                listenForMessages(channelId: documentId)
+                
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    for memberId in currentChannel.memberIds {
+                        group.addTask {
+                            try await FirebaseCloudStoreService.shared.updateData(
+                                collection: .users,
+                                documentId: memberId,
+                                newData: ["channelId": FieldValue.arrayUnion([documentId])]
+                            )
+                        }
+                    }
+                    try await group.waitForAll()
+                }
             } catch {
                 print("Error creating channel: \(error.localizedDescription)")
                 // Handle or rethrow the error as needed

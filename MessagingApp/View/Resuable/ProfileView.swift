@@ -117,20 +117,18 @@ private extension ProfileView {
             HStack {
                 Spacer()
                 ProfileActionButton(systemImageName: "message.fill", label: "Message") {
-                    Task {
-                        guard let currentUserId = userViewModel.user?.id else { return }
-                        //Create a channel if doesn't exist
-                        let channelInfo = await channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: user)
-                        
-                        if let channelInfo {
-                            navViewModel.viewToShow = {
-                                AnyView(DirectMessageView(channelInfo: channelInfo))
-                            }
-                            navViewModel.showView()
-                            dismiss()
-                        } else {
-                            print("Failed to open a dm")
+                    guard let currentUserId = userViewModel.user?.id else { return }
+                    //Create a channel if doesn't exist
+                    let channelInfo = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: user)
+                    
+                    if let channelInfo {
+                        navViewModel.viewToShow = {
+                            AnyView(DirectMessageView(channelInfo: channelInfo))
                         }
+                        navViewModel.showView()
+                        dismiss()
+                    } else {
+                        print("Failed to open a dm")
                     }
                 }
                 Spacer()

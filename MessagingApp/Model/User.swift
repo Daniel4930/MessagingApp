@@ -16,7 +16,7 @@ enum OnlineStatus: String, Codable {
     case idle
 }
 
-struct User: Codable, Identifiable, Equatable {
+struct User: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     let email: String
     let userName: String // Unique

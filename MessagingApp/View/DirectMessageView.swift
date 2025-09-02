@@ -74,7 +74,9 @@ struct DirectMessageView: View {
                 }
                 messageViewModel.listenForMessages(channelId: id)
             }
-            
+            .onDisappear {
+                messageViewModel.stopListening(channelId: channelInfo.id)
+            }
         }
         .ignoresSafeArea(.keyboard)
         .background(Color("PrimaryBackgroundColor"))
