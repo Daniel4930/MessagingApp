@@ -7,22 +7,22 @@
 
 import SwiftUI
 
-enum CurrentTab {
+enum Tabs {
     case home
     case notifications
     case account
 }
 
 struct TabsView: View {
-    @State private var selection: CurrentTab = .home
+    @State private var selection: Tabs = .home
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     let iconDimension: CGSize = CGSize(width: 25, height: 25)
-    let tabsInfo: [(tab: CurrentTab, title: String, icon: String)] = [
+    let tabsInfo: [(tab: Tabs, title: String, icon: String)] = [
         (.home, "Home", "house.fill"),
         (.notifications, "Notifications", "bell.fill"),
-        (.account, "Account", "USER_ICON")
+        (.account, "Account", "person.fill")
     ]
     
     var body: some View {
@@ -31,16 +31,9 @@ struct TabsView: View {
             case .home:
                 HomeView()
             case .notifications:
-                if let id = userViewModel.user?.id {
-                    NotificationView(userId: id)
-                } else {
-                    Text("Can't load notifications")
-                    Spacer()
-                }
+                NotificationView(userId: userViewModel.user?.id)
             case .account:
-                if let user = userViewModel.user {
-                    ProfileView(user: user)
-                }
+                CustomizableProfileView()
             }
             
             HStack(alignment: .center) {
@@ -52,7 +45,7 @@ struct TabsView: View {
                         Text(info.title)
                             .font(.footnote)
                     }
-                    .foregroundStyle(Color.button.opacity(selection == info.tab ? 1 : 0.5))
+                    .foregroundStyle(Color.button.opacity(selection == info.tab ? 1 : 0.4))
                     .onTapGesture {
                         selection = info.tab
                         navViewModel.gestureDisabled = selection == .home ? false : true
@@ -61,9 +54,9 @@ struct TabsView: View {
                 Spacer()
             }
             .padding(.top, 10)
-            .background(Color.secondaryBackground)
+            .background(Color.secondaryBackground.opacity(0.6))
             .overlay(alignment: .top) {
-                DividerView(color: Color.button.opacity(0.5), thickness: 1)
+                DividerView(color: Color.button.opacity(0.2), thickness: 1)
             }
         }
         .overlay(alignment: .trailing) {
@@ -81,17 +74,17 @@ struct TabsView: View {
     }
 }
 extension TabsView {
-    @ViewBuilder func tabIcon(icon: String, tab: CurrentTab) -> some View {
-        if icon == "USER_ICON", let user = userViewModel.user {
+    @ViewBuilder func tabIcon(icon: String, tab: Tabs) -> some View {
+        if tab == .account, let user = userViewModel.user {
             UserIconView(
-                user: user,
+                urlString: user.icon,
                 iconDimension: iconDimension,
-                borderColor: Color.primaryBackground.opacity(selection == tab ? 1 : 0.5),
+                borderColor: Color.primaryBackground.opacity(selection == tab ? 1 : 0.4),
             )
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(
                         status: user.onlineStatus.rawValue,
-                        color: Color.secondaryBackground.opacity(selection == tab ? 1 : 0.5)
+                        color: Color.secondaryBackground
                     )
                         .offset(x: 8, y: 5)
                 }

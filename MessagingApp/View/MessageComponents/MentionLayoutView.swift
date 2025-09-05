@@ -51,7 +51,7 @@ struct MentionButton: View {
             }
         } label: {
             HStack {
-                UserIconView(user: user)
+                UserIconView(urlString: user.icon)
                 
                 Text(user.displayName.isEmpty ? user.userName : user.displayName)
                     .bold()

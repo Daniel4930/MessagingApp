@@ -67,7 +67,7 @@ struct MessageCenter: View {
                             Button {
                                 selectedFriendIcon = friend
                             } label: {
-                                UserIconView(user: friend, iconDimension: .init(width: 45, height: 45))
+                                UserIconView(urlString: friend.icon, iconDimension: .init(width: 45, height: 45))
                                     .overlay(alignment: .bottomTrailing) {
                                         OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: .primaryBackground)
                                     }
@@ -97,7 +97,7 @@ struct MessageCenter: View {
                         navViewModel.showView()
                     } label: {
                         HStack {
-                            UserIconView(user: friend)
+                            UserIconView(urlString: friend.icon)
                                 .overlay(alignment: .bottomTrailing) {
                                     OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: .secondaryBackground)
                                 }
@@ -144,19 +144,32 @@ struct MessageCenter: View {
                 Button {
                     showFriendList = true
                 } label: {
-                    Image(systemName: "plus.message.fill")
+                    Image(systemName: "message.fill")
                         .resizable()
-                        .frame(width: 45, height: 45)
+                        .frame(width: 35, height: 35)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .background {
+                            Circle()
+                                .fill(.blue)
+                        }
                 }
+                .padding([.trailing, .bottom], 10)
             }
         }
         .padding()
         .task {
             guard let currentUser = userViewModel.user, let userId = currentUser.id else { return }
             channelViewModel.listenForChannels(userId: userId, friends: friendViewModel.friends)
+            userViewModel.listenForUserChanges(userId: userId)
         }
         .onAppear {
             selectedDmChannel = channelViewModel.dmChannelsMapWithFriends.first?.channel
+            if let selectedDmChannel {
+                navViewModel.viewToShow = {
+                    AnyView(DirectMessageView(channelInfo: selectedDmChannel))
+                }
+            }
         }
         .onChange(of: channelViewModel.dmChannelsMapWithFriends) { oldMap, newMap in
             if selectedDmChannel == nil, let first = newMap.first {
@@ -180,13 +193,14 @@ struct MessageCenter: View {
                 navViewModel.showView()
             } else {
                 hideKeyboard()
-                navViewModel.hideView()
-                if let selectedDmChannel {
-                    navViewModel.viewToShow = {
-                        AnyView(DirectMessageView(channelInfo: selectedDmChannel))
+                navViewModel.hideView() {
+                    if let selectedDmChannel {
+                        navViewModel.viewToShow = {
+                            AnyView(DirectMessageView(channelInfo: selectedDmChannel))
+                        }
+                    } else {
+                        navViewModel.viewToShow = nil
                     }
-                } else {
-                    navViewModel.viewToShow = nil
                 }
             }
         }

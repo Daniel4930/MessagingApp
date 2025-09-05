@@ -11,13 +11,11 @@ struct AddFriendView: View {
     @Binding var showAddFriend: Bool
     @State private var username: String = ""
     @State private var usernameErrorMessage: String = ""
-    @State private var alertMessage: String = ""
-    @State private var alertMessageHeight: CGFloat = .zero
-    @State private var alertBackgroundColor: Color = .clear
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
     @EnvironmentObject var notificationViewModel: NotificationViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
         
     var body: some View {
         VStack {
@@ -48,9 +46,6 @@ struct AddFriendView: View {
             
             Button {
                 usernameErrorMessage = ""
-                alertBackgroundColor = .clear
-                alertMessageHeight = .zero
-                alertMessage = ""
                 
                 if username.isEmpty {
                     usernameErrorMessage = "Username is empty"
@@ -60,36 +55,36 @@ struct AddFriendView: View {
                     usernameErrorMessage = "Username can't contain spaces"
                 }
                 
-                if usernameErrorMessage.isEmpty && alertMessage.isEmpty {
+                if usernameErrorMessage.isEmpty {
                     Task {
                         //Check if the username already in the friend list
                         guard !friendViewModel.friends.contains(where: { $0.userName == username }) else {
-                            showAlertMessage(message: "\(username) is already in the friend list", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "\(username) is already in the friend list", type: .error)
                             return
                         }
                         
                         guard let currentUser = userViewModel.user else {
-                            showAlertMessage(message: "Failed to send friend request", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "Failed to send friend request", type: .error)
                             return
                         }
                         
                         //Fetch recipientId from username
                         guard let user = await FirebaseCloudStoreService.shared.fetchUserByUsername(username: username) else {
-                            showAlertMessage(message: "User does not exist", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "User does not exist", type: .error)
                             return
                         }
                         
                         //Check if a friend request has already been sent
                         let friendRequestToUser = try await FirebaseCloudStoreService.shared.fetchFriendRequest(recipientId: user.id!, senderName: currentUser.userName)
                         if let friendRequestToUser = friendRequestToUser, !friendRequestToUser.isEmpty {
-                            showAlertMessage(message: "A friend request has already been sent to \(username)", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "A friend request has already been sent to \(username)", type: .error)
                             return
                         }
                         
                         //Check if the user has already sent a friend request to current user
                         let friendRequestToCurrentUser = try await FirebaseCloudStoreService.shared.fetchFriendRequest(recipientId: currentUser.id!, senderName: username)
                         if let friendRequestToCurrentUser = friendRequestToCurrentUser, !friendRequestToCurrentUser.isEmpty {
-                            showAlertMessage(message: "\(username) has already sent a friend request to you. Please accept it in the notifications tab", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "\(username) has already sent a friend request to you. Please accept it in the notifications tab", type: .info)
                             return
                         }
                         
@@ -102,13 +97,13 @@ struct AddFriendView: View {
                         )
                         
                         guard let notification = notification else {
-                            showAlertMessage(message: "Failed to send friend request", backgroundColor: .red)
+                            alertMessageViewModel.presentAlert(message: "Failed to send friend request", type: .error)
                             return
                         }
                         do {
                             try await notificationViewModel.addNotification(notification: notification)
                             
-                            showAlertMessage(message: "Friend request sent", backgroundColor: .green)
+                            alertMessageViewModel.presentAlert(message: "Friend request sent", type: .success)
                             
                         } catch {
                             print(error)
@@ -128,15 +123,5 @@ struct AddFriendView: View {
             Spacer()
         }
         .padding(.horizontal)
-        .overlay(alignment: .top) {
-            AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
-        }
-    }
-}
-extension AddFriendView {
-    func showAlertMessage(message: String, backgroundColor: Color) {
-        alertBackgroundColor = backgroundColor
-        alertMessage = message
-        alertMessageHeight = AlertMessageView.maxHeight
     }
 }

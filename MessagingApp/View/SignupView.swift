@@ -20,12 +20,10 @@ struct SignupView: View {
     @State private var errorPasswordMessage: String = ""
     @State private var retypePassword: String = ""
     @State private var errorRetypePasswordMessage: String = ""
-    @State private var alertMessage: String = ""
-    @State private var alertBackgroundColor: Color = .clear
-    @State private var alertMessageHeight: CGFloat = .zero
     @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
     
     var body: some View {
         ScrollView {
@@ -59,9 +57,6 @@ struct SignupView: View {
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
                         errorRetypePasswordMessage = ""
-                        alertBackgroundColor = .clear
-                        alertMessageHeight = .zero
-                        alertMessage = ""
                         isLoading = true
                         
                         if email.isEmpty {
@@ -93,10 +88,6 @@ struct SignupView: View {
             }
         }
         .scrollDismissesKeyboard(.immediately)
-        .overlay(alignment: .top) {
-            AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
-        }
-        .navigationBarBackButtonHidden(alertMessageHeight == AlertMessageView.maxHeight ? true : false)
     }
 }
 
@@ -125,9 +116,7 @@ extension SignupView {
                         try await userViewModel.createNewUser(authId: authDataResult.user.uid, data: userInsert)
                     } catch {
                         isLoading = false
-                        alertMessage = "Unable to sign up. Please try again"
-                        alertBackgroundColor = .red
-                        alertMessageHeight = AlertMessageView.maxHeight
+                        alertMessageViewModel.presentAlert(message: "Unable to sign up. Please try again", type: .error)
                     }
                     await userViewModel.fetchCurrentUser(email: email)
                     
@@ -147,17 +136,11 @@ extension SignupView {
                     errorPasswordMessage = "Password is weak"
                     errorRetypePasswordMessage = "Password is weak"
                 case .operationNotAllowed:
-                    alertMessage = "Server side error. Please try again"
-                    alertBackgroundColor = .red
-                    alertMessageHeight = AlertMessageView.maxHeight
+                    alertMessageViewModel.presentAlert(message: "Server side error. Please try again", type: .error)
                 case .networkError:
-                    alertMessage = "Not connected to the internet"
-                    alertBackgroundColor = .red
-                    alertMessageHeight = AlertMessageView.maxHeight
+                    alertMessageViewModel.presentAlert(message: "Not connected to the internet", type: .error)
                 case .unknown:
-                    alertMessage = "Unknown error"
-                    alertBackgroundColor = .red
-                    alertMessageHeight = AlertMessageView.maxHeight
+                    alertMessageViewModel.presentAlert(message: "Unknown error", type: .error)
                 }
             }
         }

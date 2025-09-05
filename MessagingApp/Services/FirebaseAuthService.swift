@@ -32,6 +32,11 @@ enum FirebaseResetPasswordError: Error {
     case unknown
 }
 
+enum FirebaseSignOutError: Error {
+    case keychainError
+    case unknown
+}
+
 class FirebaseAuthService {
     static let shared = FirebaseAuthService()
     
@@ -96,35 +101,23 @@ class FirebaseAuthService {
         }
     }
     
-    func signInAUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, FirebaseSignInError>) -> Void) {
-        Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
-            if let error = error as NSError? {
-                if let authError = AuthErrorCode(rawValue: error.code) {
-                    switch authError {
-                    case .invalidCredential:
-                        completion(.failure(.invalidCredential))
-                    case .invalidEmail:
-                        completion(.failure(.invalidEmail))
-                    case .userDisabled:
-                        completion(.failure(.userDisabled))
-                    case .operationNotAllowed:
-                        completion(.failure(.operationNotAllowed))
-                    case .wrongPassword:
-                        completion(.failure(.wrongPassword))
-                    case .networkError:
-                        completion(.failure(.networkError))
-                    default:
-                        print("Failed to sign in with unknown error: \(error.localizedDescription)")
-                        completion(.failure(.unknown))
-                    }
-                } else {
-                    print("Failed to sign in with unknown error: \(error.localizedDescription)")
-                    completion(.failure(.unknown))
+    func isSignIn(email: String) -> Bool {
+        return Auth.auth().currentUser != nil
+    }
+    
+    func signOut() throws {
+        do {
+            try Auth.auth().signOut()
+        } catch let error as NSError {
+            if let authError = AuthErrorCode(rawValue: error.code) {
+                switch authError {
+                case .keychainError:
+                    throw FirebaseSignOutError.keychainError
+                default:
+                    throw FirebaseSignOutError.unknown
                 }
-                return
-            }
-            if let authResult = authResult {
-                completion(.success(authResult))
+            } else {
+                throw FirebaseSignOutError.unknown
             }
         }
     }

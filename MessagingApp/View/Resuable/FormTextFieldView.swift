@@ -26,27 +26,47 @@ struct FormTextFieldView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            Group {
-                switch formType {
-                case .email:
-                    TextField(textFieldTitle, text: $text)
-                        .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                case .password:
-                    SecureField(textFieldTitle, text: $text)
-                        .textContentType(.password)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                case .text:
-                    TextField(textFieldTitle, text: $text)
+            HStack {
+                Group {
+                    switch formType {
+                    case .email:
+                        TextField(textFieldTitle, text: $text)
+                            .keyboardType(.emailAddress)
+                            .textContentType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                    case .password:
+                        SecureField(textFieldTitle, text: $text)
+                            .textContentType(.password)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                    case .text:
+                        TextField(textFieldTitle, text: $text)
+                    }
                 }
+                
+                if formType != .password {
+                    Text("+")
+                        .font(.title2.bold())
+                        .rotationEffect(.degrees(45))
+                        .foregroundStyle(.secondaryBackground)
+                        .frame(width: 25, height: 25)
+                        .background {
+                            Circle()
+                                .fill(.button)
+                                .brightness(-0.5)
+                        }
+                        .onTapGesture {
+                            text = ""
+                        }
+                        .modifier(TapGestureAnimation())
+                }
+
             }
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(.secondarySystemBackground)) // example background
+                    .fill(Color(.secondarySystemBackground))
             )
             
             Text(errorMessage.isEmpty ? " " : "*\(errorMessage)")

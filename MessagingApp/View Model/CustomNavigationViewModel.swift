@@ -58,14 +58,25 @@ class CustomNavigationViewModel: ObservableObject  {
     }
     
     func showView() {
-        endingXOffset = -CustomNavigationViewModel.maxOffset
-        currentXOffset = .zero
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.snappy()) {
+                self.endingXOffset = -CustomNavigationViewModel.maxOffset
+                self.currentXOffset = .zero
+            }
+        }
     }
     
-    func hideView() {
-        withAnimation(.snappy()) {
-            endingXOffset = .zero
-            currentXOffset = .zero
+    func hideView(completion: @escaping () -> Void = {}) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.snappy()) {
+                self.endingXOffset = .zero
+                self.currentXOffset = .zero
+            }
+        }
+        
+        let animationDuration: Double = 0.5
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+            completion()
         }
     }
 }

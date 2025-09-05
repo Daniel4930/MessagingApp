@@ -8,11 +8,11 @@ enum CurrentView {
 }
 
 struct ContentView: View {
-    @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var friendViewModel: FriendViewModel
-    
     @State private var currentView: CurrentView = .login
     @State private var isCheckingAuth = true
+    @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var friendViewModel: FriendViewModel
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
     
     var body: some View {
         if isCheckingAuth {
@@ -32,44 +32,50 @@ struct ContentView: View {
                 }
             }
             .onAppear(perform: setupFCMTokenObserver)
+            .overlay(alignment: .top) {
+                if alertMessageViewModel.showAlert {
+                    AlertMessageView()
+                }
+            }
         }
     }
     
     func attemptAutoLogin() {
         Task {
-            guard let (email, password) = KeychainService.shared.load() else {
+            //Get user email. If it doesn't exist, return to login screen
+            guard let email = UserDefaults.standard.string(forKey: "email") else {
                 isCheckingAuth = false
                 return
             }
             
-            do {
-                let authData = try await FirebaseAuthService.shared.signInAUser(email: email, password: password)
+            //If user already sign in, fetch user's data
+            if FirebaseAuthService.shared.isSignIn(email: email) {
+                await userViewModel.fetchCurrentUser(email: email)
                 
-                if let email = authData.user.email {
-                    await userViewModel.fetchCurrentUser(email: email)
-                    
-                    if let newToken = try? await Messaging.messaging().token() {
-                        if userViewModel.user?.fcmToken != newToken {
-                            await userViewModel.updateUserFCMToken(newToken)
-                        }
+                //If fetch user failed, show alert and return to login screen
+                guard let user = userViewModel.user else {
+                    alertMessageViewModel.presentAlert(message: "Failed to auto-login. Please sign in again.", type: .error)
+                    isCheckingAuth = false
+                    return
+                }
+                
+                //Update FCM token of the user's device for receiving notification if needed
+                if let newToken = try? await Messaging.messaging().token() {
+                    if user.fcmToken != newToken {
+                        await userViewModel.updateUserFCMToken(newToken)
                     }
                 }
                 
-                if let user = userViewModel.user {
-                    if user.userName.isEmpty {
-                        currentView = .newUser
-                    } else {
-                        await friendViewModel.fetchFriends(for: user)
-                        currentView = .content
-                    }
+                //If username is empty, show newUser screen to setup user.
+                if user.userName.isEmpty {
+                    currentView = .newUser
                 } else {
-                    currentView = .login
+                    await friendViewModel.fetchFriends(for: user)
+                    currentView = .content
                 }
-                
-            } catch {
-                // If auto-login fails, clear invalid credentials
-                KeychainService.shared.clear(email: email)
-                currentView = .login
+            } else {
+                //If the user is not sign in, show login screen
+                alertMessageViewModel.presentAlert(message: "Your session has expired. Please sign in again.", type: .info)
             }
             
             isCheckingAuth = false

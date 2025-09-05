@@ -1,22 +1,12 @@
-//
-//  AlertMessageView.swift
-//  MessagingApp
-//
-//  Created by Daniel Le on 8/19/25.
-//
-
 import SwiftUI
 
 struct AlertMessageView: View {
-    @Binding var text: String
-    let font: Font
-    let isBold: Bool
-    let textAlignment: TextAlignment
-    @Binding var height: CGFloat
-    @Binding var backgroundColor: Color
-    let brightness: CGFloat
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
+    @State private var height: CGFloat = 0
+    @State private var backgroundColor: Color = .clear
+    
     static let maxHeight: CGFloat = 150
-    static let dismissAfter: TimeInterval = 3
+    private let dismissAfter: TimeInterval = 3
     
     @State private var dismissTask: Task<Void, Never>?
     
@@ -31,56 +21,72 @@ struct AlertMessageView: View {
                 if value.translation.height > 0 {
                     height = AlertMessageView.maxHeight
                 } else {
-                    text = ""
-                    height = 0
-                    backgroundColor = .clear
+                    dismiss()
                 }
             }
-    }
-    
-    init(text: Binding<String>, font: Font = .title2, isBold: Bool = true, textAlignment: TextAlignment = .center, height: Binding<CGFloat>, backgroundColor: Binding<Color>, brightness: CGFloat = -0.5) {
-        self._text = text
-        self.font = font
-        self.isBold = isBold
-        self.textAlignment = textAlignment
-        self._height = height
-        self._backgroundColor = backgroundColor
-        self.brightness = brightness
     }
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(backgroundColor)
-            .brightness(brightness)
-            .frame(height: height)
-            .gesture(dragGesture)
-            .animation(.spring(duration: 0.5), value: height)
-            .animation(.spring(duration: 0.5), value: text)
-            .animation(.spring(duration: 0.5), value: backgroundColor)
-            .overlay {
-                Text(text)
-                    .font(font)
-                    .multilineTextAlignment(textAlignment)
-                    .bold(isBold)
-                    .padding(.horizontal)
-                    .padding(.top)
-            }
-            .onChange(of: text) { oldText, newText in
-                dismissTask?.cancel()
-                
-                if !newText.isEmpty {
-                    dismissTask = Task {
-                        do {
-                            try await Task.sleep(for: .seconds(AlertMessageView.dismissAfter))
-                            text = ""
-                            height = 0
-                            backgroundColor = .clear
-                        } catch {
-                            // Task was cancelled.
-                        }
+        if let alert = alertMessageViewModel.alertMessage {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(backgroundColor)
+                .frame(height: height)
+                .gesture(dragGesture)
+                .animation(.spring(duration: 0.5), value: height)
+                .animation(.spring(duration: 0.5), value: alertMessageViewModel.showAlert)
+                .animation(.spring(duration: 0.5), value: backgroundColor)
+                .overlay {
+                    Text(alert.message)
+                        .font(.title2)
+                        .multilineTextAlignment(.center)
+                        .bold()
+                        .padding(.horizontal)
+                        .padding(.top)
+                }
+                .onAppear {
+                    height = AlertMessageView.maxHeight
+                    backgroundColor = alert.type.color
+                    scheduleDismissal()
+                }
+                .onChange(of: alertMessageViewModel.showAlert) { _, showAlert in
+                    if showAlert {
+                        height = AlertMessageView.maxHeight
+                        backgroundColor = alertMessageViewModel.alertMessage?.type.color ?? .clear
+                        scheduleDismissal()
                     }
                 }
+                .ignoresSafeArea()
+        }
+    }
+    
+    private func scheduleDismissal() {
+        dismissTask?.cancel()
+        dismissTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(dismissAfter))
+                dismiss()
+            } catch {
+                // Task was cancelled.
             }
-            .ignoresSafeArea()
+        }
+    }
+    
+    private func dismiss() {
+        withAnimation {
+            height = 0
+            backgroundColor = .clear
+            alertMessageViewModel.dismissAlert()
+        }
+    }
+}
+
+extension AlertType {
+    var color: Color {
+        switch self {
+        case .success: return .green
+        case .error: return .red
+        case .warning: return .orange
+        case .info: return .blue
+        }
     }
 }

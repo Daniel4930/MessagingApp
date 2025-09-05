@@ -22,7 +22,7 @@ struct MessageLayoutView: View {
     
     var body: some View {
         HStack(alignment: .top) {
-            UserIconView(user: user, iconDimension: iconDimension)
+            UserIconView(urlString: user.icon, iconDimension: iconDimension)
                 .onTapGesture {
                     messageComposerViewModel.userProfile = user
                 }

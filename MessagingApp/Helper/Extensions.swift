@@ -29,6 +29,18 @@ extension View {
     func customSheetModifier<SheetContent: View>(isPresented: Binding<Bool>, @ViewBuilder sheetContent: @escaping () -> SheetContent) -> some View {
         modifier(CustomSheetView<SheetContent>(isPresented: isPresented, sheetContent: sheetContent))
     }
+    
+    //Conditional modifier
+    @ViewBuilder func `if`<Content: View>(
+        _ condition: Bool,
+        transform: (Self) -> Content
+    ) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
 }
 
 // MARK: - Image Styling
@@ -75,6 +87,27 @@ extension Image {
             .resizable()
             .scaledToFit()
             .modifier(SidebarItemStyle(dimension: dimension, space: space))
+    }
+}
+
+// 4. Create an animation when triggers a tap gesture
+struct TapGestureAnimation: ViewModifier {
+    @State private var opacity: CGFloat = 1
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(opacity)
+            .simultaneousGesture(TapGesture().onEnded {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    opacity = 0.5
+                }
+                // Reset back to normal after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        opacity = 1
+                    }
+                }
+            })
     }
 }
 

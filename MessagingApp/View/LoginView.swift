@@ -16,14 +16,12 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorPasswordMessage: String = ""
     @State private var isLoading: Bool = false
-    @State private var alertMessage: String = ""
-    @State private var alertMessageHeight: CGFloat = .zero
-    @State private var alertBackgroundColor: Color = .clear
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
     
     var body: some View {
         NavigationStack {
@@ -58,9 +56,6 @@ struct LoginView: View {
                         hideKeyboard()
                         errorEmailMessage = ""
                         errorPasswordMessage = ""
-                        alertBackgroundColor = .clear
-                        alertMessageHeight = .zero
-                        alertMessage = ""
                         isLoading = true
                         
                         if email.isEmpty {
@@ -83,9 +78,6 @@ struct LoginView: View {
                 }
                 .padding(.horizontal)
             }
-            .overlay(alignment: .top) {
-                AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
-            }
         }
     }
 }
@@ -95,7 +87,7 @@ extension LoginView {
             do {
                 let authData = try await FirebaseAuthService.shared.signInAUser(email: email, password: password)
                 
-                KeychainService.shared.save(email: self.email, password: self.password)
+                UserDefaults.standard.set(email, forKey: "email")
                 
                 if let email = authData.user.email {
                     await userViewModel.fetchCurrentUser(email: email)
@@ -118,34 +110,28 @@ extension LoginView {
                     }
                 } else {
                     isLoading = false
-                    alertBackgroundColor = .red
-                    alertMessageHeight = AlertMessageView.maxHeight
-                    alertMessage = "Failed to sign in. Please try again"
+                    alertMessageViewModel.presentAlert(message: "Failed to sign in. Please try again", type: .error)
                 }
                 
             } catch let error as FirebaseSignInError {
                 isLoading = false
                 switch error {
                 case .wrongPassword, .invalidCredential:
-                    self.alertMessage = "Either or both email and password are incorrect"
+                    alertMessageViewModel.presentAlert(message: "Either or both email and password are incorrect", type: .error)
                 case .invalidEmail:
                     self.errorEmailMessage = "Email is invalid"
                 case .userDisabled:
-                    self.alertMessage = "Your account has been disabled"
+                    alertMessageViewModel.presentAlert(message: "Your account has been disabled", type: .error)
                 case .operationNotAllowed:
-                    self.alertMessage = "Server side error. Please try again"
+                    alertMessageViewModel.presentAlert(message: "Server side error. Please try again", type: .error)
                 case .networkError:
-                    self.alertMessage = "Network error. Please check your internet connection"
+                    alertMessageViewModel.presentAlert(message: "Network error. Please check your internet connection", type: .error)
                 case .unknown:
-                    self.alertMessage = "Unknown error"
+                    alertMessageViewModel.presentAlert(message: "Unknown error", type: .error)
                 }
-                alertBackgroundColor = .red
-                alertMessageHeight = AlertMessageView.maxHeight
             } catch {
                 isLoading = false
-                self.alertMessage = "An unexpected error occurred: \(error.localizedDescription)"
-                alertBackgroundColor = .red
-                alertMessageHeight = AlertMessageView.maxHeight
+                alertMessageViewModel.presentAlert(message: "An unexpected error occurred: \(error.localizedDescription)", type: .error)
             }
         }
     }

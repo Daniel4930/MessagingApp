@@ -2,76 +2,87 @@
 import SwiftUI
 
 struct NotificationView: View {
-    private let currentUserId: String
+    private let currentUserId: String?
     @EnvironmentObject var notificationViewModel: NotificationViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     
-    init(userId: String) {
+    init(userId: String?) {
         self.currentUserId = userId
     }
 
     var body: some View {
         VStack(alignment: .leading) {
             Text("Notifications")
-                .font(.title2)
-                .bold()
-                .padding(.bottom)
+                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .font(.title2.bold())
+                .padding()
+                .overlay(alignment: .bottom) {
+                    DividerView()
+                }
             
             ScrollView {
-                ForEach(notificationViewModel.notifications) {notification in
-                    var attributedString: AttributedString {
-                        var result = AttributedString(notification.senderName)
-                        result.font = .headline.bold()
-                        return result
-                    }
-                    
-                    VStack(spacing: 10) {
-                        HStack {
-                            Text(attributedString + " sent you a friend request")
-                                .lineLimit(1)
-                                .layoutPriority(1)
-                            Spacer()
-                            if let timestamp = notification.timestamp {
-                                Text(notificationViewModel.formatNotificationTimestamp(time: timestamp.dateValue()))
-                                    .font(.footnote)
-                            }
+                if currentUserId == nil {
+                    Text("Can't load notification")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    ForEach(notificationViewModel.notifications) { notification in
+                        var attributedString: AttributedString {
+                            var result = AttributedString(notification.senderName)
+                            result.font = .headline.bold()
+                            return result
                         }
                         
-                        HStack {
-                            Spacer()
-                            Button("Accept") {
-                                Task {
-                                    await acceptFriendRequestAction(notification: notification)
+                        VStack(spacing: 10) {
+                            HStack {
+                                Text(attributedString + " sent you a friend request")
+                                    .lineLimit(1)
+                                    .layoutPriority(1)
+                                Spacer()
+                                if let timestamp = notification.timestamp {
+                                    Text(notificationViewModel.formatNotificationTimestamp(time: timestamp.dateValue()))
+                                        .font(.footnote)
                                 }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .buttonBorderShape(.capsule)
-                            Spacer()
-                            Button("Decline") {
-                                Task {
-                                    await declineFriendRequestAction(notification: notification)
+                            
+                            HStack {
+                                Spacer()
+                                Button("Accept") {
+                                    Task {
+                                        await acceptFriendRequestAction(notification: notification)
+                                    }
                                 }
+                                .buttonStyle(.borderedProminent)
+                                .buttonBorderShape(.capsule)
+                                Spacer()
+                                Button("Decline") {
+                                    Task {
+                                        await declineFriendRequestAction(notification: notification)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .buttonBorderShape(.capsule)
+                                Spacer()
                             }
-                            .buttonStyle(.borderedProminent)
-                            .buttonBorderShape(.capsule)
-                            Spacer()
                         }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.gray)
+                                .brightness(-0.4)
+                        )
+                        .padding(.bottom)
                     }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.gray)
-                            .brightness(-0.4)
-                    )
-                    .padding(.bottom)
                 }
             }
+            .padding()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
+        .frame(maxWidth: .infinity)
         .onAppear {
-            notificationViewModel.setUserId(currentUserId)
+            if let currentUserId {
+                notificationViewModel.setUserId(currentUserId)
+            }
         }
     }
 }
@@ -79,6 +90,11 @@ extension NotificationView {
     func acceptFriendRequestAction(notification: NotificationContent) async {
         do {
             let sender = await FirebaseCloudStoreService.shared.fetchUserByUsername(username: notification.senderName)
+            
+            guard let currentUserId = currentUserId else {
+                print("Current user's id is nil")
+                return
+            }
             
             guard let sender = sender else {
                 print("Sender is nil")

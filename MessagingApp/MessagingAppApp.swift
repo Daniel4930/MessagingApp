@@ -37,6 +37,7 @@ struct MessagingAppApp: App {
     @StateObject private var channelViewModel = ChannelViewModel()
     @StateObject private var notificationViewModel = NotificationViewModel()
     @StateObject private var navViewModel = CustomNavigationViewModel()
+    @StateObject private var alertMessageViewModel = AlertMessageViewModel()
 
     var body: some Scene {
         WindowGroup {
@@ -48,6 +49,7 @@ struct MessagingAppApp: App {
                 .environmentObject(keyboardProvider)
                 .environmentObject(navViewModel)
                 .environmentObject(notificationViewModel)
+                .environmentObject(alertMessageViewModel)
         }
     }
 }

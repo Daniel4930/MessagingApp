@@ -38,11 +38,11 @@ struct FriendListView: View {
                             AnyView(DirectMessageView(channelInfo: channel))
                         }
                         navViewModel.showView()
-                        selectedDmChannel = nil
+                        selectedDmChannel = channel.id != nil ? channel : nil
                         dismiss()
                     } label: {
                         HStack(alignment: .center) {
-                            UserIconView(user: friend)
+                            UserIconView(urlString: friend.icon)
                             VStack(alignment: .leading) {
                                 let displayNameIsEmpty = friend.displayName.isEmpty
                                 
@@ -59,7 +59,18 @@ struct FriendListView: View {
                     .tint(.white)
                 }
             }
-            .navigationTitle("New Message")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Text("Message")
+                        .font(.title3.bold())
+                }
+            }
         }
         .searchable(text: $nameToSearch, prompt: Text("Search your friends"))
     }

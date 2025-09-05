@@ -30,7 +30,7 @@ struct NavigationTopBar: View {
                     Text("Unable to get user information")
                 }
                 else if channelInfo.type == ChannelType.dm, let friend = friendViewModel.getFriendDmChannel(memberIds: channelInfo.memberIds) {
-                    UserIconView(user: friend)
+                    UserIconView(urlString: friend.icon)
                         .overlay(alignment: .bottomTrailing) {
                             OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: Color("PrimaryBackgroundColor"))
                         }

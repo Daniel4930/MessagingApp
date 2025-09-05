@@ -86,9 +86,6 @@ struct NewUserView: View {
                         }
                     }
                 }
-                .overlay(alignment: .top) {
-                    AlertMessageView(text: $generalErrorMessage, height: $generalErrorMessageHeight, backgroundColor: $generalErrorMessageColor)
-                }
             }
         }
     }

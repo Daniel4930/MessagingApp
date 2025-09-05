@@ -10,10 +10,9 @@ import SwiftUI
 struct ForgotPasswordView: View {
     @State private var email: String = ""
     @State private var emailErrorMessage: String = ""
-    @State private var alertMessage: String = ""
-    @State private var alertBackgroundColor: Color = .clear
-    @State private var alertMessageHeight: CGFloat = .zero
     @State private var isLoading: Bool = false
+    
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
     
     var body: some View {
         ZStack {
@@ -32,9 +31,6 @@ struct ForgotPasswordView: View {
                 Button {
                     hideKeyboard()
                     emailErrorMessage = ""
-                    alertBackgroundColor = .clear
-                    alertMessageHeight = .zero
-                    alertMessage = ""
                     isLoading = true
                     
                     if email.isEmpty {
@@ -51,10 +47,6 @@ struct ForgotPasswordView: View {
             }
             .padding(.horizontal)
         }
-        .overlay(alignment: .top) {
-            AlertMessageView(text: $alertMessage, height: $alertMessageHeight, backgroundColor: $alertBackgroundColor)
-        }
-        .navigationBarBackButtonHidden(alertMessageHeight == AlertMessageView.maxHeight ? true : false)
     }
 }
 extension ForgotPasswordView {
@@ -64,17 +56,11 @@ extension ForgotPasswordView {
             case .invalidEmail:
                 emailErrorMessage = "Email is invalid"
             case .networkError:
-                alertMessage = "No internet connection. Please check your internet"
-                alertBackgroundColor = .red
-                alertMessageHeight = AlertMessageView.maxHeight
+                alertMessageViewModel.presentAlert(message: "No internet connection. Please check your internet", type: .error)
             case .unknown:
-                alertMessage = "Unknown error. Please try again later"
-                alertBackgroundColor = .red
-                alertMessageHeight = AlertMessageView.maxHeight
+                alertMessageViewModel.presentAlert(message: "Unknown error. Please try again later", type: .error)
             case nil:
-                alertMessage = "Reset password link sent. Please check your email"
-                alertBackgroundColor = .green
-                alertMessageHeight = AlertMessageView.maxHeight
+                alertMessageViewModel.presentAlert(message: "Reset password link sent. Please check your email", type: .success)
             }
             isLoading = false
         }

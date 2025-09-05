@@ -19,14 +19,14 @@ enum OnlineStatus: String, Codable {
 struct User: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     let email: String
-    let userName: String // Unique
-    let displayName: String
+    var userName: String // Unique
+    var displayName: String
     @ServerTimestamp var registeredDate: Timestamp?
-    let icon: String // Get the image from firebase storage (path)
-    let onlineStatus: OnlineStatus
-    let aboutMe: String
-    let bannerColor: String // in hex
+    var icon: String // Get the image from firebase storage (path)
+    var onlineStatus: OnlineStatus
+    var aboutMe: String
+    var bannerColor: String // in hex
     var friends: [String]
-    let channelId: [String]
+    var channelId: [String]
     var fcmToken: String?
 }

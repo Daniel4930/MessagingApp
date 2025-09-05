@@ -10,58 +10,64 @@ import SwiftUI
 struct ProfileView: View {
     let user: User
     @State private var showOptions: Bool = false
+    @State private var bannerHeight: CGFloat = .zero
+    @State private var disableScroll = false
     @EnvironmentObject var userViewModel: UserViewModel
 
     var body: some View {
         ScrollView {
-            topBar
-            
-            userInfoSection
-            
-            if user.id != userViewModel.user?.id {
-                ProfileAddAndMessageButton(user: user)
+            VStack(spacing: 0) {
+                LineIndicator()
+                    .padding(.top, 5)
+                
+                ProfileTopBarButtonView(buttons: [
+                    ButtonInfo(systemImage: "ellipsis") {
+                        showOptions.toggle()
+                    }
+                ])
+                userInfoSection
+                    .overlay {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear {
+                                    bannerHeight = proxy.frame(in: .global).minY
+                                }
+                        }
+                    }
             }
-            
-            aboutMeSection
+            .padding(.horizontal)
+            .background(alignment: .top) {
+                Color(hex: user.bannerColor)
+                    .frame(height: bannerHeight)
+            }
+
+            ProfileAboutMeView(user: user)
+                .padding(.horizontal)
         }
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y
+        } action: { _, newY in
+            if newY < 0 {
+                disableScroll = true
+            } else {
+                disableScroll = false
+            }
+        }
+        .scrollDisabled(disableScroll)
         .opacity(showOptions ? 0.3 : 1)
         .defaultScrollAnchor(.top)
         .tint(Color("ButtonColor"))
-        .padding()
         .background(Color("PrimaryBackgroundColor"))
     }
 }
 
 // MARK: - View Components
 private extension ProfileView {
-    var topBar: some View {
-        HStack(spacing: 0) {
-            Spacer()
-            ellipsisButton
-        }
-        .overlay(alignment: .top) {
-            LineIndicator()
-        }
-    }
-    
-    var ellipsisButton: some View {
-        Button {
-            showOptions.toggle()
-        } label: {
-            Image(systemName: "ellipsis")
-                .frame(width: 50, height: 50)
-                .contentShape(Rectangle())
-        }
-        .padding(.top)
-        .padding(.bottom, 50)
-        .popover(isPresented: $showOptions, attachmentAnchor: .point(.center), arrowEdge: .top) {
-            ProfileOptionsView()
-        }
-    }
-    
     var userInfoSection: some View {
-        VStack(alignment: .leading) {
-            UserIconView(user: user, iconDimension: CGSize(width: 100, height: 100))
+        VStack(alignment: .leading, spacing: 0) {
+            let displayNameIsEmpty = user.displayName.isEmpty
+            
+            UserIconView(urlString: user.icon, iconDimension: CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
                 .overlay(alignment: .bottomTrailing) {
                     OnlineStatusCircle(
                         status: user.onlineStatus.rawValue,
@@ -71,116 +77,28 @@ private extension ProfileView {
                     )
                     .offset(x: -3, y: -1)
                 }
-            Text(user.displayName)
-                .font(.title2)
-                .fontWeight(.bold)
+                .padding(.bottom, 10)
+            
+            if !displayNameIsEmpty {
+                Text(user.displayName)
+                    .font(.title2)
+                    .bold()
+            }
             
             Text(user.userName)
+                .font(displayNameIsEmpty ? .title2 : .body)
+                .bold(displayNameIsEmpty)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    var aboutMeSection: some View {
-        VStack(alignment: .leading) {
-            Text("About Me")
-                .font(.subheadline)
-                .bold()
-                .padding(.bottom, 7)
-            
-            Text(user.aboutMe)
-                .padding(.bottom, 20)
-            
-            
-            Text("Member Since")
-                .font(.subheadline)
-                .bold()
-                .padding(.bottom, 4)
-            Text(user.registeredDate!.dateValue().formatted(.dateTime.month(.abbreviated).day().year()))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color("SecondaryBackgroundColor"))
-        )
-    }
-    
-    struct ProfileAddAndMessageButton: View {
-        let user: User
-        @EnvironmentObject var navViewModel: CustomNavigationViewModel
-        @EnvironmentObject var channelViewModel: ChannelViewModel
-        @EnvironmentObject var userViewModel: UserViewModel
-        @EnvironmentObject var friendViewModel: FriendViewModel
-        @Environment(\.dismiss) var dismiss
-        
-        var body: some View {
-            HStack {
-                Spacer()
-                ProfileActionButton(systemImageName: "message.fill", label: "Message") {
-                    guard let currentUserId = userViewModel.user?.id else { return }
-                    //Create a channel if doesn't exist
-                    let channelInfo = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: user)
-                    
-                    if let channelInfo {
-                        navViewModel.viewToShow = {
-                            AnyView(DirectMessageView(channelInfo: channelInfo))
-                        }
-                        navViewModel.showView()
-                        dismiss()
-                    } else {
-                        print("Failed to open a dm")
-                    }
-                }
-                Spacer()
-                
-                if friendViewModel.friends.contains(where: { $0.id != user.id }) {
-                    ProfileActionButton(systemImageName: "person.fill.badge.plus", label: "Add friend") {
-                        // Add friend action
-                    }
-                }
-                Spacer()
-            }
-        }
-        
-        private struct ProfileActionButton: View {
-            let systemImageName: String
-            let label: String
-            let action: () -> Void
-            
-            var body: some View {
-                VStack {
-                    Button(action: action) {
-                        Image(systemName: systemImageName)
-                            .resizable()
-                            .frame(width: 25, height: 25)
-                            .padding()
-                            .background(
-                                Circle()
-                                    .fill(Color("ButtonBackgroundColor"))
-                            )
-                    }
-                    Text(label)
-                        .font(.subheadline)
-                }
-            }
-        }
     }
 }
 
 private struct ProfileOptionsView: View {
     var body: some View {
         VStack(spacing: 0) {
-            ProfileOptionButton(title: "Invite to Server", action: {})
-            DividerView()
             ProfileOptionButton(title: "Copy Username", action: {})
             DividerView()
             ProfileOptionButton(title: "Copy User ID", action: {})
-            DividerView(thickness: 5)
-            ProfileOptionButton(title: "Ignore", action: {})
-            DividerView()
-            ProfileOptionButton(title: "Block", isDestructive: true, action: {})
-            DividerView()
-            ProfileOptionButton(title: "Report User Profile", isDestructive: true, action: {})
         }
         .presentationCompactAdaptation(.popover)
     }
@@ -188,7 +106,6 @@ private struct ProfileOptionsView: View {
 
 private struct ProfileOptionButton: View {
     let title: String
-    var isDestructive: Bool = false
     let action: () -> Void
     
     var body: some View {
@@ -196,8 +113,8 @@ private struct ProfileOptionButton: View {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .foregroundColor(isDestructive ? .red : nil)
         }
         .contentShape(Rectangle())
     }
 }
+

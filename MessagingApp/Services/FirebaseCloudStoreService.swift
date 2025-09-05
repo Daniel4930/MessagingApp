@@ -80,6 +80,36 @@ class FirebaseCloudStoreService {
     // MARK: - Messaging Functions (New Implementation)
 
     /// Listens for real-time updates to a user's channels, ordered by last activity.
+    func listenForUser(userId: String) -> AsyncThrowingStream<User, Error> {
+        let stream = AsyncThrowingStream(User.self) { continuation in
+            let listener = db.collection(FirebaseCloudStoreCollection.users.rawValue)
+                .document(userId)
+                .addSnapshotListener { documentSnapshot, error in
+                    if let error = error {
+                        continuation.finish(throwing: error)
+                        return
+                    }
+                    
+                    guard let document = documentSnapshot else {
+                        continuation.finish(throwing: NSError(domain: "FirebaseCloudStoreService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Document snapshot was nil."]))
+                        return
+                    }
+                    
+                    do {
+                        let user = try document.data(as: User.self)
+                        continuation.yield(user)
+                    } catch {
+                        continuation.finish(throwing: error)
+                    }
+                }
+            
+            continuation.onTermination = { @Sendable _ in
+                listener.remove()
+            }
+        }
+        return stream
+    }
+
     func listenForUserChannels(userId: String) -> AsyncThrowingStream<[Channel], Error> {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue)
