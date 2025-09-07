@@ -30,9 +30,14 @@ def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) ->
     if not sender_id:
         print("Message data is missing senderId.")
         return
-    
-    # If message_text is None or empty, use a default message.
-    notification_body = message_text if message_text else "Sent an attachment"
+
+    # If text is None, empty, or just whitespace → treat it as an attachment
+    if not message_text or not message_text.strip():
+        notification_body = "Sent an attachment"
+    else:
+        notification_body = message_text.strip()
+    print(message_text)
+
 
     # Get the channel to find the members
     channel_ref = db.collection("channels").document(channel_id)

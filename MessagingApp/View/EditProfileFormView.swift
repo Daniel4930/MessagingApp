@@ -23,6 +23,7 @@ struct EditProfileFormView: View {
     @State private var saveEnable = false
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
+    @EnvironmentObject var alertViewModel: AlertMessageViewModel
     
     var body: some View {
         VStack(spacing: 0) {
@@ -198,8 +199,8 @@ extension EditProfileFormView {
                             navViewModel.viewToShow = nil
                         }
                     } catch {
-                        // TODO: Show error to user
                         print("Error saving profile: \(error)")
+                        alertViewModel.presentAlert(message: "Failed to save profile picture", type: .error)
                     }
                 }
             }

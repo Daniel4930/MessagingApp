@@ -31,7 +31,7 @@ struct ContentView: View {
                     NewUserView(currentView: $currentView)
                 }
             }
-            .onAppear(perform: setupFCMTokenObserver)
+            .onAppear(perform: setupObservers)
             .overlay(alignment: .top) {
                 if alertMessageViewModel.showAlert {
                     AlertMessageView()
@@ -82,7 +82,7 @@ struct ContentView: View {
         }
     }
     
-    private func setupFCMTokenObserver() {
+    private func setupObservers() {
         NotificationCenter.default.addObserver(forName: Notification.Name("FCMToken"), object: nil, queue: .main) { notification in
             Task { @MainActor in
                 guard let newToken = notification.userInfo?["token"] as? String else { return }
@@ -93,5 +93,13 @@ struct ContentView: View {
                 }
             }
         }
+        
+        NotificationCenter.default.addObserver(forName: .didLogOut, object: nil, queue: .main) { _ in
+            currentView = .login
+        }
     }
+}
+
+extension Notification.Name {
+    static let didLogOut = Notification.Name("didLogOut")
 }

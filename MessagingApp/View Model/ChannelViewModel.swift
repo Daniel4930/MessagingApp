@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseFirestore
 
 // A new struct to replace the tuple, making it Equatable and Identifiable.
 struct FriendChannelMap: Equatable {
@@ -87,5 +88,20 @@ class ChannelViewModel: ObservableObject {
             lastMessage: nil
         )
         return temporaryChannel
+    }
+    
+    func updateLastMessage(channelId: String, lastMessage: LastMessage) async throws {
+        do {
+            let lastMessageData = try Firestore.Encoder().encode(lastMessage)
+            let updateData = ["lastMessage": lastMessageData]
+            
+            try await FirebaseCloudStoreService.shared.updateData(
+                collection: .channels,
+                documentId: channelId,
+                newData: updateData
+            )
+        } catch {
+            throw error
+        }
     }
 }

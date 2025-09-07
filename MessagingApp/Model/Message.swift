@@ -7,12 +7,19 @@
 
 import FirebaseFirestore
 
+struct MessageFile: Codable, Hashable {
+    let url: String
+    let name: String
+    let size: Int
+}
+
 struct Message: Codable, Identifiable, Hashable {
     @DocumentID var id: String?
     let senderId: String
-    let text: String?
+    var text: String?
     let photoUrls: [String]
-    let fileUrls: [String]
+    let videoUrls: [String]
+    let files: [MessageFile]
     @ServerTimestamp var date: Timestamp?
     let edited: Bool
     let reaction: String?

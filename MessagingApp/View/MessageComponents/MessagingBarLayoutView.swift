@@ -12,14 +12,17 @@ import FirebaseStorage
 @MainActor
 struct MessagingBarLayoutView: View {
     let channel: Channel
-    @Binding var sendButton: Bool
+    @Binding var sendButtonDisbaled: Bool
     @Binding var showFileAndImageSelector: Bool
-    @Binding var scrollToBottom: Bool
     @FocusState.Binding var focusedField: Field?
-    
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    
+    @State private var currentOverlayOffset: CGFloat = .zero
+    @State private var editMessageHeightView: CGFloat = .zero
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
+    @EnvironmentObject var alertViewModel: AlertMessageViewModel
+    @EnvironmentObject var channelViewModel: ChannelViewModel
     
     var body: some View {
         HStack(spacing: 10) {
@@ -27,55 +30,117 @@ struct MessagingBarLayoutView: View {
             
             CustomTextEditor(
                 messageComposerViewModel: messageComposerViewModel,
-                focusedField: $focusedField,
-                scrollToBottom: $scrollToBottom
+                focusedField: $focusedField
             )
             
             if messageComposerViewModel.showSendButton || !messageComposerViewModel.selectionData.isEmpty {
                 SendButtonView {
                     Task {
-                        sendButton = true
+                        sendButtonDisbaled = true
                         do {
-                            try await messageViewModel.uploadFilesAndSendMessage(
-                                senderId: userViewModel.user?.id,
-                                selectionData: messageComposerViewModel.selectionData,
-                                channel: channel,
-                                finalizedText: messageComposerViewModel.finalizeText()
-                            )
+                            if messageComposerViewModel.editMessage,
+                                let channelId = channel.id,
+                                let messageId = messageComposerViewModel.editedMessageId,
+                                let finalizedText = messageComposerViewModel.finalizeText() {
+                                try await messageViewModel.updateMessageText(channelId: channelId, messageId: messageId, text: finalizedText)
+                                
+                                if messageId == channel.lastMessage?.messageId {
+                                    let messageMap = messageViewModel.messages.first(where: { $0.channelId == channelId })
+                                    guard let currentMessage = messageMap?.messages.first(where: { $0.id == messageId }) else {
+                                        print("Failed to get last message in channel")
+                                        return
+                                    }
+                                    
+                                    var newCurrentMessage = currentMessage
+                                    newCurrentMessage.text = finalizedText
+                                    guard let lastMessage = LastMessage(from: newCurrentMessage) else {
+                                        print("Failed to create last message data")
+                                        return
+                                    }
+                                    
+                                    try await channelViewModel.updateLastMessage(channelId: channelId, lastMessage: lastMessage)
+                                }
+                            } else {
+                                try await messageViewModel.uploadFilesAndSendMessage(
+                                    senderId: userViewModel.user?.id,
+                                    selectionData: messageComposerViewModel.selectionData,
+                                    channel: channel,
+                                    finalizedText: messageComposerViewModel.finalizeText()
+                                )
+                            }
                             
                             // Reset composer state on success
                             messageComposerViewModel.resetInputs()
-                            scrollToBottom = true
+                            messageComposerViewModel.scrollToBottom = true
                             
                         } catch {
                             print("Error sending message: \(error.localizedDescription)")
-                            // TODO: Show an error alert to the user
+                            alertViewModel.presentAlert(message: "Failed to send message", type: .error)
                         }
-                        sendButton = false
+                        sendButtonDisbaled = false
                     }
                 }
-                .disabled(sendButton)
+                .disabled(sendButtonDisbaled)
             }
         }
         .padding(.horizontal, 13)
         .padding(.vertical, 10)
         .overlay(alignment: .top) {
-            MentionLayoutViewAnimation(messageComposerViewModel: messageComposerViewModel) {
-                MentionLayoutView(users: messageComposerViewModel.mathchUsers) { name in
-                    let uiTextView = messageComposerViewModel.uiTextView
-                    
-                    uiTextView.text.removeLast(uiTextView.text.distance(from: uiTextView.text.lastIndex(of: "@")!, to: uiTextView.text.endIndex))
-                    uiTextView.text.append("@" + name + " ")
-                    messageComposerViewModel.uiTextView = uiTextView
-                    messageComposerViewModel.showMention = false
-                    
-                    if let delegate = uiTextView.delegate as? CustomUITextView.Coordinator {
-                        delegate.textViewDidChange(uiTextView)
+            VStack(spacing: 0) {
+                MentionLayoutViewAnimation(messageComposerViewModel: messageComposerViewModel, currentOffsetOverlay: $currentOverlayOffset) {
+                    MentionLayoutView(users: messageComposerViewModel.mathchUsers) { name in
+                        let uiTextView = messageComposerViewModel.uiTextView
+                        
+                        uiTextView.text.removeLast(uiTextView.text.distance(from: uiTextView.text.lastIndex(of: "@")!, to: uiTextView.text.endIndex))
+                        uiTextView.text.append("@" + name + " ")
+                        messageComposerViewModel.uiTextView = uiTextView
+                        messageComposerViewModel.showMention = false
+                        
+                        if let delegate = uiTextView.delegate as? CustomUITextView.Coordinator {
+                            delegate.textViewDidChange(uiTextView)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                
+                if messageComposerViewModel.editMessage {
+                    DividerView()
+                    HStack {
+                        Button {
+                            messageComposerViewModel.editMessage = false
+                            messageComposerViewModel.uiTextView.text = ""
+                            messageComposerViewModel.uiTextView.delegate?.textViewDidChange?(messageComposerViewModel.uiTextView)
+                            messageComposerViewModel.editedMessageId = nil
+                        } label: {
+                            Image(systemName: "x.circle.fill")
+                        }
+                        Text("Editing Message")
+                    }
+                    .tint(.button)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .padding(.vertical, 10)
+                    .background(.secondaryBackground)
+                    .overlay {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear {
+                                    editMessageHeightView = proxy.size.height
+                                }
+                                .onDisappear {
+                                    editMessageHeightView = 0
+                                }
+                        }
                     }
                 }
-                .frame(maxWidth: .infinity)
             }
+            .offset(y: -currentOverlayOffset - editMessageHeightView)
         }
         .background(Color("PrimaryBackgroundColor"))
+        .onChange(of: messageComposerViewModel.editMessage) { oldValue, newValue in
+            if newValue {
+                focusedField = .textView
+            }
+        }
     }
 }

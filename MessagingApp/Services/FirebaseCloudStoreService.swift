@@ -132,7 +132,7 @@ class FirebaseCloudStoreService {
             }
         }
     }
-
+    
     /// Listens for the latest messages in a specific channel.
     func fetchLastMessages(channelId: String, limit: Int = 10) async throws -> ([Message], DocumentSnapshot?) {
         let snapshot = try await db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
@@ -143,23 +143,43 @@ class FirebaseCloudStoreService {
         let messages = snapshot.documents.compactMap { try? $0.data(as: Message.self) }
         return (messages.reversed(), snapshot.documents.last)
     }
-    
-    func listenForNewMessages(channelId: String, after lastMessageDate: Date) -> AsyncThrowingStream<[Message], Error> {
+
+    func listenForMessageUpdates(channelId: String, from startDate: Date? = nil) -> AsyncThrowingStream<(added: [Message], modified: [Message], removed: [Message]), Error> {
         return AsyncThrowingStream { continuation in
-            let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
-                .whereField("date", isGreaterThan: lastMessageDate)
-                .order(by: "date", descending: false)
-                .addSnapshotListener { querySnapshot, error in
+            var query: Query = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
+
+            if let startDate = startDate {
+                query = query.whereField("date", isGreaterThanOrEqualTo: startDate)
+            }
+
+            let listener = query.addSnapshotListener { querySnapshot, error in
                     if let error = error {
                         continuation.finish(throwing: error)
                         return
                     }
-                    guard let documents = querySnapshot?.documents else {
-                        continuation.yield([])
+                    guard let snapshot = querySnapshot else {
+                        continuation.yield(([], [], []))
                         return
                     }
-                    let messages = documents.compactMap { try? $0.data(as: Message.self) }
-                    continuation.yield(messages)
+
+                    var addedMessages: [Message] = []
+                    var modifiedMessages: [Message] = []
+                    var removedMessages: [Message] = []
+
+                    snapshot.documentChanges.forEach { diff in
+                        guard let message = try? diff.document.data(as: Message.self) else {
+                            return
+                        }
+                        switch diff.type {
+                        case .added:
+                            addedMessages.append(message)
+                        case .modified:
+                            modifiedMessages.append(message)
+                        case .removed:
+                            removedMessages.append(message)
+                        }
+                    }
+                    continuation.yield((addedMessages, modifiedMessages, removedMessages))
                 }
             continuation.onTermination = { @Sendable _ in
                 listener.remove()
@@ -181,10 +201,6 @@ class FirebaseCloudStoreService {
 
     /// Sends a message and atomically updates the parent channel's last message and activity.
     func sendMessage(channelId: String, message: Message) async throws {
-        guard let lastMessage = LastMessage(from: message) else {
-            throw FirebaseError.encodingFailed
-        }
-        
         let batch = db.batch()
         
         // 1. Create the new message document in the subcollection
@@ -197,12 +213,40 @@ class FirebaseCloudStoreService {
         messageData["date"] = FieldValue.serverTimestamp()
         batch.setData(messageData, forDocument: messageRef)
         
+        var newMessage = message
+        newMessage.id = messageRef.documentID
+        guard let lastMessage = LastMessage(from: newMessage) else {
+            throw FirebaseError.encodingFailed
+        }
+        
         // 2. Update the parent channel document
         let channelRef = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId)
         let lastMessageData = try Firestore.Encoder().encode(lastMessage)
         batch.updateData(["lastMessage": lastMessageData, "lastActivity": message.date as Any], forDocument: channelRef)
         
         try await batch.commit()
+    }
+    
+    func updateMessageText(channleId: String, messageId: String, text: String) async throws {
+        do {
+            try await db
+                .collection(FirebaseCloudStoreCollection.channels.rawValue)
+                .document(channleId)
+                .collection(FirebaseCloudStoreCollection.messages.rawValue)
+                .document(messageId)
+                .setData(["text": text, "edited": true], mergeFields: ["text", "edited"])
+        } catch {
+            throw FirebaseError.operationFailed("Failed to update message text \(error.localizedDescription)")
+        }
+    }
+    
+    func deleteMessage(messageId: String, channelId: String) {
+        db
+        .collection(FirebaseCloudStoreCollection.channels.rawValue)
+        .document(channelId)
+        .collection(FirebaseCloudStoreCollection.messages.rawValue)
+        .document(messageId)
+        .delete()
     }
 
     // MARK: - NotificationContent Functions

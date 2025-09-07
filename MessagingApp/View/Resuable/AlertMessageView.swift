@@ -33,8 +33,6 @@ struct AlertMessageView: View {
                 .frame(height: height)
                 .gesture(dragGesture)
                 .animation(.spring(duration: 0.5), value: height)
-                .animation(.spring(duration: 0.5), value: alertMessageViewModel.showAlert)
-                .animation(.spring(duration: 0.5), value: backgroundColor)
                 .overlay {
                     Text(alert.message)
                         .font(.title2)

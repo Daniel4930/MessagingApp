@@ -9,8 +9,9 @@ import FirebaseFirestore
 
 // Represents the nested 'lastMessage' object in your Channel document
 struct LastMessage: Codable, Equatable {
+    let messageId: String
     let senderId: String
-    let text: String?
+    var text: String?
     let timestamp: Timestamp
 }
 

@@ -30,6 +30,15 @@ class MessageViewModel: ObservableObject {
         messageListenerTasks.values.forEach { $0.cancel() }
     }
     
+    private func sendMessage(channelId: String, message: Message) async {
+        do {
+            // Send the message
+            try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
+        } catch {
+            print("Failed to send message or update channel: \(error.localizedDescription)")
+        }
+    }
+    
     func stopListening(channelId: String?) {
         if let channelId {
             messageListenerTasks[channelId]?.cancel()
@@ -44,34 +53,49 @@ class MessageViewModel: ObservableObject {
         
         let task = Task {
             do {
-                let (initialMessages, lastDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId)
+                // 1. Initial Fetch
+                let (initialMessages, lastDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId, limit: 10)
                 
                 await MainActor.run {
+                    let messageMap = MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument)
                     if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                        self.messages[index].messages = initialMessages
-                        self.messages[index].documentSnapshot = lastDocument
+                        self.messages[index] = messageMap
                     } else {
-                        self.messages.append(MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument))
+                        self.messages.append(messageMap)
                     }
                 }
                 
-                let lastMessageDate = initialMessages.last?.date?.dateValue() ?? Date()
+                // 2. Listen for real-time updates
+                let oldestMessageDate = initialMessages.first?.date?.dateValue() ?? Date()
+                let stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(channelId: channelId, from: oldestMessageDate)
                 
-                let stream = FirebaseCloudStoreService.shared.listenForNewMessages(channelId: channelId, after: lastMessageDate)
-                
-                for try await newMessages in stream {
+                for try await (added, modified, removed) in stream {
                     await MainActor.run {
                         if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                            let combinedMessages = self.messages[index].messages + newMessages
-                            let uniqueMessages = Array(Set(combinedMessages))
-                            self.messages[index].messages = uniqueMessages.sorted { ($0.date?.dateValue() ?? Date.distantPast) < ($1.date?.dateValue() ?? Date.distantPast) }
+                            let existingMessageIds = Set(self.messages[index].messages.map { $0.id })
+                            
+                            // Add new messages that aren't already present
+                            let newMessages = added.filter { !existingMessageIds.contains($0.id) }
+                            self.messages[index].messages.append(contentsOf: newMessages)
+                            
+                            // Update modified messages
+                            for message in modified {
+                                if let msgIndex = self.messages[index].messages.firstIndex(where: { $0.id == message.id }) {
+                                    self.messages[index].messages[msgIndex] = message
+                                }
+                            }
+                            
+                            // Remove deleted messages
+                            let removedIds = Set(removed.map { $0.id })
+                            self.messages[index].messages.removeAll { removedIds.contains($0.id) }
+                            
+                            // Ensure sorting
+                            self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
                         }
                     }
                 }
             } catch {
-                if error is CancellationError {
-                    // This is expected when the task is cancelled.
-                } else {
+                if !(error is CancellationError) {
                     print("Error listening for messages on channel \(channelId): \(error.localizedDescription)")
                 }
             }
@@ -79,27 +103,35 @@ class MessageViewModel: ObservableObject {
         messageListenerTasks[channelId] = task
     }
     
-    private func sendMessage(channelId: String, message: Message) async {
+    func fetchMoreMessages(channelId: String) async {
+        guard let index = messages.firstIndex(where: { $0.channelId == channelId }),
+              let lastSnapshot = messages[index].documentSnapshot else {
+            // No more messages to load or already loading
+            return
+        }
+
         do {
-            // Send the message
-            try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
+            let (olderMessages, newSnapshot) = try await FirebaseCloudStoreService.shared.fetchMoreMessages(channelId: channelId, lastDocumentSnapshot: lastSnapshot)
             
-            // After sending, create the LastMessage object and update the channel
-            if let lastMessage = LastMessage(from: message) {
-                let lastMessageData = try Firestore.Encoder().encode(lastMessage)
-                let channelUpdateData: [String: Any] = [
-                    "lastMessage": lastMessageData,
-                    "lastActivity": FieldValue.serverTimestamp()
-                ]
-                try await FirebaseCloudStoreService.shared.updateData(
-                    collection: .channels,
-                    documentId: channelId,
-                    newData: channelUpdateData
-                )
+            await MainActor.run {
+                self.messages[index].messages.insert(contentsOf: olderMessages, at: 0)
+                self.messages[index].documentSnapshot = newSnapshot
             }
         } catch {
-            print("Failed to send message or update channel: \(error.localizedDescription)")
+            print("Error fetching more messages: \(error.localizedDescription)")
         }
+    }
+    
+    func updateMessageText(channelId: String, messageId: String, text: String) async throws {
+        do {
+            try await FirebaseCloudStoreService.shared.updateMessageText(channleId: channelId, messageId: messageId, text: text)
+        } catch {
+            throw error
+        }
+    }
+    
+    func deleteMessage(messageId: String, channelId: String) {
+        FirebaseCloudStoreService.shared.deleteMessage(messageId: messageId, channelId: channelId)
     }
     
     func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channel: Channel, finalizedText: String?) async throws {
@@ -142,15 +174,23 @@ class MessageViewModel: ObservableObject {
             return
         }
 
+        struct UploadResult {
+            let url: URL?
+            let fileType: UploadedFile.FileType
+            let name: String
+            let size: Int
+        }
+
         var photoUrls: [String] = []
-        var fileUrls: [String] = []
+        var videoUrls: [String] = []
+        var files: [MessageFile] = []
         
-        try await withThrowingTaskGroup(of: (url: URL?, fileType: UploadedFile.FileType).self) { group in
+        try await withThrowingTaskGroup(of: UploadResult.self) { group in
             for file in selectionData {
                 group.addTask {
                     var fileData: Data?
-                    var fileUrl: URL?
                     let fileName: String
+                    var fileSize: Int = 0
                     let storageFolder: FirebaseStorageFolder
                     var downloadUrl: URL?
                     
@@ -163,13 +203,14 @@ class MessageViewModel: ObservableObject {
                         storageFolder = .images
                     case .video:
                         guard let videoInfo = file.videoInfo else { throw UploadError.missingData }
-                        fileUrl = videoInfo.videoFileUrl
+                        fileData = videoInfo.videoData
                         fileName = videoInfo.name
                         storageFolder = .videos
                     case .file:
                         guard let fileInfo = file.fileInfo else { throw UploadError.missingData }
-                        fileData = fileInfo.data
+                        fileData = fileInfo.fileData
                         fileName = fileInfo.name
+                        fileSize = fileInfo.size
                         storageFolder = .files
                     }
                     
@@ -178,12 +219,11 @@ class MessageViewModel: ObservableObject {
                         fileName: fileName
                     )
                     
-                    if let fileUrl {
-                        downloadUrl = try await FirebaseStorageService.shared.uploadFile(reference: storageRef, fileUrl: fileUrl)
-                    } else if let fileData {
+                    if let fileData {
                         downloadUrl = try await FirebaseStorageService.shared.uploadData(reference: storageRef, data: fileData)
                     }
-                    return (url: downloadUrl, fileType: file.fileType)
+                    
+                    return UploadResult(url: downloadUrl, fileType: file.fileType, name: fileName, size: fileSize)
                 }
             }
             
@@ -192,14 +232,17 @@ class MessageViewModel: ObservableObject {
                     switch result.fileType {
                     case .photo:
                         photoUrls.append(url.absoluteString)
-                    case .video, .file:
-                        fileUrls.append(url.absoluteString)
+                    case .video:
+                        videoUrls.append(url.absoluteString)
+                    case .file:
+                        let messageFile = MessageFile(url: url.absoluteString, name: result.name, size: result.size)
+                        files.append(messageFile)
                     }
                 }
             }
         }
         
-        guard finalizedText != nil || !photoUrls.isEmpty || !fileUrls.isEmpty else {
+        guard finalizedText != nil || !photoUrls.isEmpty || !files.isEmpty || !videoUrls.isEmpty else {
             print("Cannot send an empty message")
             return
         }
@@ -208,7 +251,8 @@ class MessageViewModel: ObservableObject {
             senderId: senderId,
             text: finalizedText,
             photoUrls: photoUrls,
-            fileUrls: fileUrls,
+            videoUrls: videoUrls,
+            files: files,
             date: Timestamp(),
             edited: false,
             reaction: nil,

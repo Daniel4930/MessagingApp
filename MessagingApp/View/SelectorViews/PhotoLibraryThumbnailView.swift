@@ -102,6 +102,9 @@ extension PhotoLibraryThumbnailView {
                             let duration = try await urlAsset.load(.duration)
                             let durationSeconds = CMTimeGetSeconds(duration)
                             
+                            let videoURL = urlAsset.url
+                            let videoData = try Data(contentsOf: videoURL)
+                            
                             uploadedFile = UploadedFile(
                                 identifier: asset.localIdentifier,
                                 fileType: .video,
@@ -109,7 +112,7 @@ extension PhotoLibraryThumbnailView {
                                 videoInfo: VideoFile(
                                     name: name,
                                     duration: durationSeconds,
-                                    videoFileUrl: urlAsset.url,
+                                    videoData: videoData,
                                     thumbnail: uiImage
                                 ),
                                 fileInfo: nil

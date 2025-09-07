@@ -11,6 +11,7 @@ import UIKit
 struct MessageContentView: View {
     let message: Message
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @FocusState.Binding var focusedField: Field?
     
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     let linkMetadataService = LinkMetadataService()
@@ -22,6 +23,8 @@ struct MessageContentView: View {
     @State private var embededImageDimension: CGSize = .zero
     @State private var linkEmbededViewDimension: CGSize = .zero
     @State private var customTextViewHeight: CGFloat = .zero
+    @State private var showMessageOptions = false
+    @State private var isLongPressing = false
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -29,22 +32,22 @@ struct MessageContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if let text = message.text {
-                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari) { userName in
+                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari, showMessageOptions: $showMessageOptions, isEdited: message.edited) { userName in
                     if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
                         messageComposerViewModel.userProfile = user
                     }
                 }
-                    .frame(height: customTextViewHeight)
-                    .sheet(isPresented: $showSafari) {
-                        if let url = URL(string: text) {
-                            SafariView(url: url)
-                        }
+                .frame(height: customTextViewHeight)
+                .sheet(isPresented: $showSafari) {
+                    if let url = URL(string: text) {
+                        SafariView(url: url)
                     }
-                    .task {
-                        if text.contains(linkRegexPattern) {
-                            retrieveMetaDataFromURL(url: text)
-                        }
+                }
+                .task {
+                    if text.contains(linkRegexPattern) {
+                        retrieveMetaDataFromURL(url: text)
                     }
+                }
             }
 
             if showEmbeded {
@@ -68,11 +71,25 @@ struct MessageContentView: View {
                 GridImageView(imageUrl: message.photoUrls)
                     .padding(.top, 5)
             }
-            if !message.fileUrls.isEmpty {
-                ForEach(message.fileUrls.indices, id: \.self) { index in
-                    EmbededFileLayoutView(url: message.fileUrls[index])
+            if !message.files.isEmpty {
+                ForEach(message.files.indices, id: \.self) { index in
+                    EmbededFileLayoutView(file: message.files[index])
                 }
             }
+            if !message.videoUrls.isEmpty {
+                VideoView(videoUrls: message.videoUrls)
+                    .allowsHitTesting(!isLongPressing)
+            }
+        }
+        .onLongPressGesture(perform: {
+            showMessageOptions.toggle()
+            focusedField = nil
+        }, onPressingChanged: { isPressing in
+            self.isLongPressing = isPressing
+        })
+        .sheet(isPresented: $showMessageOptions) {
+            EditMessageView(message: message, messageComposerViewModel: messageComposerViewModel)
+                .presentationDetents([.medium, .large])
         }
     }
 }

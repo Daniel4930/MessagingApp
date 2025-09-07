@@ -18,10 +18,10 @@ struct PhotoAndFileHoriScrollView: View {
             HStack {
                 ForEach(Array(messageComposerViewModel.selectionData.enumerated()), id: \.offset) { index, uploadData in
                     if uploadData.fileType == .photo, let photoInfo = uploadData.photoInfo {
-                        SelectedImagePreview(image: photoInfo.image, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
+                        SelectedFilePreview(image: photoInfo.image, isFile: false, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                     }
                     else if uploadData.fileType == .video, let videoInfo = uploadData.videoInfo {
-                        SelectedImagePreview(image: videoInfo.thumbnail, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
+                        SelectedFilePreview(image: videoInfo.thumbnail, isFile: false, index: index, showPhotoAndFile: $showPhotoAndFile, messageComposerViewModel: messageComposerViewModel)
                             .overlay(alignment: .bottomLeading) {
                                 Image(systemName: "play.fill")
                                     .resizable()
@@ -36,7 +36,13 @@ struct PhotoAndFileHoriScrollView: View {
                             }
                     }
                     else if uploadData.fileType == .file {
-                        
+                        SelectedFilePreview(
+                            image: nil,
+                            isFile: true,
+                            index: index,
+                            showPhotoAndFile: $showPhotoAndFile,
+                            messageComposerViewModel: messageComposerViewModel
+                        )
                     }
                 }
             }

@@ -73,33 +73,33 @@ struct MentionButton: View {
 
 struct MentionLayoutViewAnimation<Content: View>: View {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @Binding var currentOffsetOverlay: CGFloat
     let content: Content
     let numUsersToShow: Int
     
-    @State private var currentValue: CGFloat = 0
     let maxDisplayUsers: CGFloat = 5
     let maxHeight: CGFloat = 300
     let springStiffness = 0.5
     let springDrag = 0.75
     
-    init(messageComposerViewModel: MessageComposerViewModel, content: () -> Content) {
+    init(messageComposerViewModel: MessageComposerViewModel, currentOffsetOverlay: Binding<CGFloat>, content: () -> Content) {
         self.messageComposerViewModel = messageComposerViewModel
         self.content = content()
+        self._currentOffsetOverlay = currentOffsetOverlay
         self.numUsersToShow = messageComposerViewModel.mathchUsers.count
     }
     
     var body: some View {
         content
-            .frame(height: currentValue)
-            .offset(y: -currentValue)
-            .animation(.interactiveSpring(response: springStiffness, dampingFraction: springDrag), value: currentValue)
+            .frame(height: currentOffsetOverlay)
+            .animation(.interactiveSpring(response: springStiffness, dampingFraction: springDrag), value: currentOffsetOverlay)
             .onChange(of: numUsersToShow) { _, newValue in
                 let targetHeight = CGFloat((maxHeight / maxDisplayUsers)) * CGFloat(newValue)
-                currentValue = newValue >= 5 ? maxHeight : targetHeight
+                currentOffsetOverlay = newValue >= 5 ? maxHeight : targetHeight
             }
             .onChange(of: messageComposerViewModel.showMention) { _, newValue in
                 if newValue == false {
-                    currentValue = 0
+                    currentOffsetOverlay = 0
                 }
             }
     }

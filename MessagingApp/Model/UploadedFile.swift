@@ -33,11 +33,12 @@ struct PhotoFile {
 struct VideoFile {
     let name: String
     let duration: Double
-    let videoFileUrl: URL
+    let videoData: Data
     let thumbnail: UIImage
 }
 
 struct FileData {
     let name: String
-    let data: Data
+    let fileData: Data
+    let size: Int
 }

@@ -21,7 +21,6 @@ struct SelectorView: View {
     let minHeight: CGFloat
     let channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
-    @Binding var scrollToBottom: Bool
     @Binding var sendButton: Bool
     
     @State private var selectorHeight: CGFloat = .zero
@@ -60,12 +59,12 @@ struct SelectorView: View {
                 )
                     .highPriorityGesture(gesture)
             } else {
-                PollsAndFilesButtonsView()
+                PollsAndFilesButtonsView(messageComposerViewModel: messageComposerViewModel)
                     .highPriorityGesture(gesture)
             }
             
             ScrollView {
-                LazyVStack(alignment: .leading) {
+                LazyVStack(alignment: .center) {
                     switch accessStatus {
                     case .fullAccess:
                         PhotosAndVideosGridView(assets: $assets, refreshAssets: getPhotosAndVideosAssets, messageComposerViewModel: messageComposerViewModel)
@@ -95,7 +94,7 @@ struct SelectorView: View {
             .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight)
             .overlay(alignment: .bottom) {
                 if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
-                    CustomSendButtonView(channel: channel, messageComposerViewModel: messageComposerViewModel, scrollToBottom: $scrollToBottom, height: $selectorHeight, sendButton: $sendButton, minHeight: minHeight)
+                    CustomSendButtonView(channel: channel, messageComposerViewModel: messageComposerViewModel, height: $selectorHeight, sendButtonDisabled: $sendButton, minHeight: minHeight)
                 }
             }
         }
@@ -178,12 +177,13 @@ extension SelectorView {
 struct CustomSendButtonView: View {
     let channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
-    @Binding var scrollToBottom: Bool
     @Binding var height: CGFloat
-    @Binding var sendButton: Bool
+    @Binding var sendButtonDisabled: Bool
     let minHeight: CGFloat
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var alertViewModel: AlertMessageViewModel
+    @EnvironmentObject var channelViewModel: ChannelViewModel
     
     var body: some View {
         ZStack {
@@ -196,28 +196,52 @@ struct CustomSendButtonView: View {
                 .overlay(alignment: .bottomTrailing) {
                     SendButtonView {
                         Task {
-                            sendButton = true
+                            sendButtonDisabled = true
                             do {
-                                try await messageViewModel.uploadFilesAndSendMessage(
-                                    senderId: userViewModel.user?.id,
-                                    selectionData: messageComposerViewModel.selectionData,
-                                    channel: channel,
-                                    finalizedText: messageComposerViewModel.finalizeText()
-                                )
+                                if messageComposerViewModel.editMessage,
+                                    let channelId = channel.id,
+                                    let messageId = messageComposerViewModel.editedMessageId,
+                                    let finalizedText = messageComposerViewModel.finalizeText() {
+                                    try await messageViewModel.updateMessageText(channelId: channelId, messageId: messageId, text: finalizedText)
+                                    
+                                    if messageId == channel.lastMessage?.messageId {
+                                        let messageMap = messageViewModel.messages.first(where: { $0.channelId == channelId })
+                                        guard let currentMessage = messageMap?.messages.first(where: { $0.id == messageId }) else {
+                                            print("Failed to get last message in channel")
+                                            return
+                                        }
+                                        
+                                        var newCurrentMessage = currentMessage
+                                        newCurrentMessage.text = finalizedText
+                                        guard let lastMessage = LastMessage(from: newCurrentMessage) else {
+                                            print("Failed to create last message data")
+                                            return
+                                        }
+                                        
+                                        try await channelViewModel.updateLastMessage(channelId: channelId, lastMessage: lastMessage)
+                                    }
+                                } else {
+                                    try await messageViewModel.uploadFilesAndSendMessage(
+                                        senderId: userViewModel.user?.id,
+                                        selectionData: messageComposerViewModel.selectionData,
+                                        channel: channel,
+                                        finalizedText: messageComposerViewModel.finalizeText()
+                                    )
+                                }
                                 
                                 // Reset composer state on success
                                 messageComposerViewModel.resetInputs()
-                                scrollToBottom = true
+                                messageComposerViewModel.scrollToBottom = true
                             } catch {
                                 print("Error sending message: \(error.localizedDescription)")
-                                // TODO: Show an error alert to the user
+                                alertViewModel.presentAlert(message: "Failed to send message", type: .error)
                             }
-                            sendButton = false
+                            sendButtonDisabled = false
                         }
                         height = minHeight
                     }
                     .padding([.trailing, .vertical], 20)
-                    .disabled(sendButton)
+                    .disabled(sendButtonDisabled)
                 }
         }
         .frame(maxWidth: .infinity)

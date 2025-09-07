@@ -15,12 +15,29 @@ struct UploadedFileInfoView: View {
     var body: some View {
         ScrollView {            
             if let dataToShow = messageComposerViewModel.dataToShow, let uiImage = dataToShow.photoInfo?.image {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: thumbnailSize.width, height: thumbnailSize.height)
-                    .padding(.vertical)
-                    .background(Color.primaryBackground)
+                Group {
+                    switch dataToShow.fileType {
+                    case .photo:
+                        if let uiImage = dataToShow.photoInfo?.image {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                        }
+                    case .video:
+                        if let uiImage = dataToShow.videoInfo?.thumbnail {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                        }
+                    case .file:
+                        if let uiImage = UIImage(systemName: "document.fill") {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                        }
+                    }
+                }
+                .scaledToFill()
+                .frame(width: thumbnailSize.width, height: thumbnailSize.height)
+                .padding(.vertical)
+                .background(Color.primaryBackground)
                 
                 LineIndicator(color: .white, width: 70, height: 3)
                 

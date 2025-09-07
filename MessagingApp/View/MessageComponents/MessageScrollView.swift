@@ -9,7 +9,6 @@ import SwiftUI
 
 struct MessageScrollView: View {
     let channelInfo: Channel
-    @Binding var scrollToBottom: Bool
     @FocusState.Binding var focusedField: Field?
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @State private var scrollPosition = ScrollPosition()
@@ -32,7 +31,7 @@ struct MessageScrollView: View {
                         ForEach(dayGroup.messageGroups, id: \.time) { messageGroup in
                             ForEach(messageGroup.userGroups, id: \.userId) { userGroup in
                                 if let user = friendViewModel.getUser(withId: userGroup.userId, currentUser: userViewModel.user) {
-                                    MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time, messageComposerViewModel: messageComposerViewModel)
+                                    MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time, messageComposerViewModel: messageComposerViewModel, focusedField: $focusedField)
                                 }
                             }
                         }
@@ -48,13 +47,16 @@ struct MessageScrollView: View {
                 focusedField = nil
             }
         }
-        .onChange(of: scrollToBottom) { _, newValue in
+        .onChange(of: messageComposerViewModel.scrollToBottom) { _, newValue in
             if newValue == true {
                 withAnimation(.spring(duration: 0.2)) {
                     scrollPosition.scrollTo(edge: .bottom)
                 }
-                scrollToBottom = false
+                messageComposerViewModel.scrollToBottom = false
             }
+        }
+        .onChange(of: messageComposerViewModel.scrollToId) { oldValue, newValue in
+            scrollPosition.scrollTo(id: newValue, anchor: .center)
         }
         .task {
             // When the view appears, find all other members in the channel and fetch their info if needed.

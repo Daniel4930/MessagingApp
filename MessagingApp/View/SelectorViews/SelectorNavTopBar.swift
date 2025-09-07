@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 struct SelectorNavTopBar: View {
     @Binding var height: CGFloat

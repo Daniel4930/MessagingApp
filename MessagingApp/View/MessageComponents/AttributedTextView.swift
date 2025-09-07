@@ -8,12 +8,12 @@
 import SwiftUI
 import UIKit
 
-//TODO: Add an enum for action urls
-
 struct AttributedTextView: UIViewRepresentable {
     let text: String
     @Binding var customTextViewHeight: CGFloat
     @Binding var showSafari: Bool
+    @Binding var showMessageOptions: Bool
+    let isEdited: Bool
     let onMentionTap: (String) -> Void
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     
@@ -31,6 +31,9 @@ struct AttributedTextView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = .zero
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        
+        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
+        textView.addGestureRecognizer(longPress)
         
         return textView
     }
@@ -54,9 +57,9 @@ struct AttributedTextView: UIViewRepresentable {
                 attributed.append(linkAttr)
             }
             
-            else if word.hasPrefix("@"), let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst()), friends: friendViewModel.friends),
+            else if word.hasPrefix("@"),
+                    let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst()), friends: friendViewModel.friends),
                     let url = URL(string: "mention://\(user.userName)") {
-                
                 let name = user.displayName.isEmpty ? user.userName : user.displayName
                 
                 // Build mention string with '@' + name
@@ -90,6 +93,15 @@ struct AttributedTextView: UIViewRepresentable {
             }
         }
         
+        //If the message have been edited, add a small text "(Edited)" at the end of the message
+        if isEdited {
+            let editedReminderAttr = NSAttributedString(string: " (Edited)", attributes: [
+                .foregroundColor: UIColor.gray,
+                .font: UIFont.systemFont(ofSize: 10)
+            ])
+            attributed.append(editedReminderAttr)
+        }
+        
         // Set to UITextView
         uiTextView.attributedText = attributed
         
@@ -110,6 +122,13 @@ struct AttributedTextView: UIViewRepresentable {
         
         init(parent: AttributedTextView) {
             self.parent = parent
+        }
+        
+        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+            if gesture.state == .began {
+                // Forward to SwiftUI
+                self.parent.showMessageOptions = true
+            }
         }
         
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {

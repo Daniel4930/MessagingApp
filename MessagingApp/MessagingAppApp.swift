@@ -38,6 +38,8 @@ struct MessagingAppApp: App {
     @StateObject private var notificationViewModel = NotificationViewModel()
     @StateObject private var navViewModel = CustomNavigationViewModel()
     @StateObject private var alertMessageViewModel = AlertMessageViewModel()
+    
+    @State private var appStateId = UUID()
 
     var body: some Scene {
         WindowGroup {
@@ -50,6 +52,10 @@ struct MessagingAppApp: App {
                 .environmentObject(navViewModel)
                 .environmentObject(notificationViewModel)
                 .environmentObject(alertMessageViewModel)
+                .id(appStateId)
+                .onReceive(NotificationCenter.default.publisher(for: .didLogOut)) { _ in
+                    appStateId = UUID()
+                }
         }
     }
 }

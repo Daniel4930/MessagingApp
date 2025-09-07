@@ -164,9 +164,15 @@ extension LastMessage {
     init?(from message: Message) {
         // A last message must have a timestamp. If not, fail initialization.
         guard let timestamp = message.date else {
+            print("Failed to initialize last message: Date is nil")
+            return nil
+        }
+        guard let messageId = message.id else {
+            print("Failed to initialize last message: ID is nil")
             return nil
         }
         
+        self.messageId = messageId
         self.senderId = message.senderId
         self.timestamp = timestamp
         
@@ -174,7 +180,7 @@ extension LastMessage {
         // Otherwise, it's nil, implying an attachment.
         if let text = message.text, !text.isEmpty {
             self.text = text
-        } else if !message.photoUrls.isEmpty || !message.fileUrls.isEmpty {
+        } else if !message.photoUrls.isEmpty || !message.files.isEmpty || !message.videoUrls.isEmpty {
             self.text = "Attachment"
         } else {
             self.text = nil

@@ -11,6 +11,8 @@ class NotificationViewModel: ObservableObject {
     private let cloudStoreService = FirebaseCloudStoreService.shared
     private var userId: String?
     
+    
+    
     private func fetchNotifications() {
         guard let userId = userId else { return }
         

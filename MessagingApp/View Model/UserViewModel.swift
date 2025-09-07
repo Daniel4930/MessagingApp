@@ -87,6 +87,13 @@ class UserViewModel: ObservableObject {
         self.user?.userName = newUsername
     }
     
+    func clearFCMToken() async {
+        guard let userId = user?.id else { return }
+        await FirebaseCloudStoreService.shared.updateUserFCMToken(userId: userId, token: "")
+    }
+    
+    
+    
     func saveUser(displayName: String, aboutMe: String, bannerColor: Color, avatarImageData: Data?) async throws {
         guard let currentUser = self.user, let userId = currentUser.id else { return }
         

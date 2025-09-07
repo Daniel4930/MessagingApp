@@ -11,6 +11,7 @@ struct MessageLayoutView: View {
     let messages: [Message]
     let time: Date
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @FocusState.Binding var focusedField: Field?
     
     let iconDimension: CGSize = .init(width: 45, height: 45)
     static let messageTimeFormatter: DateFormatter = {
@@ -39,8 +40,9 @@ struct MessageLayoutView: View {
                         .foregroundStyle(.gray)
                 }
                 ForEach(messages) { message in
-                    MessageContentView(message: message, messageComposerViewModel: messageComposerViewModel)
+                    MessageContentView(message: message, messageComposerViewModel: messageComposerViewModel, focusedField: $focusedField)
                 }
+                .scrollTargetLayout()
             }
         }
         .padding(.horizontal, 13)

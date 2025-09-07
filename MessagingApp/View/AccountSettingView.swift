@@ -10,6 +10,7 @@ import SwiftUI
 struct AccountSettingView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
+    @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
     
     var body: some View {
         NavigationStack {
@@ -29,10 +30,15 @@ struct AccountSettingView: View {
                         // Logout button inside the list
                         Section {
                             Button("Log out", role: .destructive) {
-                                do {
-                                    try FirebaseAuthService.shared.signOut()
-                                } catch {
-                                    print("Failed to sign out: \(error)")
+                                Task {
+                                    await userViewModel.clearFCMToken()
+                                    do {
+                                        try FirebaseAuthService.shared.signOut()
+                                        UserDefaults.standard.removeObject(forKey: "email")
+                                        NotificationCenter.default.post(name: .didLogOut, object: nil)
+                                    } catch {
+                                        alertMessageViewModel.presentAlert(message: "Failed to sign out: \(error.localizedDescription)", type: .error)
+                                    }
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
