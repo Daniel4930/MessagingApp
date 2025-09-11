@@ -19,20 +19,20 @@ struct HomeView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
-    let sidebarItems: [SidebarItem] = [
-        .messageCenter, .createServer, .searchServer
-    ]
+//    let sidebarItems: [SidebarItem] = [
+//        .messageCenter, .createServer, .searchServer
+//    ]
     
     var body: some View {
         HStack {
-            ScrollView {
-                ForEach(Array(sidebarItems.indices), id: \.self) { index in
-                    let currentItem = sidebarItems[index]
-                    SidebarItemView(currentItem: currentItem, selectedItem: $selectedItem)
-                }
-            }
-            .frame(width: 70)
-            .padding(.top)
+//            ScrollView {
+//                ForEach(Array(sidebarItems.indices), id: \.self) { index in
+//                    let currentItem = sidebarItems[index]
+//                    SidebarItemView(currentItem: currentItem, selectedItem: $selectedItem)
+//                }
+//            }
+//            .frame(width: 70)
+//            .padding(.top)
             
             Group {
                 switch selectedItem {

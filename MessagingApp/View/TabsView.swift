@@ -17,6 +17,7 @@ struct TabsView: View {
     @State private var selection: Tabs = .home
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var navViewModel: CustomNavigationViewModel
+    @EnvironmentObject var keyboardProvider: KeyboardProvider
     
     let iconDimension: CGSize = CGSize(width: 25, height: 25)
     let tabsInfo: [(tab: Tabs, title: String, icon: String)] = [
@@ -67,7 +68,10 @@ struct TabsView: View {
         }
         .gesture(
             DragGesture()
-                .onChanged(navViewModel.onDragChanged(_:))
+                .onChanged { value in
+                    navViewModel.onDragChanged(value: value)
+                    keyboardProvider.keyboardWillAppear = false
+                }
                 .onEnded(navViewModel.onDragEnded(_:))
             , isEnabled: !navViewModel.gestureDisabled
         )

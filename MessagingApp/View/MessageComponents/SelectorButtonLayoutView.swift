@@ -10,15 +10,20 @@ struct SelectorButtonLayoutView: View {
     @Binding var showFileAndImageSelector: Bool
     @FocusState.Binding var focusedField: Field?
     
-    let iconDimension: (width: CGFloat, height: CGFloat) = (25, 25)
-    let animationDuration: Double = 0.2
+    @EnvironmentObject var keyboardProvider: KeyboardProvider
+    
+    let iconDimension: (width: CGFloat, height: CGFloat) = (23, 23)
+    let animationDuration: Double = 0.3
     let rotationAngle: Double = 45.0
     let paddingSpace: CGFloat = 10
     
     var body: some View {
         Button {
+            if showFileAndImageSelector {
+                keyboardProvider.keyboardWillAppear = true
+                focusedField = .textField
+            }
             showFileAndImageSelector.toggle()
-            focusedField = .textView
         } label: {
             Image(systemName: "plus")
                 .resizable()
@@ -28,7 +33,7 @@ struct SelectorButtonLayoutView: View {
                 .background(Color("SecondaryBackgroundColor"))
                 .clipShape(.circle)
                 .foregroundStyle(showFileAndImageSelector ? .blue : .white)
-                .animation(.easeInOut(duration: animationDuration), value: showFileAndImageSelector)
+                .animation(.spring(duration: animationDuration, bounce: 0), value: showFileAndImageSelector)
         }
         .rotationEffect(.degrees(0))
     }

@@ -35,7 +35,7 @@ struct SelectorNavTopBar: View {
                 Spacer()
             }
             
-            if accessStatus == .fullAccess {
+            if accessStatus == .denied || accessStatus == .restricted || accessStatus == .undetermined {
                 Button {
                     height = minHeight
                 } label: {

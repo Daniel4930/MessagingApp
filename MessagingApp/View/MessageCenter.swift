@@ -25,40 +25,26 @@ struct MessageCenter: View {
                 .bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            HStack(alignment: .center) {
-                Button {
-                    print("Search")
-                } label: {
-                    Image(systemName: "magnifyingglass")
+            Button {
+                showAddFriend = true
+                navViewModel.exitSwipeAction = {
+                    showAddFriend = false
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "person.fill.badge.plus")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)
-                        .padding(8)
-                        .background(Color.buttonBackground)
-                        .clipShape(.circle)
+                    Text("Add Friends")
                 }
-                
-                Button {
-                    showAddFriend = true
-                    navViewModel.exitSwipeAction = {
-                        showAddFriend = false
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "person.fill.badge.plus")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                        Text("Add Friends")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(8)
-                    .background(Color.buttonBackground)
-                    .clipShape(.capsule)
-                }
+                .frame(maxWidth: .infinity)
+                .bold()
+                .foregroundStyle(.button)
+                .padding(8)
+                .background(Color.buttonBackground)
+                .clipShape(.capsule)
             }
-            .bold()
-            .foregroundStyle(.button)
             
             ScrollView {
                 ScrollView([.horizontal]) {

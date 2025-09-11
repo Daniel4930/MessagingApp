@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseStorage
 
 struct MessageMap {
     let channelId: String
@@ -24,6 +25,7 @@ enum UploadError: Error {
 @MainActor
 class MessageViewModel: ObservableObject {
     @Published var messages: [MessageMap] = []
+    @Published var uploadProgress: [String: StorageUploadTask] = [:]
     private var messageListenerTasks: [String: Task<Void, Never>] = [:]
     
     deinit {
@@ -32,7 +34,6 @@ class MessageViewModel: ObservableObject {
     
     private func sendMessage(channelId: String, message: Message) async {
         do {
-            // Send the message
             try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
         } catch {
             print("Failed to send message or update channel: \(error.localizedDescription)")
@@ -46,7 +47,7 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    func listenForMessages(channelId: String) {
+    func listenForMessages(channelId: String, userViewModel: UserViewModel) {
         guard messageListenerTasks[channelId] == nil else {
             return
         }
@@ -72,11 +73,14 @@ class MessageViewModel: ObservableObject {
                 for try await (added, modified, removed) in stream {
                     await MainActor.run {
                         if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                            let existingMessageIds = Set(self.messages[index].messages.map { $0.id })
-                            
-                            // Add new messages that aren't already present
-                            let newMessages = added.filter { !existingMessageIds.contains($0.id) }
-                            self.messages[index].messages.append(contentsOf: newMessages)
+                            for message in added {
+                                if let clientId = message.clientId, let pendingIndex = self.messages[index].messages.firstIndex(where: { $0.clientId == clientId }) {
+                                    self.messages[index].messages[pendingIndex] = message
+                                    self.messages[index].messages[pendingIndex].isPending = false
+                                } else {
+                                    self.messages[index].messages.append(message)
+                                }
+                            }
                             
                             // Update modified messages
                             for message in modified {
@@ -86,8 +90,10 @@ class MessageViewModel: ObservableObject {
                             }
                             
                             // Remove deleted messages
-                            let removedIds = Set(removed.map { $0.id })
-                            self.messages[index].messages.removeAll { removedIds.contains($0.id) }
+                            if !removed.isEmpty {
+                                let removedIds = Set(removed.map { $0.id })
+                                self.messages[index].messages.removeAll { removedIds.contains($0.id ?? "") }
+                            }
                             
                             // Ensure sorting
                             self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
@@ -134,21 +140,39 @@ class MessageViewModel: ObservableObject {
         FirebaseCloudStoreService.shared.deleteMessage(messageId: messageId, channelId: channelId)
     }
     
-    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channel: Channel, finalizedText: String?) async throws {
+    func removeAttachmentFromUploadTask(attachmentIdentifier: String) {
+        let _ = uploadProgress.removeValue(forKey: attachmentIdentifier)
+    }
+    
+    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channel: Channel, finalizedText: String?, userViewModel: UserViewModel) async throws {
         guard let senderId = senderId else { throw UploadError.missingUserInfo }
+        
+        let clientId = UUID().uuidString
+        let pendingMessage = Message(
+            id: clientId,
+            senderId: senderId,
+            text: finalizedText,
+            photoUrls: [],
+            videoUrls: [],
+            files: [],
+            date: Timestamp(date: Date()),
+            edited: false,
+            reaction: nil,
+            forwardMessageId: nil,
+            replayMessageId: nil,
+            clientId: clientId,
+            isPending: true,
+            selectionData: selectionData
+        )
         
         var currentChannel = channel
         
-        // If the channel doesn't have an ID, it's a draft. Create it first.
         if currentChannel.id == nil {
-            let newChannel = ChannelInsert(
-                memberIds: currentChannel.memberIds,
-                type: currentChannel.type
-            )
+            let newChannel = ChannelInsert(memberIds: currentChannel.memberIds, type: currentChannel.type)
             do {
                 let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel, additionalData: nil)
                 currentChannel.id = documentId
-                listenForMessages(channelId: documentId)
+                listenForMessages(channelId: documentId, userViewModel: userViewModel)
                 
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     for memberId in currentChannel.memberIds {
@@ -164,9 +188,17 @@ class MessageViewModel: ObservableObject {
                 }
             } catch {
                 print("Error creating channel: \(error.localizedDescription)")
-                // Handle or rethrow the error as needed
+                if let index = messages.firstIndex(where: { $0.channelId == currentChannel.id }) {
+                    messages[index].messages.removeAll { $0.clientId == clientId }
+                }
                 return
             }
+        }
+        
+        if let index = messages.firstIndex(where: { $0.channelId == currentChannel.id }) {
+            messages[index].messages.append(pendingMessage)
+        } else {
+            messages.append(MessageMap(channelId: currentChannel.id!, messages: [pendingMessage]))
         }
         
         guard let channelId = currentChannel.id else {
@@ -174,93 +206,92 @@ class MessageViewModel: ObservableObject {
             return
         }
 
-        struct UploadResult {
-            let url: URL?
-            let fileType: UploadedFile.FileType
-            let name: String
-            let size: Int
-        }
-
         var photoUrls: [String] = []
         var videoUrls: [String] = []
         var files: [MessageFile] = []
         
-        try await withThrowingTaskGroup(of: UploadResult.self) { group in
-            for file in selectionData {
-                group.addTask {
-                    var fileData: Data?
-                    let fileName: String
-                    var fileSize: Int = 0
-                    let storageFolder: FirebaseStorageFolder
-                    var downloadUrl: URL?
-                    
-                    // Extract data and metadata from the UploadedFile struct
-                    switch file.fileType {
-                    case .photo:
-                        guard let photoInfo = file.photoInfo else { throw UploadError.missingData }
-                        fileData = photoInfo.image.pngData()
-                        fileName = photoInfo.name
-                        storageFolder = .images
-                    case .video:
-                        guard let videoInfo = file.videoInfo else { throw UploadError.missingData }
-                        fileData = videoInfo.videoData
-                        fileName = videoInfo.name
-                        storageFolder = .videos
-                    case .file:
-                        guard let fileInfo = file.fileInfo else { throw UploadError.missingData }
-                        fileData = fileInfo.fileData
-                        fileName = fileInfo.name
-                        fileSize = fileInfo.size
-                        storageFolder = .files
-                    }
-                    
-                    let storageRef = FirebaseStorageService.shared.createChildReference(
-                        folder: storageFolder,
-                        fileName: fileName
-                    )
-                    
-                    if let fileData {
-                        downloadUrl = try await FirebaseStorageService.shared.uploadData(reference: storageRef, data: fileData)
-                    }
-                    
-                    return UploadResult(url: downloadUrl, fileType: file.fileType, name: fileName, size: fileSize)
-                }
+        let dispatchGroup = DispatchGroup()
+        
+        for file in selectionData {
+            dispatchGroup.enter()
+            var fileData: Data?
+            let fileName: String
+            var fileSize: Int = 0
+            let storageFolder: FirebaseStorageFolder
+            
+            switch file.fileType {
+            case .photo:
+                guard let photoInfo = file.photoInfo else { continue }
+                fileData = photoInfo.image.pngData()
+                fileName = photoInfo.name
+                storageFolder = .images
+            case .video:
+                guard let videoInfo = file.videoInfo else { continue }
+                fileData = videoInfo.videoData
+                fileName = videoInfo.name
+                storageFolder = .videos
+            case .file:
+                guard let fileInfo = file.fileInfo else { continue }
+                fileData = fileInfo.fileData
+                fileName = fileInfo.name
+                fileSize = fileInfo.size
+                storageFolder = .files
             }
             
-            for try await result in group {
-                if let url = result.url {
-                    switch result.fileType {
-                    case .photo:
-                        photoUrls.append(url.absoluteString)
-                    case .video:
-                        videoUrls.append(url.absoluteString)
-                    case .file:
-                        let messageFile = MessageFile(url: url.absoluteString, name: result.name, size: result.size)
-                        files.append(messageFile)
+            let storageRef = FirebaseStorageService.shared.createChildReference(folder: storageFolder, fileName: fileName)
+            
+            if let fileData = fileData {
+                let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileData) { result in
+                    switch result {
+                    case .success(let url):
+                        switch file.fileType {
+                        case .photo:
+                            photoUrls.append(url.absoluteString)
+                        case .video:
+                            videoUrls.append(url.absoluteString)
+                        case .file:
+                            let messageFile = MessageFile(url: url.absoluteString, name: fileName, size: fileSize)
+                            files.append(messageFile)
+                        }
+                    case .failure(let error):
+                        print("Failed to upload file: \(error)")
                     }
+                    dispatchGroup.leave()
                 }
+                
+                self.uploadProgress[file.identifier] = uploadTask
+            } else {
+                dispatchGroup.leave()
             }
         }
         
-        guard finalizedText != nil || !photoUrls.isEmpty || !files.isEmpty || !videoUrls.isEmpty else {
-            print("Cannot send an empty message")
-            return
+        dispatchGroup.notify(queue: .main) {
+            Task {
+                guard finalizedText != nil || !photoUrls.isEmpty || !files.isEmpty || !videoUrls.isEmpty else {
+                    print("Cannot send an empty message")
+                    if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                        self.messages[index].messages.removeAll { $0.clientId == clientId }
+                    }
+                    return
+                }
+                
+                let message = Message (
+                    senderId: senderId,
+                    text: finalizedText,
+                    photoUrls: photoUrls,
+                    videoUrls: videoUrls,
+                    files: files,
+                    date: Timestamp(),
+                    edited: false,
+                    reaction: nil,
+                    forwardMessageId: nil,
+                    replayMessageId: nil,
+                    clientId: clientId
+                )
+                
+                await self.sendMessage(channelId: channelId, message: message)
+            }
         }
-        
-        let message = Message (
-            senderId: senderId,
-            text: finalizedText,
-            photoUrls: photoUrls,
-            videoUrls: videoUrls,
-            files: files,
-            date: Timestamp(),
-            edited: false,
-            reaction: nil,
-            forwardMessageId: nil,
-            replayMessageId: nil
-        )
-        
-        await sendMessage(channelId: channelId, message: message)
     }
 
     // MARK: - Message Grouping
@@ -273,7 +304,11 @@ class MessageViewModel: ObservableObject {
             return []
         }
         
-        let groupedByDate = self.groupMessagesByDate(messages: messageMap.messages)
+        return groupedMessages(messages: messageMap.messages)
+    }
+    
+    func groupedMessages(messages: [Message]) -> [DayGroup] {
+        let groupedByDate = self.groupMessagesByDate(messages: messages)
         
         return groupedByDate.map { (date, messagesInDay) -> DayGroup in
             let groupedByHourMinute = self.groupMessagesByHourMinute(messages: messagesInDay)

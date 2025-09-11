@@ -9,6 +9,7 @@ import SwiftUI
 struct CustomTextEditor: View {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @FocusState.Binding var focusedField: Field?
+    let memberIds: [String]
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -17,12 +18,12 @@ struct CustomTextEditor: View {
     
     var body: some View {
         ZStack(alignment: .leading) {
-            CustomUITextView(messageComposerViewModel: messageComposerViewModel) {
+            CustomUITextView(messageComposerViewModel: messageComposerViewModel, memberIds: memberIds) {
                 messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextView.text.isEmpty
                 
                 if let user = userViewModel.user {
                     var users = Array(arrayLiteral: user)
-                    users.append(contentsOf: friendViewModel.friends)
+                    users.append(contentsOf: friendViewModel.friends.filter({ memberIds.contains($0.id!) }))
                     let matched = searchUser(users: users)
                     messageComposerViewModel.mathchUsers = matched
                     messageComposerViewModel.showMention = !matched.isEmpty
@@ -30,7 +31,7 @@ struct CustomTextEditor: View {
             }
             .frame(height: min(messageComposerViewModel.customTextEditorHeight, MessageComposerViewModel.customTextEditorMaxHeight))
             .padding(.horizontal, horizontalPaddingSpace)
-            .focused($focusedField, equals: .textView)
+            .focused($focusedField, equals: .textField)
             
             if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
                 let displayName = friend.displayName
@@ -81,6 +82,7 @@ extension CustomTextEditor {
 
 struct CustomUITextView: UIViewRepresentable {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    let memberIds: [String]
     var onMessageChange: () -> Void
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -94,11 +96,6 @@ struct CustomUITextView: UIViewRepresentable {
         textView.delegate = context.coordinator
         textView.font = UIFont.systemFont(ofSize: 16)
         textView.backgroundColor = UIColor(named: "SecondaryBackgroundColor")
-        
-        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
-        textView.addGestureRecognizer(tapGesture)
-        tapGesture.delegate = context.coordinator
-        
         DispatchQueue.main.async {
             messageComposerViewModel.uiTextView = textView
             
@@ -109,7 +106,7 @@ struct CustomUITextView: UIViewRepresentable {
     
     func updateUIView(_ uiView: UITextView, context: Context) {}
     
-    class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+    class Coordinator: NSObject, UITextViewDelegate {
         var parent: CustomUITextView
         
         init(_ parent: CustomUITextView) {
@@ -119,7 +116,7 @@ struct CustomUITextView: UIViewRepresentable {
         private func generateNameMatchPattern(user: User) -> String? {
             let userName = user.userName
             let displayName = user.displayName
-            let friends = parent.friendViewModel.friends
+            let friends = parent.friendViewModel.friends.filter({ parent.memberIds.contains($0.id!) })
             
             var pattern = "@(\(userName)\(displayName.isEmpty ? "" : "|\(displayName)")"
             
@@ -133,14 +130,6 @@ struct CustomUITextView: UIViewRepresentable {
             pattern.append(")")
             
             return pattern
-        }
-        
-        @objc func handleTap() {
-            parent.messageComposerViewModel.scrollToBottom = true
-        }
-        
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-            return true
         }
         
         func textViewDidChange(_ textView: UITextView) {

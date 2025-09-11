@@ -28,6 +28,7 @@ struct MessageContentView: View {
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
+    @EnvironmentObject var messageViewModel: MessageViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -49,7 +50,7 @@ struct MessageContentView: View {
                     }
                 }
             }
-
+            
             if showEmbeded {
                 organizeEmbededItems()
                     .overlay(alignment: .leading) {
@@ -67,20 +68,23 @@ struct MessageContentView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
+            if let selectionData = message.selectionData, !selectionData.isEmpty {
+                PendingAttachmentsView(selectionData: selectionData, uploadProgress: messageViewModel.uploadProgress)
+            }
             if !message.photoUrls.isEmpty {
-                GridImageView(imageUrl: message.photoUrls)
-                    .padding(.top, 5)
+                GridImageView(imageUrls: message.photoUrls, selectedImages: nil)
+            }
+            if !message.videoUrls.isEmpty {
+                VideoView(videoUrls: message.videoUrls)
             }
             if !message.files.isEmpty {
                 ForEach(message.files.indices, id: \.self) { index in
                     EmbededFileLayoutView(file: message.files[index])
                 }
             }
-            if !message.videoUrls.isEmpty {
-                VideoView(videoUrls: message.videoUrls)
-                    .allowsHitTesting(!isLongPressing)
-            }
         }
+        .brightness(messageComposerViewModel.editedMessageId == message.id ? 0.3 : 0)
+        .opacity(message.isPending ? 0.5 : 1.0)
         .onLongPressGesture(perform: {
             showMessageOptions.toggle()
             focusedField = nil

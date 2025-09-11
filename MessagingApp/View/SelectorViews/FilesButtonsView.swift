@@ -1,5 +1,5 @@
 //
-//  PollsAndFilesButtonsView.swift
+//  FilesButtonsView.swift
 //  MessagingApp
 //
 //  Created by Daniel Le on 8/4/25.
@@ -7,29 +7,13 @@
 
 import SwiftUI
 
-struct PollsAndFilesButtonsView: View {
+struct FilesButtonsView: View {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @State private var importing = false
     @EnvironmentObject var alertViewModel: AlertMessageViewModel
     
     var body: some View {
         HStack {
-            NavigationLink {
-                Text("poll")
-            } label: {
-                HStack {
-                    Image(systemName: "line.3.horizontal")
-                    Text("Polls")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.buttonBackground)
-                )
-            }
-            
             Button {
                 importing = true
             } label: {

@@ -36,7 +36,6 @@ def send_message_notification(event: firestore_fn.Event[firestore_fn.Change]) ->
         notification_body = "Sent an attachment"
     else:
         notification_body = message_text.strip()
-    print(message_text)
 
 
     # Get the channel to find the members

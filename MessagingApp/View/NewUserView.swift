@@ -17,14 +17,12 @@ struct NewUserView: View {
     @State private var usernameErrorMessage: String = ""
     @State private var displayName: String = ""
     @State private var displayNameErrorMessage: String = ""
-    @State private var generalErrorMessage: String = ""
-    @State private var generalErrorMessageColor: Color = .clear
-    @State private var generalErrorMessageHeight: CGFloat = .zero
     @State private var photoItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isLoading: Bool = false
     
     @EnvironmentObject var userViewModel: UserViewModel
+    @EnvironmentObject var alertViewModel: AlertMessageViewModel
     
     var body: some View {
         ScrollView {
@@ -81,7 +79,7 @@ struct NewUserView: View {
                                let uiImage = UIImage(data: data) {
                                 selectedImage = uiImage
                             } else {
-                                setupErrorMessage(message: "Failed to upload image. Please try again")
+                                alertViewModel.presentAlert(message: "Failed to upload image. Please try again", type: .error)
                             }
                         }
                     }
@@ -95,7 +93,6 @@ extension NewUserView {
         hideKeyboard()
         usernameErrorMessage = ""
         displayNameErrorMessage = ""
-        generalErrorMessage = ""
         isLoading = true
         
         if username.isEmpty {
@@ -111,17 +108,11 @@ extension NewUserView {
             isLoading = false
         }
         
-        if usernameErrorMessage.isEmpty && displayNameErrorMessage.isEmpty && generalErrorMessage.isEmpty {
+        if usernameErrorMessage.isEmpty && displayNameErrorMessage.isEmpty {
             Task {
-                await checkUsernameAlreadyExists()
+                await updateUser()
             }
         }
-    }
-    
-    func setupErrorMessage(message: String, color: Color = .red) {
-        generalErrorMessage = message
-        generalErrorMessageColor = color
-        generalErrorMessageHeight = AlertMessageView.maxHeight
     }
     
     func handleUploadImageToStorage() async -> String? {
@@ -144,7 +135,7 @@ extension NewUserView {
                 let ref = FirebaseStorageService.shared.createChildReference(folder: .icons, fileName: fileName)
                 
                 return await withCheckedContinuation { continuation in
-                    FirebaseStorageService.shared.uploadDataToBucket(reference: ref, data: data) { result in
+                    let _ = FirebaseStorageService.shared.uploadDataToBucket(reference: ref, data: data) { result in
                         switch result {
                         case .success(let url):
                             continuation.resume(returning: url.absoluteString)
@@ -152,13 +143,13 @@ extension NewUserView {
                             switch error {
                             case .uploadFailed(let description):
                                 print("Failed to upload image \(description)")
-                                generalErrorMessage = "Failed to upload image to server"
+                                alertViewModel.presentAlert(message: "Failed to upload image to server", type: .error)
                             case .getDownloadUrlFailed(let description):
                                 print("Failed to get uploaded image url \(description)")
-                                generalErrorMessage = "Couldn't find image"
+                                alertViewModel.presentAlert(message: "Couldn't find image", type: .error)
                             case .noDownloadUrl:
                                 print("No downloadable url for the uploaded image")
-                                generalErrorMessage = "Server error. Please try again"
+                                alertViewModel.presentAlert(message: "Server error. Please try again", type: .error)
                             }
                             self.selectedImage = nil
                             continuation.resume(returning: nil)
@@ -170,7 +161,7 @@ extension NewUserView {
         return nil
     }
     
-    func checkUsernameAlreadyExists() async {
+    func updateUser() async {
         if let _ = await FirebaseCloudStoreService.shared.fetchUserByUsername(username: username) {
             usernameErrorMessage = "Username is taken"
             isLoading = false
@@ -178,7 +169,11 @@ extension NewUserView {
         }
         var dataToUpload: [String: Any] = [:]
         
-        if let imageUrl = await handleUploadImageToStorage() {
+        if selectedImage != nil {
+            guard let imageUrl = await handleUploadImageToStorage() else {
+                isLoading = false
+                return
+            }
             dataToUpload = [
                 "userName": username,
                 "displayName": displayName,
@@ -204,11 +199,11 @@ extension NewUserView {
                 isLoading = false
                 currentView = .content
             } catch {
-                setupErrorMessage(message: "Failed to create user's information. Please try again")
+                alertViewModel.presentAlert(message: "Failed to create user's information. Please try again", type: .error)
                 isLoading = false
             }
         } else {
-            setupErrorMessage(message: "Can't update user because userInfo is nil")
+            alertViewModel.presentAlert(message: "Can't update user because userInfo is nil", type: .error)
             isLoading = false
         }
     }

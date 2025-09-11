@@ -47,6 +47,7 @@ struct EditProfileFormView: View {
                     
                     VStack(alignment: .leading, spacing: 0) {
                         FormTextFieldView(formType: .text, formTitle: "Display Name", textFieldTitle: "Enter a diplay name", errorMessage: $displayNameErrorMessage, text: $displayName)
+                            .padding(.bottom)
                         
                         Text("About Me")
                             .font(.subheadline)
@@ -185,18 +186,26 @@ extension EditProfileFormView {
             Spacer()
             
             Button("Save") {
+                displayNameErrorMessage = ""
+                
                 Task {
                     do {
-                        try await userViewModel.saveUser(
-                            displayName: displayName,
-                            aboutMe: aboutMe,
-                            bannerColor: bannerColor,
-                            avatarImageData: avatarImageData
-                        )
+                        if displayName.contains(" ") {
+                            displayNameErrorMessage = "Display name can't contain spaces"
+                        }
                         
-                        hideKeyboard()
-                        navViewModel.hideView() {
-                            navViewModel.viewToShow = nil
+                        if displayNameErrorMessage.isEmpty {
+                            try await userViewModel.saveUser(
+                                displayName: displayName,
+                                aboutMe: aboutMe,
+                                bannerColor: bannerColor,
+                                avatarImageData: avatarImageData
+                            )
+                            
+                            hideKeyboard()
+                            navViewModel.hideView() {
+                                navViewModel.viewToShow = nil
+                            }
                         }
                     } catch {
                         print("Error saving profile: \(error)")
@@ -208,7 +217,6 @@ extension EditProfileFormView {
             .foregroundStyle(.blue)
             .opacity(saveEnable ? 1 : 0.5)
             .modifier(TapGestureAnimation())
-
         }
     }
     

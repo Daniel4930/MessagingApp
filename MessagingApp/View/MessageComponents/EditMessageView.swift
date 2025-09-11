@@ -24,7 +24,7 @@ struct EditMessageView: View {
                         messageComposerViewModel.editedMessageId = message.id
                         messageComposerViewModel.uiTextView.text = message.text ?? ""
                         messageComposerViewModel.uiTextView.delegate?.textViewDidChange?(messageComposerViewModel.uiTextView)
-                        messageComposerViewModel.scrollToId = message.id
+                        messageComposerViewModel.scrollToMessageId = message.id
                         dismiss()
                     }
                 }

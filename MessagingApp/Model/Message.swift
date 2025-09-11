@@ -26,12 +26,31 @@ struct Message: Codable, Identifiable, Hashable {
     let forwardMessageId: String?
     let replayMessageId: String?
     
+    var clientId: String?
+    var isPending: Bool = false
+    var selectionData: [UploadedFile]?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case senderId
+        case text
+        case photoUrls
+        case videoUrls
+        case files
+        case date
+        case edited
+        case reaction
+        case forwardMessageId
+        case replayMessageId
+        case clientId
+    }
+    
     // Implement Hashable
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(id ?? clientId)
     }
 
     static func == (lhs: Message, rhs: Message) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.clientId == rhs.clientId
     }
 }

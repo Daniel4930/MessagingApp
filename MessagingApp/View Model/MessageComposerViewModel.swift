@@ -7,6 +7,7 @@
 
 import Foundation
 import _PhotosUI_SwiftUI
+import SwiftUI
 
 class MessageComposerViewModel: ObservableObject {
     @Published var selectionData: [UploadedFile] = []
@@ -19,8 +20,9 @@ class MessageComposerViewModel: ObservableObject {
     @Published var userProfile: User?
     @Published var editMessage = false
     @Published var editedMessageId: String?
+    @Published var scrollPosition: ScrollPosition = ScrollPosition()
     @Published var scrollToBottom = false
-    @Published var scrollToId: String?
+    @Published var scrollToMessageId: String?
     
     static let maxSelection = 10
     static let customTextEditorMaxHeight = UIScreen.main.bounds.height / 5

@@ -20,11 +20,25 @@ struct ProfileView: View {
                 LineIndicator()
                     .padding(.top, 5)
                 
-                ProfileTopBarButtonView(buttons: [
-                    ButtonInfo(systemImage: "ellipsis") {
-                        showOptions.toggle()
-                    }
-                ])
+                Button {
+                    showOptions.toggle()
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(width: 35, height: 35)
+                        .contentShape(Rectangle())
+                        .popover(isPresented: $showOptions, arrowEdge: .top) {
+                            ProfileOptionsView(username: user.userName)
+                        }
+                }
+                .background {
+                    Circle().fill(.buttonBackground.opacity(0.8))
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.top)
+                .padding(.bottom, 40)
+                .modifier(TapGestureAnimation())
+                
+                
                 userInfoSection
                     .overlay {
                         GeometryReader { proxy in
@@ -94,12 +108,20 @@ private extension ProfileView {
 }
 
 private struct ProfileOptionsView: View {
+    let username: String
+    @EnvironmentObject var alertViewModel: AlertMessageViewModel
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         VStack(spacing: 0) {
-            ProfileOptionButton(title: "Copy Username", action: {})
-            DividerView()
-            ProfileOptionButton(title: "Copy User ID", action: {})
+            ProfileOptionButton(title: "Copy Username") {
+                let pasteboard = UIPasteboard.general
+                pasteboard.string = username
+                alertViewModel.presentAlert(message: "Username copied", type: .success)
+                dismiss()
+            }
         }
+        .frame(minWidth: 180)
         .presentationCompactAdaptation(.popover)
     }
 }

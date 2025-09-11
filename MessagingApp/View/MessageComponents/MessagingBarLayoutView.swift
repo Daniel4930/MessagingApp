@@ -30,7 +30,8 @@ struct MessagingBarLayoutView: View {
             
             CustomTextEditor(
                 messageComposerViewModel: messageComposerViewModel,
-                focusedField: $focusedField
+                focusedField: $focusedField,
+                memberIds: channel.memberIds
             )
             
             if messageComposerViewModel.showSendButton || !messageComposerViewModel.selectionData.isEmpty {
@@ -65,13 +66,13 @@ struct MessagingBarLayoutView: View {
                                     senderId: userViewModel.user?.id,
                                     selectionData: messageComposerViewModel.selectionData,
                                     channel: channel,
-                                    finalizedText: messageComposerViewModel.finalizeText()
+                                    finalizedText: messageComposerViewModel.finalizeText(),
+                                    userViewModel: userViewModel
                                 )
+                                messageComposerViewModel.scrollToBottom = true
                             }
                             
-                            // Reset composer state on success
                             messageComposerViewModel.resetInputs()
-                            messageComposerViewModel.scrollToBottom = true
                             
                         } catch {
                             print("Error sending message: \(error.localizedDescription)")
@@ -139,7 +140,7 @@ struct MessagingBarLayoutView: View {
         .background(Color("PrimaryBackgroundColor"))
         .onChange(of: messageComposerViewModel.editMessage) { oldValue, newValue in
             if newValue {
-                focusedField = .textView
+                focusedField = .textField
             }
         }
     }

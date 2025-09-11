@@ -11,13 +11,13 @@ struct MessageScrollView: View {
     let channelInfo: Channel
     @FocusState.Binding var focusedField: Field?
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
-    @State private var scrollPosition = ScrollPosition()
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     
     var body: some View {
-        let dayGroups = channelInfo.id == nil ? [] : messageViewModel.groupedMessages(for: channelInfo.id!)
+        let messages = messageViewModel.messages.first(where: { $0.channelId == channelInfo.id })?.messages ?? []
+        let dayGroups = channelInfo.id == nil ? [] : messageViewModel.groupedMessages(messages: messages)
         
         ScrollView {
             LazyVStack(alignment: .leading) {
@@ -31,7 +31,13 @@ struct MessageScrollView: View {
                         ForEach(dayGroup.messageGroups, id: \.time) { messageGroup in
                             ForEach(messageGroup.userGroups, id: \.userId) { userGroup in
                                 if let user = friendViewModel.getUser(withId: userGroup.userId, currentUser: userViewModel.user) {
-                                    MessageLayoutView(user: user, messages: userGroup.messages, time: messageGroup.time, messageComposerViewModel: messageComposerViewModel, focusedField: $focusedField)
+                                    MessageLayoutView(
+                                        user: user,
+                                        messages: userGroup.messages,
+                                        time: messageGroup.time,
+                                        messageComposerViewModel: messageComposerViewModel,
+                                        focusedField: $focusedField
+                                    )
                                 }
                             }
                         }
@@ -39,24 +45,34 @@ struct MessageScrollView: View {
                 }
             }
         }
-        .scrollPosition($scrollPosition)
+        .scrollPosition($messageComposerViewModel.scrollPosition)
         .scrollDismissesKeyboard(.immediately)
-        .defaultScrollAnchor(.bottom)
+//        .defaultScrollAnchor(dayGroups.isEmpty ? .top : .bottom)
         .onScrollPhaseChange { oldPhase, newPhase in
             if newPhase == .interacting {
                 focusedField = nil
             }
         }
+        .refreshable {
+            guard let channelId = channelInfo.id else { return }
+            guard let messageMap = messageViewModel.messages.first(where: { $0.channelId == channelId }) else { return }
+            guard let messageId = messageMap.messages.first?.id else { return }
+            
+            await messageViewModel.fetchMoreMessages(channelId: channelId)
+            messageComposerViewModel.scrollToMessageId = messageId
+        }
         .onChange(of: messageComposerViewModel.scrollToBottom) { _, newValue in
             if newValue == true {
                 withAnimation(.spring(duration: 0.2)) {
-                    scrollPosition.scrollTo(edge: .bottom)
+                    messageComposerViewModel.scrollPosition.scrollTo(edge: .bottom)
                 }
                 messageComposerViewModel.scrollToBottom = false
             }
         }
-        .onChange(of: messageComposerViewModel.scrollToId) { oldValue, newValue in
-            scrollPosition.scrollTo(id: newValue, anchor: .center)
+        .onChange(of: messageComposerViewModel.scrollToMessageId) { oldValue, newValue in
+            withAnimation {
+                messageComposerViewModel.scrollPosition.scrollTo(id: newValue, anchor: .top)
+            }
         }
         .task {
             // When the view appears, find all other members in the channel and fetch their info if needed.

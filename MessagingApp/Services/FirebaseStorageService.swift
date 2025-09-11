@@ -86,10 +86,11 @@ class FirebaseStorageService {
         }
     }
     
-    func uploadDataToBucket(reference: StorageReference, data: Data, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) {
-        reference.putData(data) { _, error in
+    func uploadDataToBucket(reference: StorageReference, data: Data, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) -> StorageUploadTask {
+        let uploadTask = reference.putData(data) { _, error in
             if let error = error {
                 completion(.failure(FirebaseStorageUploadError.uploadFailed(error.localizedDescription)))
+                return
             }
             
             reference.downloadURL { url, error in
@@ -104,6 +105,7 @@ class FirebaseStorageService {
                 }
             }
         }
+        return uploadTask
     }
     
     func downloadFileFromBucket(reference: StorageReference, completion: @escaping (Result<URL, FirebaseDownloadFileError>) -> Void) {

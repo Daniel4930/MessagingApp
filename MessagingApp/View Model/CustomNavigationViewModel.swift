@@ -14,6 +14,7 @@ class CustomNavigationViewModel: ObservableObject  {
     @Published var gestureDisabled: Bool
     @Published var viewToShow: (() -> AnyView)?
     @Published var exitSwipeAction: (() -> Void)?
+    @Published var duringSwipeAction: (() -> Void)?
     
     init() {
         self.currentXOffset = .zero
@@ -25,10 +26,13 @@ class CustomNavigationViewModel: ObservableObject  {
     static let velocityThreshold: CGFloat = 700
     static let maxOffset: CGFloat = UIScreen.main.bounds.width
     
-    func onDragChanged(_ value: DragGesture.Value) {
+    func onDragChanged(value: DragGesture.Value) {
         let translation = value.translation.width
         if self.endingXOffset == -CustomNavigationViewModel.maxOffset && translation < 0 { return }
         self.currentXOffset = translation
+        if let duringSwipeAction {
+            duringSwipeAction()
+        }
     }
     
     func onDragEnded(_ value: DragGesture.Value) {

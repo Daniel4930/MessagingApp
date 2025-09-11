@@ -14,7 +14,7 @@ struct UploadedFileInfoView: View {
     
     var body: some View {
         ScrollView {            
-            if let dataToShow = messageComposerViewModel.dataToShow, let uiImage = dataToShow.photoInfo?.image {
+            if let dataToShow = messageComposerViewModel.dataToShow {
                 Group {
                     switch dataToShow.fileType {
                     case .photo:

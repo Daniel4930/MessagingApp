@@ -188,7 +188,7 @@ class FirebaseCloudStoreService {
     }
 
     /// Fetches an older batch of messages for pagination.
-    func fetchMoreMessages(channelId: String, lastDocumentSnapshot: DocumentSnapshot, limit: Int = 20) async throws -> ([Message], DocumentSnapshot?) {
+    func fetchMoreMessages(channelId: String, lastDocumentSnapshot: DocumentSnapshot, limit: Int = 10) async throws -> ([Message], DocumentSnapshot?) {
         let snapshot = try await db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
             .order(by: "date", descending: true)
             .start(afterDocument: lastDocumentSnapshot)
@@ -298,6 +298,7 @@ class FirebaseCloudStoreService {
     func fetchUserByUsername(username: String) async -> User? {
         do {
             let snapshot = try await db.collection(FirebaseCloudStoreCollection.users.rawValue).whereField("userName", isEqualTo: username).getDocuments()
+            
             if let document = snapshot.documents.first {
                 return try document.data(as: User.self)
             }
