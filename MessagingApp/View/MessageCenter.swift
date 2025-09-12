@@ -49,7 +49,9 @@ struct MessageCenter: View {
             ScrollView {
                 ScrollView([.horizontal]) {
                     HStack(spacing: 16) {
-                        ForEach(friendViewModel.friends, id: \.id) { friend in
+                        let sortedFriends = friendViewModel.friends.sorted { $0.onlineStatus.sortOrder < $1.onlineStatus.sortOrder }
+                        
+                        ForEach(sortedFriends, id: \.id) { friend in
                             Button {
                                 selectedFriendIcon = friend
                             } label: {

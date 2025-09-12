@@ -17,7 +17,9 @@ struct DirectMessageView: View {
     @State private var showPhotoAndFile = false
     @State private var sendButton = false
     @State private var safeAreaInsetBottom: CGFloat = .zero
-    @State private var safeAreaInsetTop: CGFloat = .zero
+    @State private var selectorHeight: CGFloat = .zero
+    @State private var backgroundOpacity: CGFloat = .zero
+
     @StateObject private var messageComposerViewModel = MessageComposerViewModel()
     @FocusState private var focusedField: Field?
     @EnvironmentObject var keyboardProvider: KeyboardProvider
@@ -41,38 +43,61 @@ struct DirectMessageView: View {
                 
                 DividerView()
                 
-                MessageScrollView(channelInfo: channelInfo, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
-                    .onTapGesture {
-                        showFileAndImageSelector = false
-                        hideKeyboard()
-                    }
-                
-                DividerView()
-                
-                if !messageComposerViewModel.selectionData.isEmpty {
-                    PhotoAndFileHoriScrollView(messageComposerViewModel: messageComposerViewModel, showPhotoAndFile: $showPhotoAndFile)
+                MessageScrollView(
+                    channelInfo: channelInfo,
+                    focusedField: $focusedField,
+                    messageComposerViewModel: messageComposerViewModel
+                )
+                .onTapGesture {
+                    showFileAndImageSelector = false
+                    hideKeyboard()
                 }
                 
-                MessagingBarLayoutView(channel: channelInfo, sendButtonDisbaled: $sendButton, showFileAndImageSelector: $showFileAndImageSelector, focusedField: $focusedField, messageComposerViewModel: messageComposerViewModel)
-                    .offset(y: keyboardProvider.keyboardWillAppear || showFileAndImageSelector ? 0 : -safeAreaInsetBottom)
+                DividerView(thickness: 1)
+                
+                if !messageComposerViewModel.selectionData.isEmpty {
+                    PhotoAndFileHoriScrollView(
+                        messageComposerViewModel: messageComposerViewModel,
+                        showPhotoAndFile: $showPhotoAndFile
+                    )
+                }
+                
+                MessagingBarLayoutView(
+                    channel: channelInfo,
+                    sendButtonDisbaled: $sendButton,
+                    showFileAndImageSelector: $showFileAndImageSelector,
+                    focusedField: $focusedField,
+                    messageComposerViewModel: messageComposerViewModel
+                )
             }
-            .padding(.top, safeAreaInsetTop)
             .padding(.bottom, bottomPaddingForSelector)
+            .padding(.bottom, keyboardProvider.keyboardWillAppear || showFileAndImageSelector ? 0 : safeAreaInsetBottom)
+            .overlay {
+                if selectorHeight > SelectorView.threshold {
+                    Color.black
+                        .opacity(backgroundOpacity)
+                        .ignoresSafeArea()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
             
             SelectorView(
-                minHeight: keyboardProvider.height - safeAreaInsetBottom,
+                minHeight: keyboardProvider.height,
                 channel: channelInfo,
                 messageComposerViewModel: messageComposerViewModel,
-                sendButton: $sendButton
+                sendButton: $sendButton,
+                showFileAndImageSelector: $showFileAndImageSelector,
+                selectorHeight: $selectorHeight
             )
             .frame(maxWidth: .infinity, alignment: .bottom)
-            .padding(.bottom, safeAreaInsetBottom)
             .offset(y: selectorViewYOffset)
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(.keyboard)
+        .ignoresSafeArea(edges: Edge.Set([.bottom]))
         .background(Color("PrimaryBackgroundColor"))
         .animation(.spring(duration: 0.3, bounce: 0), value: selectorViewYOffset)
         .animation(.spring(duration: 0.3, bounce: 0), value: bottomPaddingForSelector)
+        .animation(.spring(duration: 0.3, bounce: 0), value: backgroundOpacity)
         .onAppear {
             navViewModel.duringSwipeAction = {
                 showFileAndImageSelector = false
@@ -86,6 +111,15 @@ struct DirectMessageView: View {
         .onChange(of: showFileAndImageSelector) { oldValue, newValue in
             if newValue {
                 hideKeyboard()
+            } else {
+                focusedField = .textField
+            }
+        }
+        .onChange(of: selectorHeight) { oldValue, newValue in
+            if newValue > SelectorView.threshold {
+                backgroundOpacity = (newValue / SelectorView.selectorMaxHeight) * 0.3
+            } else {
+                backgroundOpacity = .zero
             }
         }
         .customSheetModifier(isPresented: $showPhotoAndFile) {
@@ -114,7 +148,6 @@ struct DirectMessageView: View {
                 Color.clear
                     .onAppear {
                         safeAreaInsetBottom = proxy.safeAreaInsets.bottom
-                        safeAreaInsetTop = proxy.safeAreaInsets.top
                     }
             }
         }

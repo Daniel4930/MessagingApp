@@ -140,25 +140,6 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     }
 }
 
-// Helper extension to make the completion-handler based upload function usable with modern async/await.
-extension FirebaseStorageService {
-    func uploadData(reference: StorageReference, data: Data) async throws -> URL {
-        return try await withCheckedThrowingContinuation { continuation in
-            uploadDataToBucket(reference: reference, data: data) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-    
-    func uploadFile(reference: StorageReference, fileUrl: URL) async throws -> URL {
-        return try await withCheckedThrowingContinuation { continuation in
-            uploadFileToBucket(reference: reference, url: fileUrl) { result in
-                continuation.resume(with: result)
-            }
-        }
-    }
-}
-
 // Helper to create a LastMessage from a Message
 extension LastMessage {
     init?(from message: Message) {

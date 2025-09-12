@@ -55,10 +55,14 @@ class MessageViewModel: ObservableObject {
         let task = Task {
             do {
                 // 1. Initial Fetch
-                let (initialMessages, lastDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId, limit: 10)
+                let (initialMessages, oldestDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId, limit: 20)
                 
                 await MainActor.run {
-                    let messageMap = MessageMap(channelId: channelId, messages: initialMessages, documentSnapshot: lastDocument)
+                    let messageMap = MessageMap(
+                        channelId: channelId,
+                        messages: initialMessages,
+                        documentSnapshot: oldestDocument
+                    )
                     if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
                         self.messages[index] = messageMap
                     } else {
@@ -67,8 +71,14 @@ class MessageViewModel: ObservableObject {
                 }
                 
                 // 2. Listen for real-time updates
-                let oldestMessageDate = initialMessages.first?.date?.dateValue() ?? Date()
-                let stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(channelId: channelId, from: oldestMessageDate)
+                guard let oldestMessageDate = initialMessages.first?.date?.dateValue() else {
+                    fatalError("Can't listen for real time messages in channelId \(channelId). Date to listen is nil")
+                }
+                
+                let stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(
+                    channelId: channelId,
+                    from: oldestMessageDate
+                )
                 
                 for try await (added, modified, removed) in stream {
                     await MainActor.run {
@@ -137,6 +147,12 @@ class MessageViewModel: ObservableObject {
     }
     
     func deleteMessage(messageId: String, channelId: String) {
+        // Optimistically remove the message from the local array for a responsive UI.
+        if let index = messages.firstIndex(where: { $0.channelId == channelId }) {
+            messages[index].messages.removeAll { $0.id == messageId }
+        }
+        
+        // Trigger the backend deletion.
         FirebaseCloudStoreService.shared.deleteMessage(messageId: messageId, channelId: channelId)
     }
     
@@ -149,7 +165,6 @@ class MessageViewModel: ObservableObject {
         
         let clientId = UUID().uuidString
         let pendingMessage = Message(
-            id: clientId,
             senderId: senderId,
             text: finalizedText,
             photoUrls: [],

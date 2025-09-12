@@ -10,10 +10,20 @@ import FirebaseFirestore
 
 enum OnlineStatus: String, Codable {
     case online
+    case idle
+    case doNotDisturb
     case offline
     case invisible
-    case doNotDisturb
-    case idle
+    
+    var sortOrder: Int {
+        switch self {
+        case .online: return 0
+        case .idle: return 1
+        case .doNotDisturb: return 2
+        case .offline: return 3
+        case .invisible: return 4
+        }
+    }
 }
 
 struct User: Codable, Identifiable, Equatable, Hashable {

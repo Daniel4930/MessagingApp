@@ -90,11 +90,11 @@ struct MessagingBarLayoutView: View {
             VStack(spacing: 0) {
                 MentionLayoutViewAnimation(messageComposerViewModel: messageComposerViewModel, currentOffsetOverlay: $currentOverlayOffset) {
                     MentionLayoutView(users: messageComposerViewModel.mathchUsers) { name in
-                        let uiTextView = messageComposerViewModel.uiTextView
+                        let uiTextView = messageComposerViewModel.uiTextEditor
                         
                         uiTextView.text.removeLast(uiTextView.text.distance(from: uiTextView.text.lastIndex(of: "@")!, to: uiTextView.text.endIndex))
                         uiTextView.text.append("@" + name + " ")
-                        messageComposerViewModel.uiTextView = uiTextView
+                        messageComposerViewModel.uiTextEditor = uiTextView
                         messageComposerViewModel.showMention = false
                         
                         if let delegate = uiTextView.delegate as? CustomUITextView.Coordinator {
@@ -109,8 +109,7 @@ struct MessagingBarLayoutView: View {
                     HStack {
                         Button {
                             messageComposerViewModel.editMessage = false
-                            messageComposerViewModel.uiTextView.text = ""
-                            messageComposerViewModel.uiTextView.delegate?.textViewDidChange?(messageComposerViewModel.uiTextView)
+                            messageComposerViewModel.uiTextEditor.text = ""
                             messageComposerViewModel.editedMessageId = nil
                         } label: {
                             Image(systemName: "x.circle.fill")

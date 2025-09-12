@@ -22,24 +22,27 @@ struct SelectorView: View {
     let channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var sendButton: Bool
+    @Binding var showFileAndImageSelector: Bool
+    @Binding var selectorHeight: CGFloat
     
-    @State private var selectorHeight: CGFloat = .zero
     @State private var openCamera = false
     @State private var accessStatus: PhotoLibraryAccessStatus?
     @State private var assets: [PHAsset] = []
     @State private var lastCreationDate: Date?
     @State private var enableHighPriorityGesture = false
     @State private var fetchMoreAssets = false
+    @State private var changeTopBarAppear = false
+    @State private var overScrollVertically = false
     
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     
-    let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.898
-    let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
+    static let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.88
+    static let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     let fetchLimit = 20
     
     var gesture: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 6)
             .onChanged { dragValue in
                 onDragChanged(dragValue)
             }
@@ -49,17 +52,17 @@ struct SelectorView: View {
     }
     
     var body: some View {
-        VStack {            
+        VStack {
             LineIndicator()
             
-            if selectorHeight >= threshold {
+            if changeTopBarAppear {
                 SelectorNavTopBar(
                     height: $selectorHeight,
                     minHeight: minHeight,
                     accessStatus: accessStatus ?? .undetermined,
                     messageComposerViewModel: messageComposerViewModel
                 )
-                    .highPriorityGesture(gesture)
+                .highPriorityGesture(gesture)
             } else {
                 FilesButtonsView(messageComposerViewModel: messageComposerViewModel)
                     .highPriorityGesture(gesture)
@@ -91,13 +94,24 @@ struct SelectorView: View {
                     }
                 }
             }
+            .scrollDisabled(overScrollVertically)
             .font(.subheadline)
             .padding(.horizontal)
-            .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight)
+            .highPriorityGesture(gesture, isEnabled: selectorHeight == minHeight || overScrollVertically)
             .overlay(alignment: .bottom) {
                 if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
-                    CustomSendButtonView(channel: channel, messageComposerViewModel: messageComposerViewModel, height: $selectorHeight, sendButtonDisabled: $sendButton, minHeight: minHeight)
+                    CustomSendButtonView(
+                        channel: channel,
+                        messageComposerViewModel: messageComposerViewModel,
+                        height: $selectorHeight,
+                        sendButtonDisabled: $sendButton,
+                        minHeight: minHeight)
                 }
+            }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y < 0
+            } action: { oldValue, newValue in
+                overScrollVertically = newValue
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 let contentHeight = geometry.contentSize.height
@@ -112,19 +126,26 @@ struct SelectorView: View {
             } action: { oldValue, newValue in
                 fetchMoreAssets = newValue
             }
-
         }
+        .animation(.spring(duration: 0.3, bounce: 0), value: changeTopBarAppear)
         .foregroundStyle(Color.button)
         .frame(maxWidth: .infinity)
         .frame(height: selectorHeight)
         .background(Color.primaryBackground)
-        .gesture(gesture)
-        .onAppear {
-            selectorHeight = minHeight
-            handlePhotoLibraryAccessRequest()
+        .gesture(gesture, isEnabled: showFileAndImageSelector)
+        .task {
+            self.selectorHeight = minHeight
+            self.handlePhotoLibraryAccessRequest()
         }
         .onChange(of: minHeight) { _, newValue in
             selectorHeight = newValue
+        }
+        .onChange(of: selectorHeight) { oldValue, newValue in
+            if newValue >= SelectorView.threshold {
+                changeTopBarAppear = true
+            } else {
+                changeTopBarAppear = false
+            }
         }
         .onChange(of: fetchMoreAssets) { oldValue, newValue in
             if newValue {
@@ -136,8 +157,8 @@ struct SelectorView: View {
 
 extension SelectorView {
     func onDragChanged(_ dragValue: DragGesture.Value) {
-        if dragValue.translation.height < 0 && selectorHeight <= selectorMaxHeight {
-            if selectorHeight + abs(dragValue.translation.height) <= selectorMaxHeight {
+        if dragValue.translation.height < 0 && selectorHeight <= SelectorView.selectorMaxHeight {
+            if selectorHeight + abs(dragValue.translation.height) <= SelectorView.selectorMaxHeight {
                 selectorHeight += abs(dragValue.translation.height)
             }
         }
@@ -149,10 +170,12 @@ extension SelectorView {
     }
     
     func onDragEnded(_ dragValue: DragGesture.Value) {
-        if selectorHeight > threshold {
-            selectorHeight = selectorMaxHeight
-        } else {
-            selectorHeight = minHeight
+        withAnimation(.spring(duration: 0.3, bounce: 0)) {
+            if selectorHeight > SelectorView.threshold {
+                selectorHeight = SelectorView.selectorMaxHeight
+            } else {
+                selectorHeight = minHeight
+            }
         }
     }
     

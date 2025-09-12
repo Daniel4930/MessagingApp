@@ -15,8 +15,8 @@ struct AttributedTextView: UIViewRepresentable {
     @Binding var showMessageOptions: Bool
     let isEdited: Bool
     let onMentionTap: (String) -> Void
-    let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     
+    let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     
@@ -126,7 +126,6 @@ struct AttributedTextView: UIViewRepresentable {
         
         @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
             if gesture.state == .began {
-                // Forward to SwiftUI
                 self.parent.showMessageOptions = true
             }
         }

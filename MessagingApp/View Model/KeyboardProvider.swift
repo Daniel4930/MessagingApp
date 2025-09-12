@@ -29,7 +29,7 @@ final class KeyboardProvider: ObservableObject {
         
         let height = UserDefaults.standard.float(forKey: "KeyboardHeight")
         if height == .zero {
-            self.height = 273
+            self.height = 346.0
         } else {
             self.height = CGFloat(height)
         }
@@ -50,6 +50,4 @@ final class KeyboardProvider: ObservableObject {
             UserDefaults.standard.set(Float(self.height), forKey: "KeyboardHeight")
         }
     }
-    
-    
 }

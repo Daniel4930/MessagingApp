@@ -12,7 +12,7 @@ import SwiftUI
 class MessageComposerViewModel: ObservableObject {
     @Published var selectionData: [UploadedFile] = []
     @Published var dataToShow: UploadedFile? = nil
-    @Published var uiTextView: UITextView = UITextView()
+    @Published var uiTextEditor: UITextView = UITextView()
     @Published var showSendButton: Bool = false
     @Published var showMention: Bool = false
     @Published var mathchUsers: [User] = []
@@ -20,12 +20,11 @@ class MessageComposerViewModel: ObservableObject {
     @Published var userProfile: User?
     @Published var editMessage = false
     @Published var editedMessageId: String?
-    @Published var scrollPosition: ScrollPosition = ScrollPosition()
     @Published var scrollToBottom = false
     @Published var scrollToMessageId: String?
     
     static let maxSelection = 10
-    static let customTextEditorMaxHeight = UIScreen.main.bounds.height / 5
+    static let customTextEditorMaxHeight = UIScreen.main.bounds.height / 8
     static let customTextEditorMinHeight = UIScreen.main.bounds.height / 20
     
     func addData(uploadData: UploadedFile) {
@@ -48,13 +47,13 @@ class MessageComposerViewModel: ObservableObject {
     }
     
     func finalizeText() -> String? {
-        if uiTextView.text.isEmpty {
+        if uiTextEditor.text.isEmpty {
             return nil
         }
-        if uiTextView.text.last == " " {
-            return String(uiTextView.text.dropLast())
+        if uiTextEditor.text.last == " " {
+            return String(uiTextEditor.text.dropLast())
         }
-        return uiTextView.text
+        return uiTextEditor.text
     }
     
     func getPhotoInfo() -> [PhotoFile?] {
@@ -85,7 +84,7 @@ class MessageComposerViewModel: ObservableObject {
     }
     
     func resetInputs() {
-        uiTextView.text = ""
+        uiTextEditor.text = ""
         selectionData = []
         showSendButton = false
         customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight

@@ -22,9 +22,7 @@ struct EditMessageView: View {
                     Button("Edit Message", systemImage: "pencil") {
                         messageComposerViewModel.editMessage = true
                         messageComposerViewModel.editedMessageId = message.id
-                        messageComposerViewModel.uiTextView.text = message.text ?? ""
-                        messageComposerViewModel.uiTextView.delegate?.textViewDidChange?(messageComposerViewModel.uiTextView)
-                        messageComposerViewModel.scrollToMessageId = message.id
+                        messageComposerViewModel.uiTextEditor.text = message.text ?? ""
                         dismiss()
                     }
                 }

@@ -19,7 +19,7 @@ struct CustomTextEditor: View {
     var body: some View {
         ZStack(alignment: .leading) {
             CustomUITextView(messageComposerViewModel: messageComposerViewModel, memberIds: memberIds) {
-                messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextView.text.isEmpty
+                messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextEditor.text.isEmpty
                 
                 if let user = userViewModel.user {
                     var users = Array(arrayLiteral: user)
@@ -33,7 +33,7 @@ struct CustomTextEditor: View {
             .padding(.horizontal, horizontalPaddingSpace)
             .focused($focusedField, equals: .textField)
             
-            if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextView.text.isEmpty {
+            if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextEditor.text.isEmpty {
                 let displayName = friend.displayName
                 
                 Text("Message @\(displayName.isEmpty ? friend.userName : displayName)")
@@ -47,7 +47,7 @@ struct CustomTextEditor: View {
 }
 extension CustomTextEditor {
     func searchUser(users: [User]) -> [User] {
-        if let message = messageComposerViewModel.uiTextView.text {
+        if let message = messageComposerViewModel.uiTextEditor.text {
             //message = "@"
             guard let commandIndex = message.lastIndex(of: "@") else { return [] }
             
@@ -97,7 +97,7 @@ struct CustomUITextView: UIViewRepresentable {
         textView.font = UIFont.systemFont(ofSize: 16)
         textView.backgroundColor = UIColor(named: "SecondaryBackgroundColor")
         DispatchQueue.main.async {
-            messageComposerViewModel.uiTextView = textView
+            messageComposerViewModel.uiTextEditor = textView
             
         }
         

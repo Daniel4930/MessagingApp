@@ -33,11 +33,18 @@ struct MessageContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if let text = message.text {
-                AttributedTextView(text: text, customTextViewHeight: $customTextViewHeight, showSafari: $showSafari, showMessageOptions: $showMessageOptions, isEdited: message.edited) { userName in
-                    if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
-                        messageComposerViewModel.userProfile = user
+                AttributedTextView(
+                    text: text,
+                    customTextViewHeight: $customTextViewHeight,
+                    showSafari: $showSafari,
+                    showMessageOptions: $showMessageOptions,
+                    isEdited: message.edited,
+                    onMentionTap: { userName in
+                        if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
+                            messageComposerViewModel.userProfile = user
+                        }
                     }
-                }
+                )
                 .frame(height: customTextViewHeight)
                 .sheet(isPresented: $showSafari) {
                     if let url = URL(string: text) {
@@ -68,7 +75,7 @@ struct MessageContentView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            if let selectionData = message.selectionData, !selectionData.isEmpty {
+            if message.isPending, let selectionData = message.selectionData, !selectionData.isEmpty {
                 PendingAttachmentsView(selectionData: selectionData, uploadProgress: messageViewModel.uploadProgress)
             }
             if !message.photoUrls.isEmpty {

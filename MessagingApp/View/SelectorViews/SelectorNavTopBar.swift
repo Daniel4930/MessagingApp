@@ -16,7 +16,9 @@ struct SelectorNavTopBar: View {
     var body: some View {
         HStack(alignment: .center) {
             Button("Back") {
-                height = minHeight
+                withAnimation(.spring(duration: 0.3, bounce: 0)) {
+                    height = minHeight
+                }
             }
             .foregroundStyle(.blue)
             .frame(maxWidth: .infinity, alignment: .leading)

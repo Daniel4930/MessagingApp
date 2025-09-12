@@ -40,10 +40,15 @@ struct MessageLayoutView: View {
                         .foregroundStyle(.gray)
                 }
                 ForEach(messages) { message in
-                    MessageContentView(message: message, messageComposerViewModel: messageComposerViewModel, focusedField: $focusedField)
+                    MessageContentView(
+                        message: message,
+                        messageComposerViewModel: messageComposerViewModel,
+                        focusedField: $focusedField
+                    )
+                    .id(message.id)
                 }
-                .scrollTargetLayout()
             }
+            .scrollTargetLayout()
         }
         .padding(.horizontal, 13)
         .padding(.bottom)
