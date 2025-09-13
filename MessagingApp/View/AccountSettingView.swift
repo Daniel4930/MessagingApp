@@ -9,50 +9,48 @@ import SwiftUI
 
 struct AccountSettingView: View {
     @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        NavigationStack {
-            VStack {
-                settingTopBar()
-                
-                if let user = userViewModel.user {
-                    List {
-                        Text("Email: \(user.email)")
-                        
-                        NavigationLink {
-                            EditUsernameView()
-                        } label: {
-                            Text("Username: \(user.userName)")
-                        }
-                        
-                        // Logout button inside the list
-                        Section {
-                            Button("Log out", role: .destructive) {
-                                Task {
-                                    await userViewModel.clearFCMToken()
-                                    do {
-                                        try FirebaseAuthService.shared.signOut()
-                                        UserDefaults.standard.removeObject(forKey: "email")
-                                        NotificationCenter.default.post(name: .didLogOut, object: nil)
-                                    } catch {
-                                        alertMessageViewModel.presentAlert(message: "Failed to sign out: \(error.localizedDescription)", type: .error)
-                                    }
+        VStack {
+            settingTopBar()
+            
+            if let user = userViewModel.user {
+                List {
+                    Text("Email: \(user.email)")
+                    
+                    NavigationLink {
+                        EditUsernameView()
+                    } label: {
+                        Text("Username: \(user.userName)")
+                    }
+                    
+                    // Logout button inside the list
+                    Section {
+                        Button("Log out", role: .destructive) {
+                            Task {
+                                await userViewModel.clearFCMToken()
+                                do {
+                                    try FirebaseAuthService.shared.signOut()
+                                    UserDefaults.standard.removeObject(forKey: "email")
+                                    NotificationCenter.default.post(name: .didLogOut, object: nil)
+                                } catch {
+                                    alertMessageViewModel.presentAlert(message: "Failed to sign out: \(error.localizedDescription)", type: .error)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .center)
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
-                    .background(Color.black)
-                    .tint(.white)
                 }
-                
-                Spacer()
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .background(Color.black)
+                .tint(.white)
             }
+            Spacer()
         }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 extension AccountSettingView {
@@ -60,10 +58,7 @@ extension AccountSettingView {
         return ZStack {
             HStack {
                 Button {
-                    hideKeyboard()
-                    navViewModel.hideView {
-                        navViewModel.viewToShow = nil
-                    }
+                    dismiss()
                 } label: {
                     Text("+")
                         .foregroundStyle(.white)

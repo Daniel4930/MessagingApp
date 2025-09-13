@@ -14,27 +14,32 @@ struct CustomizableProfileView: View {
     @State private var viewTopSafeAreaInset: CGFloat = .zero
     @State private var topBarHeight: CGFloat = .zero
     @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileTopBarButtonView(buttons: [
-                    ButtonInfo(systemImage: "gear") {
-                        navViewModel.viewToShow = {
-                            AnyView(AccountSettingView())
-                        }
-                        navViewModel.showView()
-                    }
-                ])
-                .padding(.top, viewTopSafeAreaInset)
-                .overlay {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear {
-                                topBarHeight = proxy.size.height
+                HStack(spacing: 0) {
+                    Spacer()
+                    NavigationLink(destination: AccountSettingView()) {
+                        Image(systemName: "gear")
+                            .frame(width: 35, height: 35)
+                            .contentShape(Rectangle())
+                            .background {
+                                Circle().fill(.buttonBackground.opacity(0.8))
+                            }
+                            .padding(.top)
+                            .padding(.bottom, 40)
+                            .modifier(TapGestureAnimation())
+                            .overlay {
+                                GeometryReader { proxy in
+                                    Color.clear
+                                        .onAppear {
+                                            topBarHeight = proxy.size.height
+                                        }
+                                }
                             }
                     }
+                    .padding(.top, viewTopSafeAreaInset)
                 }
                 
                 userInfoSection()
@@ -45,12 +50,7 @@ struct CustomizableProfileView: View {
                     .frame(height: profileIconHeight / 2 + topBarHeight + viewTopSafeAreaInset)
             }
             
-            Button {
-                navViewModel.viewToShow = {
-                    AnyView(EditProfileFormView())
-                }
-                navViewModel.showView()
-            } label: {
+            NavigationLink(destination: EditProfileFormView()) {
                 HStack(alignment: .center) {
                     Image(systemName: "pencil")
                     Text("Edit Profile")
@@ -71,6 +71,7 @@ struct CustomizableProfileView: View {
                 .padding(.horizontal)
         }
         .ignoresSafeArea()
+        .toolbar(.hidden, for: .navigationBar)
         .defaultScrollAnchor(.top)
         .tint(Color("ButtonColor"))
         .background(Color("PrimaryBackgroundColor"))
@@ -86,10 +87,6 @@ struct CustomizableProfileView: View {
                     }
             }
         }
-        .onAppear {
-            navViewModel.viewToShow = nil
-            navViewModel.gestureDisabled = false
-        }
     }
 }
 extension CustomizableProfileView {
@@ -100,7 +97,7 @@ extension CustomizableProfileView {
             Button {
                 showOnlineStatus.toggle()
             } label: {
-                UserIconView(urlString: userViewModel.user!.icon, iconDimension: CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
+                UserIconView(urlString: userViewModel.user?.icon, iconDimension: CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
                     .overlay(alignment: .bottomTrailing) {
                         OnlineStatusCircle(
                             status: userViewModel.user!.onlineStatus.rawValue,

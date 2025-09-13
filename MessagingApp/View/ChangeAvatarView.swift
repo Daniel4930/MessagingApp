@@ -11,6 +11,8 @@ import PhotosUI
 struct ChangeAvatarView: View {
     @Binding var avatarPhotoPickerItem: [PhotosPickerItem]
     @Binding var avatarImage: Image?
+    @Binding var removeAvatar: Bool
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         VStack(spacing: 0) {
@@ -43,11 +45,10 @@ struct ChangeAvatarView: View {
                 DividerView()
                 
                 Button {
-                    if !avatarPhotoPickerItem.isEmpty {
-                        avatarPhotoPickerItem = []
-                    } else {
-                        avatarImage = Image(systemName: "person.circle")
-                    }
+                    avatarPhotoPickerItem = []
+                    avatarImage = nil
+                    removeAvatar = true
+                    dismiss()
                 } label: {
                     Text("Remove Avatar")
                         .bold()

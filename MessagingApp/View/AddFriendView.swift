@@ -8,20 +8,20 @@
 import SwiftUI
 
 struct AddFriendView: View {
-    @Binding var showAddFriend: Bool
     @State private var username: String = ""
     @State private var usernameErrorMessage: String = ""
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     @EnvironmentObject var notificationViewModel: NotificationViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var alertMessageViewModel: AlertMessageViewModel
+    
+    @Environment(\.dismiss) var dismiss
         
     var body: some View {
         VStack {
             ZStack {
                 Button {
-                    showAddFriend = false
+                    dismiss()
                 } label: {
                     Image(systemName: "arrow.left")
                         .resizable()
@@ -122,6 +122,7 @@ struct AddFriendView: View {
             }
             Spacer()
         }
+        .toolbar(.hidden, for: .navigationBar)
         .padding(.horizontal)
     }
 }

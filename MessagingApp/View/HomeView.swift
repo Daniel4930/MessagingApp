@@ -15,37 +15,8 @@ enum SidebarItem: Equatable {
 }
 
 struct HomeView: View {
-    @State private var selectedItem: SidebarItem = .messageCenter
-    @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
-    
-//    let sidebarItems: [SidebarItem] = [
-//        .messageCenter, .createServer, .searchServer
-//    ]
-    
     var body: some View {
-        HStack {
-//            ScrollView {
-//                ForEach(Array(sidebarItems.indices), id: \.self) { index in
-//                    let currentItem = sidebarItems[index]
-//                    SidebarItemView(currentItem: currentItem, selectedItem: $selectedItem)
-//                }
-//            }
-//            .frame(width: 70)
-//            .padding(.top)
-            
-            Group {
-                switch selectedItem {
-                case .messageCenter:
-                    MessageCenter()
-                case .server(_):
-                    Text("Server")
-                case .createServer:
-                    Text("Create a new server")
-                case .searchServer:
-                    Text("Search a server")
-                }
-            }
+        MessageCenter()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 UnevenRoundedRectangle(
@@ -54,10 +25,5 @@ struct HomeView: View {
                 .fill(Color.secondaryBackground)
                 .opacity(0.5)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: selectedItem) { oldValue, newValue in
-            navViewModel.gestureDisabled = selectedItem == .messageCenter ? false : true
-        }
     }
 }

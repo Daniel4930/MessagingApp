@@ -11,7 +11,6 @@ struct FriendListView: View {
     @Binding var selectedDmChannel: Channel?
     @State private var nameToSearch: String = ""
     @EnvironmentObject var friendViewModel: FriendViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @Environment(\.dismiss) var dismiss
@@ -34,11 +33,8 @@ struct FriendListView: View {
                         guard let currentUserId = userViewModel.user?.id else { return }
                         guard let channel = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: friend) else { return }
                         
-                        navViewModel.viewToShow = {
-                            AnyView(DirectMessageView(channelInfo: channel))
-                        }
-                        navViewModel.showView()
                         selectedDmChannel = channel.id != nil ? channel : nil
+                        print(channel.id)
                         dismiss()
                     } label: {
                         HStack(alignment: .center) {

@@ -36,7 +36,6 @@ struct MessagingAppApp: App {
     @StateObject private var keyboardProvider = KeyboardProvider()
     @StateObject private var channelViewModel = ChannelViewModel()
     @StateObject private var notificationViewModel = NotificationViewModel()
-    @StateObject private var navViewModel = CustomNavigationViewModel()
     @StateObject private var alertMessageViewModel = AlertMessageViewModel()
     
     @State private var appStateId = UUID()
@@ -49,7 +48,6 @@ struct MessagingAppApp: App {
                 .environmentObject(messageViewModel)
                 .environmentObject(channelViewModel)
                 .environmentObject(keyboardProvider)
-                .environmentObject(navViewModel)
                 .environmentObject(notificationViewModel)
                 .environmentObject(alertMessageViewModel)
                 .id(appStateId)

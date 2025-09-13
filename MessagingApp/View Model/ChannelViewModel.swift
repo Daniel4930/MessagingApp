@@ -57,7 +57,6 @@ class ChannelViewModel: ObservableObject {
             do {
                 let stream = FirebaseCloudStoreService.shared.listenForUserChannels(userId: userId)
                 for try await channels in stream {
-                    // Partition the channels into DMs and Servers
                     self.dmChannels = channels.filter { $0.type == ChannelType.dm }
                     self.serverChannels = channels.filter { $0.type != ChannelType.dm }
                     
@@ -72,16 +71,14 @@ class ChannelViewModel: ObservableObject {
     
     /// Finds an existing DM channel with another user or creates a new one if it doesn't exist.
     func findOrCreateDmChannel(currentUserId: String, otherUser: User) -> Channel? {
-        // First, check if a DM channel already exists locally in our fetched channels.
         if let existingChannel = dmChannels.first(where: { $0.memberIds.contains(otherUser.id!) }) {
             return existingChannel
         }
         
-        // If not, create a new local (temporary) channel.
         guard let otherUserId = otherUser.id else { return nil }
         
         let temporaryChannel = Channel(
-            id: nil, // No ID yet, as it's not in Firestore
+            id: nil,
             memberIds: [currentUserId, otherUserId],
             type: ChannelType.dm,
             lastActivity: nil,

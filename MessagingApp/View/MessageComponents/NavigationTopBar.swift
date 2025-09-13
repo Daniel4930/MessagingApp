@@ -9,15 +9,15 @@ import SwiftUI
 
 struct NavigationTopBar: View {
     let channelInfo: Channel
+    @Binding var showFileAndImageSelector: Bool
     @EnvironmentObject var friendViewModel: FriendViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
-    @EnvironmentObject var channelViewModel: ChannelViewModel
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         HStack {
             Button {
-                hideKeyboard()
-                navViewModel.hideView()
+                showFileAndImageSelector = false
+                dismiss()
             } label: {
                 Image(systemName: "arrow.left")
                     .resizable()

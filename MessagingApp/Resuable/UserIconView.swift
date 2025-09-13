@@ -15,8 +15,8 @@ struct UserIconView: View {
     
     @State private var didFail = false
     
-    init(urlString: String, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
-        self.urlString = urlString
+    init(urlString: String?, iconDimension: CGSize = CGSize(width: 37, height: 37), borderColor: Color = .buttonBackground, borderWidth: CGFloat = 2) {
+        self.urlString = urlString ?? ""
         self.iconDimension = iconDimension
         self.borderColor = borderColor
         self.borderWidth = borderWidth
@@ -33,11 +33,11 @@ struct UserIconView: View {
                         .frame(width: iconDimension.width, height: iconDimension.height)
                         .clipShape(.circle)
                 }
-                .onFailure { _ in
+                .onFailure { error in
                     didFail = true
+                    print(error)
                 }
                 .resizable()
-                .cancelOnDisappear(true)
                 .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
         }
     }

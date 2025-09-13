@@ -7,6 +7,7 @@
 
 import UIKit
 import SwiftUI
+import Kingfisher
 
 @MainActor
 class UserViewModel: ObservableObject {
@@ -94,33 +95,31 @@ class UserViewModel: ObservableObject {
     
     
     
-    func saveUser(displayName: String, aboutMe: String, bannerColor: Color, avatarImageData: Data?) async throws {
-        guard let currentUser = self.user, let userId = currentUser.id else { return }
+    func saveUser(displayName: String, aboutMe: String, bannerColor: Color, avatarImageData: Data?, removeAvatar: Bool = false) async throws {
+        guard var currentUser = self.user, let userId = currentUser.id else { return }
         
         var updatedData: [String: Any] = [:]
+        let oldIconURL = currentUser.icon // Store the old URL
         
-        // Keep track of new values
-        var newDisplayName = currentUser.displayName
-        var newAboutMe = currentUser.aboutMe
-        var newBannerColor = currentUser.bannerColor
-        var newIcon = currentUser.icon
-
         if currentUser.displayName != displayName {
             updatedData["displayName"] = displayName
-            newDisplayName = displayName
+            currentUser.displayName = displayName
         }
         
         if currentUser.aboutMe != aboutMe {
             updatedData["aboutMe"] = aboutMe
-            newAboutMe = aboutMe
+            currentUser.aboutMe = aboutMe
         }
         
         if let bannerColorHex = bannerColor.toHex(), currentUser.bannerColor != bannerColorHex {
             updatedData["bannerColor"] = bannerColorHex
-            newBannerColor = bannerColorHex
+            currentUser.bannerColor = bannerColorHex
         }
         
-        if let imageData = avatarImageData {
+        if removeAvatar {
+            updatedData["icon"] = ""
+            currentUser.icon = ""
+        } else if let imageData = avatarImageData {
             let iconUrl = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
                 let storageRef = FirebaseStorageService.shared.createChildReference(folder: .icons, fileName: userId)
                 let _ = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: imageData) { result in
@@ -134,16 +133,17 @@ class UserViewModel: ObservableObject {
             }
             let iconUrlString = iconUrl.absoluteString
             updatedData["icon"] = iconUrlString
-            newIcon = iconUrlString
+            currentUser.icon = iconUrlString
         }
         
         if !updatedData.isEmpty {
             try await FirebaseCloudStoreService.shared.updateData(collection: .users, documentId: userId, newData: updatedData)
             
-            self.user?.displayName = newDisplayName
-            self.user?.aboutMe = newAboutMe
-            self.user?.bannerColor = newBannerColor
-            self.user?.icon = newIcon
+            if updatedData["icon"] != nil, !oldIconURL.isEmpty {
+                try await KingfisherManager.shared.cache.removeImage(forKey: oldIconURL)
+            }
+
+            self.user = currentUser
         }
     }
 }

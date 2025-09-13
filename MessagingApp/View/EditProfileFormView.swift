@@ -20,10 +20,12 @@ struct EditProfileFormView: View {
     @State private var avatarPhotoPickerItem: [PhotosPickerItem] = []
     @State private var avatarImage: Image?
     @State private var avatarImageData: Data?
+    @State private var removeAvatar = false
     @State private var saveEnable = false
+    @State private var saving = false
     @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     @EnvironmentObject var alertViewModel: AlertMessageViewModel
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         VStack(spacing: 0) {
@@ -71,15 +73,16 @@ struct EditProfileFormView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tint(.white)
         }
+        .toolbar(.hidden, for: .navigationBar)
         .background(.primaryBackground)
         .customSheetModifier(isPresented: $showAvatarEditor) {
-            ChangeAvatarView(avatarPhotoPickerItem: $avatarPhotoPickerItem, avatarImage: $avatarImage)
+            ChangeAvatarView(avatarPhotoPickerItem: $avatarPhotoPickerItem, avatarImage: $avatarImage, removeAvatar: $removeAvatar)
                 .presentationDetents([.fraction(0.3)])
         }
         .onTapGesture {
             hideKeyboard()
         }
-        .onAppear {
+        .task {
             if let user = userViewModel.user {
                 displayName = user.displayName
                 aboutMe = user.aboutMe
@@ -109,8 +112,6 @@ struct EditProfileFormView: View {
         }
         .onChange(of: avatarPhotoPickerItem) { oldValue, newValue in
             guard let firstItem = newValue.first else {
-                avatarImage = nil
-                avatarImageData = nil
                 return
             }
             
@@ -119,6 +120,7 @@ struct EditProfileFormView: View {
                     DispatchQueue.main.async {
                         self.avatarImage = Image(uiImage: uiImage)
                         self.avatarImageData = data
+                        self.removeAvatar = false
                     }
                 } else {
                     DispatchQueue.main.async {
@@ -133,6 +135,11 @@ struct EditProfileFormView: View {
                 saveEnable = true
             } else {
                 saveEnable = false
+            }
+        }
+        .onChange(of: removeAvatar) { oldValue, newValue in
+            if newValue {
+                saveEnable = true
             }
         }
     }
@@ -166,10 +173,7 @@ extension EditProfileFormView {
     func topNavigationBar() -> some View {
         HStack(alignment: .center) {
             Button {
-                hideKeyboard()
-                navViewModel.hideView() {
-                    navViewModel.viewToShow = nil
-                }
+                dismiss()
             } label: {
                 Text("+")
                     .foregroundStyle(.white)
@@ -185,8 +189,9 @@ extension EditProfileFormView {
             
             Spacer()
             
-            Button("Save") {
+            Button {
                 displayNameErrorMessage = ""
+                saving = true
                 
                 Task {
                     do {
@@ -199,18 +204,22 @@ extension EditProfileFormView {
                                 displayName: displayName,
                                 aboutMe: aboutMe,
                                 bannerColor: bannerColor,
-                                avatarImageData: avatarImageData
+                                avatarImageData: avatarImageData,
+                                removeAvatar: removeAvatar
                             )
-                            
-                            hideKeyboard()
-                            navViewModel.hideView() {
-                                navViewModel.viewToShow = nil
-                            }
+                            dismiss()
                         }
                     } catch {
                         print("Error saving profile: \(error)")
                         alertViewModel.presentAlert(message: "Failed to save profile picture", type: .error)
                     }
+                    saving = false
+                }
+            } label: {
+                if saving {
+                    ProgressView()
+                } else {
+                    Text("Save")
                 }
             }
             .disabled(!saveEnable)
@@ -231,12 +240,16 @@ extension EditProfileFormView {
                     if let image = avatarImage {
                         image
                             .iconStyle(CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
-                    } else if let user = userViewModel.user {
+                    } else if let user = userViewModel.user, !user.icon.isEmpty, !removeAvatar {
                         UserIconView(
                             urlString: user.icon,
                             iconDimension: CGSize(width: 100, height: 100),
                             borderColor: Color("PrimaryBackgroundColor"),
                             borderWidth: 5)
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .iconStyle(CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
+                            .foregroundStyle(.gray)
                     }
                 }
                 .overlay(alignment: .topTrailing) {

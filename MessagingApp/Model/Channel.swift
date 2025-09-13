@@ -8,7 +8,7 @@
 import FirebaseFirestore
 
 // Represents the nested 'lastMessage' object in your Channel document
-struct LastMessage: Codable, Equatable {
+struct LastMessage: Codable, Equatable, Hashable {
     let messageId: String
     let senderId: String
     var text: String?
@@ -20,7 +20,7 @@ enum ChannelType: String, Codable {
     case server
 }
 
-struct Channel: Codable, Identifiable, Equatable {
+struct Channel: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     let memberIds: [String]
     let type: ChannelType

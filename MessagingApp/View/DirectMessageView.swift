@@ -16,7 +16,9 @@ struct DirectMessageView: View {
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
     @State private var sendButton = false
-    @State private var safeAreaInsetBottom: CGFloat = .zero
+    @State private var safeAreaInsetBottom: CGFloat = UIApplication.shared.connectedScenes
+        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+        .first?.safeAreaInsets.bottom ?? 0
     @State private var selectorHeight: CGFloat = .zero
     @State private var backgroundOpacity: CGFloat = .zero
 
@@ -25,7 +27,6 @@ struct DirectMessageView: View {
     @EnvironmentObject var keyboardProvider: KeyboardProvider
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
-    @EnvironmentObject var navViewModel: CustomNavigationViewModel
     
     var selectorViewYOffset: CGFloat {
         showFileAndImageSelector ? 0 : keyboardProvider.height
@@ -38,8 +39,11 @@ struct DirectMessageView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
-                NavigationTopBar(channelInfo: channelInfo)
-                    .padding([.leading, .vertical])
+                NavigationTopBar(
+                    channelInfo: channelInfo,
+                    showFileAndImageSelector: $showFileAndImageSelector
+                )
+                .padding([.leading, .vertical])
                 
                 DividerView()
                 
@@ -71,7 +75,6 @@ struct DirectMessageView: View {
                 )
             }
             .padding(.bottom, bottomPaddingForSelector)
-            .padding(.bottom, keyboardProvider.keyboardWillAppear || showFileAndImageSelector ? 0 : safeAreaInsetBottom)
             .overlay {
                 if selectorHeight > SelectorView.threshold {
                     Color.black
@@ -90,20 +93,24 @@ struct DirectMessageView: View {
                 selectorHeight: $selectorHeight
             )
             .frame(maxWidth: .infinity, alignment: .bottom)
-            .offset(y: selectorViewYOffset)
+            .offset(
+                y: selectorViewYOffset + (keyboardProvider.keyboardWillAppear || showFileAndImageSelector ? 0 : safeAreaInsetBottom)
+            )
         }
         .ignoresSafeArea(.keyboard)
-        .ignoresSafeArea(edges: Edge.Set([.bottom]))
         .background(Color("PrimaryBackgroundColor"))
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+            }
+        }
         .animation(.spring(duration: 0.3), value: selectorViewYOffset)
         .animation(.spring(duration: 0.3), value: bottomPaddingForSelector)
         .animation(.spring(duration: 0.3), value: backgroundOpacity)
-        .onAppear {
-            navViewModel.duringSwipeAction = {
-                showFileAndImageSelector = false
-                focusedField = nil
-            }
-        }
         .onChange(of: focusedField) { oldValue, newValue in
             if newValue == .textField {
                 showFileAndImageSelector = false
@@ -112,8 +119,6 @@ struct DirectMessageView: View {
         .onChange(of: showFileAndImageSelector) { oldValue, newValue in
             if newValue {
                 hideKeyboard()
-            } else {
-                focusedField = .textField
             }
         }
         .onChange(of: selectorHeight) { oldValue, newValue in
@@ -141,16 +146,6 @@ struct DirectMessageView: View {
         .onDisappear {
             messageViewModel.stopListening(channelId: channelInfo.id)
             showFileAndImageSelector = false
-            keyboardProvider.keyboardWillAppear = false
-            navViewModel.duringSwipeAction = nil
-        }
-        .overlay {
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        safeAreaInsetBottom = proxy.safeAreaInsets.bottom
-                    }
-            }
         }
     }
 }
