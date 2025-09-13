@@ -70,7 +70,6 @@ struct TabsView: View {
             DragGesture()
                 .onChanged { value in
                     navViewModel.onDragChanged(value: value)
-                    keyboardProvider.keyboardWillAppear = false
                 }
                 .onEnded(navViewModel.onDragEnded(_:))
             , isEnabled: !navViewModel.gestureDisabled

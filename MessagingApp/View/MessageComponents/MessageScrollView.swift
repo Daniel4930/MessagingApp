@@ -44,6 +44,7 @@ struct MessageScrollView: View {
             }
         }
         .scrollPosition($scrollPosition)
+        .defaultScrollAnchor(.bottom)
         .refreshable {
             guard let channelId = channelInfo.id else { return }
             guard let messageMap = messageViewModel.messages.first(where: { $0.channelId == channelId }) else { return }
@@ -51,6 +52,11 @@ struct MessageScrollView: View {
             
             await messageViewModel.fetchMoreMessages(channelId: channelId)
             messageComposerViewModel.scrollToMessageId = messageId
+        }
+        .onScrollPhaseChange { oldPhase, newPhase, context in
+            if let dy = context.velocity?.dy, abs(dy) >= 2 {
+                hideKeyboard()
+            }
         }
         .onChange(of: messageComposerViewModel.scrollToBottom) { _, newValue in
             if newValue == true {

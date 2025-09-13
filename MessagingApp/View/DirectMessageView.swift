@@ -95,12 +95,13 @@ struct DirectMessageView: View {
         .ignoresSafeArea(.keyboard)
         .ignoresSafeArea(edges: Edge.Set([.bottom]))
         .background(Color("PrimaryBackgroundColor"))
-        .animation(.spring(duration: 0.3, bounce: 0), value: selectorViewYOffset)
-        .animation(.spring(duration: 0.3, bounce: 0), value: bottomPaddingForSelector)
-        .animation(.spring(duration: 0.3, bounce: 0), value: backgroundOpacity)
+        .animation(.spring(duration: 0.3), value: selectorViewYOffset)
+        .animation(.spring(duration: 0.3), value: bottomPaddingForSelector)
+        .animation(.spring(duration: 0.3), value: backgroundOpacity)
         .onAppear {
             navViewModel.duringSwipeAction = {
                 showFileAndImageSelector = false
+                focusedField = nil
             }
         }
         .onChange(of: focusedField) { oldValue, newValue in

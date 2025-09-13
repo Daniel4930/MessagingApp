@@ -27,7 +27,6 @@ struct ContentView: View {
                     LoginView(currentView: $currentView)
                 case .content:
                     TabsView()
-//                    DirectMessageView(channelInfo: Channel(memberIds: [], type: .dm, lastActivity: nil, lastMessage: nil))
                 case .newUser:
                     NewUserView(currentView: $currentView)
                 }

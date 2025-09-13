@@ -4,6 +4,7 @@
 //
 //  Created by Daniel Le on 7/21/25.
 //
+
 import SwiftUI
 import Kingfisher
 import FirebaseStorage
@@ -23,6 +24,7 @@ struct GridImageView: View {
             buildGrid(count: count) { index in
                 let url = URL(string: imageUrls[index])
                 KFImage(url)
+                    .cacheMemoryOnly()
                     .resizable()
                     .scaledToFit()
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -36,6 +38,7 @@ struct GridImageView: View {
                     ForEach(0..<count, id: \.self) { index in
                         let url = URL(string: imageUrls[index])
                         KFImage(url)
+                            .cacheMemoryOnly()
                             .resizable()
                             .scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 10))

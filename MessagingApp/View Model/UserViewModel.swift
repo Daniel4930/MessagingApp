@@ -123,7 +123,7 @@ class UserViewModel: ObservableObject {
         if let imageData = avatarImageData {
             let iconUrl = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
                 let storageRef = FirebaseStorageService.shared.createChildReference(folder: .icons, fileName: userId)
-                FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: imageData) { result in
+                let _ = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: imageData) { result in
                     switch result {
                     case .success(let url):
                         continuation.resume(returning: url)

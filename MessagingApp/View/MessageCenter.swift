@@ -65,6 +65,8 @@ struct MessageCenter: View {
                                             .fill(Color.primaryBackground)
                                     }
                             }
+                            .tint(.white)
+                            .modifier(TapGestureAnimation())
                         }
                     }
                 }

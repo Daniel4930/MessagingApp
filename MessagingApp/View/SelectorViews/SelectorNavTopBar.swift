@@ -12,13 +12,15 @@ struct SelectorNavTopBar: View {
     let minHeight: CGFloat
     let accessStatus: PhotoLibraryAccessStatus
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
+    @Binding var changeTopBarAppear: Bool
     
     var body: some View {
         HStack(alignment: .center) {
             Button("Back") {
-                withAnimation(.spring(duration: 0.3, bounce: 0)) {
+                withAnimation(.smooth(duration: 0.3)) {
                     height = minHeight
                 }
+                changeTopBarAppear = false
             }
             .foregroundStyle(.blue)
             .frame(maxWidth: .infinity, alignment: .leading)

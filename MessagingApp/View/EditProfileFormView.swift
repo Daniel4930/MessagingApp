@@ -231,8 +231,12 @@ extension EditProfileFormView {
                     if let image = avatarImage {
                         image
                             .iconStyle(CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
-                    } else {
-                        UserIconView(urlString: userViewModel.user!.icon, iconDimension: CGSize(width: 100, height: 100), borderColor: Color("PrimaryBackgroundColor"), borderWidth: 5)
+                    } else if let user = userViewModel.user {
+                        UserIconView(
+                            urlString: user.icon,
+                            iconDimension: CGSize(width: 100, height: 100),
+                            borderColor: Color("PrimaryBackgroundColor"),
+                            borderWidth: 5)
                     }
                 }
                 .overlay(alignment: .topTrailing) {
