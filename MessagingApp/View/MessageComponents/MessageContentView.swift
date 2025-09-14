@@ -24,7 +24,6 @@ struct MessageContentView: View {
     @State private var linkEmbededViewDimension: CGSize = .zero
     @State private var customTextViewHeight: CGFloat = .zero
     @State private var showMessageOptions = false
-    @State private var isLongPressing = false
     
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -35,10 +34,12 @@ struct MessageContentView: View {
             if let text = message.text {
                 AttributedTextView(
                     text: text,
+                    isPending: message.isPending,
                     customTextViewHeight: $customTextViewHeight,
                     showSafari: $showSafari,
                     showMessageOptions: $showMessageOptions,
                     isEdited: message.edited,
+                    editing: messageComposerViewModel.editedMessageId == message.id,
                     onMentionTap: { userName in
                         if let user = userViewModel.fetchUserByUsername(name: userName, friends: friendViewModel.friends) {
                             messageComposerViewModel.userProfile = user
@@ -90,13 +91,9 @@ struct MessageContentView: View {
                 }
             }
         }
-        .brightness(messageComposerViewModel.editedMessageId == message.id ? 0.3 : 0)
-        .opacity(message.isPending ? 0.5 : 1.0)
         .onLongPressGesture(perform: {
             showMessageOptions.toggle()
             focusedField = nil
-        }, onPressingChanged: { isPressing in
-            self.isLongPressing = isPressing
         })
         .sheet(isPresented: $showMessageOptions) {
             EditMessageView(message: message, messageComposerViewModel: messageComposerViewModel)

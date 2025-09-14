@@ -18,7 +18,6 @@ class MessageComposerViewModel: ObservableObject {
     @Published var mathchUsers: [User] = []
     @Published var customTextEditorHeight: CGFloat = MessageComposerViewModel.customTextEditorMinHeight
     @Published var userProfile: User?
-    @Published var editMessage = false
     @Published var editedMessageId: String?
     @Published var scrollToBottom = false
     @Published var scrollToMessageId: String?
@@ -88,7 +87,6 @@ class MessageComposerViewModel: ObservableObject {
         selectionData = []
         showSendButton = false
         customTextEditorHeight = MessageComposerViewModel.customTextEditorMinHeight
-        editMessage = false
         editedMessageId = nil
     }
 }

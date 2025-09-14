@@ -20,7 +20,6 @@ struct EditMessageView: View {
             Section {
                 if message.senderId == userViewModel.user?.id {
                     Button("Edit Message", systemImage: "pencil") {
-                        messageComposerViewModel.editMessage = true
                         messageComposerViewModel.editedMessageId = message.id
                         messageComposerViewModel.uiTextEditor.text = message.text ?? ""
                         dismiss()
