@@ -33,8 +33,7 @@ struct FriendListView: View {
                         guard let currentUserId = userViewModel.user?.id else { return }
                         guard let channel = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: friend) else { return }
                         
-                        selectedDmChannel = channel.id != nil ? channel : nil
-                        print(channel.id)
+                        selectedDmChannel = channel
                         dismiss()
                     } label: {
                         HStack(alignment: .center) {

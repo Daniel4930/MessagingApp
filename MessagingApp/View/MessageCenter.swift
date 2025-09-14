@@ -58,9 +58,9 @@ struct MessageCenter: View {
                         .padding(10)
                     }
                     .tint(.white)
-                    .navigationDestination(item: $selectedDmChannel) { destinationChannel in
-                        DirectMessageView(channelInfo: destinationChannel)
-                    }
+                }
+                .navigationDestination(item: $selectedDmChannel) { destinationChannel in
+                    DirectMessageView(channelInfo: destinationChannel)
                 }
             }
             .overlay(alignment: .bottomTrailing) {

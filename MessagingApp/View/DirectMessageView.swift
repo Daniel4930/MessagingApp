@@ -12,7 +12,7 @@ enum Field {
 }
 
 struct DirectMessageView: View {
-    let channelInfo: Channel
+    @State private var channelInfo: Channel
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
     @State private var sendButton = false
@@ -27,6 +27,10 @@ struct DirectMessageView: View {
     @EnvironmentObject var keyboardProvider: KeyboardProvider
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
+    
+    init(channelInfo: Channel) {
+        self.channelInfo = channelInfo
+    }
     
     var selectorViewYOffset: CGFloat {
         showFileAndImageSelector ? 0 : keyboardProvider.height
@@ -67,7 +71,7 @@ struct DirectMessageView: View {
                 }
                 
                 MessagingBarLayoutView(
-                    channel: channelInfo,
+                    channel: $channelInfo,
                     sendButtonDisbaled: $sendButton,
                     showFileAndImageSelector: $showFileAndImageSelector,
                     focusedField: $focusedField,
@@ -86,7 +90,7 @@ struct DirectMessageView: View {
             
             SelectorView(
                 minHeight: keyboardProvider.height,
-                channel: channelInfo,
+                channel: $channelInfo,
                 messageComposerViewModel: messageComposerViewModel,
                 sendButton: $sendButton,
                 showFileAndImageSelector: $showFileAndImageSelector,

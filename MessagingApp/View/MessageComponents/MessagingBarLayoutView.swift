@@ -11,7 +11,7 @@ import FirebaseStorage
 
 @MainActor
 struct MessagingBarLayoutView: View {
-    let channel: Channel
+    @Binding var channel: Channel
     @Binding var sendButtonDisbaled: Bool
     @Binding var showFileAndImageSelector: Bool
     @FocusState.Binding var focusedField: Field?
@@ -65,9 +65,10 @@ struct MessagingBarLayoutView: View {
                                 try await messageViewModel.uploadFilesAndSendMessage(
                                     senderId: userViewModel.user?.id,
                                     selectionData: messageComposerViewModel.selectionData,
-                                    channel: channel,
+                                    channel: $channel,
                                     finalizedText: messageComposerViewModel.finalizeText(),
-                                    userViewModel: userViewModel
+                                    userViewModel: userViewModel,
+                                    channelViewModel: channelViewModel
                                 )
                                 messageComposerViewModel.scrollToBottom = true
                             }

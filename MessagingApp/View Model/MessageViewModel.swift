@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseStorage
+import SwiftUI
 
 struct MessageMap {
     let channelId: String
@@ -70,10 +71,8 @@ class MessageViewModel: ObservableObject {
                     }
                 }
                 
-                // 2. Listen for real-time updates
-                guard let oldestMessageDate = initialMessages.first?.date?.dateValue() else {
-                    fatalError("Can't listen for real time messages in channelId \(channelId). Date to listen is nil")
-                }
+                // 2. Listen for real-time updates, fall back to current date for temporary channel
+                let oldestMessageDate = initialMessages.first?.date?.dateValue() ?? Date()
                 
                 let stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(
                     channelId: channelId,
@@ -160,7 +159,15 @@ class MessageViewModel: ObservableObject {
         let _ = uploadProgress.removeValue(forKey: attachmentIdentifier)
     }
     
-    func uploadFilesAndSendMessage(senderId: String?, selectionData: [UploadedFile], channel: Channel, finalizedText: String?, userViewModel: UserViewModel) async throws {
+    func uploadFilesAndSendMessage(
+        senderId: String?,
+        selectionData: [UploadedFile],
+        channel: Binding<Channel>,
+        finalizedText: String?,
+        userViewModel: UserViewModel,
+        channelViewModel: ChannelViewModel
+    ) async throws {
+        
         guard let senderId = senderId else { throw UploadError.missingUserInfo }
         
         let clientId = UUID().uuidString
@@ -180,14 +187,21 @@ class MessageViewModel: ObservableObject {
             selectionData: selectionData
         )
         
-        var currentChannel = channel
+        var currentChannel = channel.wrappedValue
         
         if currentChannel.id == nil {
             let newChannel = ChannelInsert(memberIds: currentChannel.memberIds, type: currentChannel.type)
             do {
-                let documentId = try await FirebaseCloudStoreService.shared.addDocument(collection: .channels, data: newChannel, additionalData: nil)
+                let documentId = try await FirebaseCloudStoreService.shared.addDocument(
+                    collection: .channels,
+                    data: newChannel,
+                    additionalData: nil
+                )
                 currentChannel.id = documentId
                 listenForMessages(channelId: documentId, userViewModel: userViewModel)
+                if let newChannelWithListener = channelViewModel.dmChannels.first(where: { $0.id == documentId }) {
+                    channel.wrappedValue = newChannelWithListener
+                }
                 
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     for memberId in currentChannel.memberIds {

@@ -19,7 +19,7 @@ enum PhotoLibraryAccessStatus {
 
 struct SelectorView: View {
     let minHeight: CGFloat
-    let channel: Channel
+    @Binding var channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var sendButton: Bool
     @Binding var showFileAndImageSelector: Bool
@@ -103,7 +103,7 @@ struct SelectorView: View {
             .overlay(alignment: .bottom) {
                 if selectorHeight != minHeight && !messageComposerViewModel.selectionData.isEmpty {
                     CustomSendButtonView(
-                        channel: channel,
+                        channel: $channel,
                         messageComposerViewModel: messageComposerViewModel,
                         height: $selectorHeight,
                         sendButtonDisabled: $sendButton,
@@ -241,7 +241,7 @@ extension SelectorView {
 }
 
 struct CustomSendButtonView: View {
-    let channel: Channel
+    @Binding var channel: Channel
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @Binding var height: CGFloat
     @Binding var sendButtonDisabled: Bool
@@ -290,9 +290,10 @@ struct CustomSendButtonView: View {
                                     try await messageViewModel.uploadFilesAndSendMessage(
                                         senderId: userViewModel.user?.id,
                                         selectionData: messageComposerViewModel.selectionData,
-                                        channel: channel,
+                                        channel: $channel,
                                         finalizedText: messageComposerViewModel.finalizeText(),
-                                        userViewModel: userViewModel
+                                        userViewModel: userViewModel,
+                                        channelViewModel: channelViewModel
                                     )
                                     messageComposerViewModel.scrollToBottom = true
                                 }
