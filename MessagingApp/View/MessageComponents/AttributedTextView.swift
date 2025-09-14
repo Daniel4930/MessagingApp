@@ -116,7 +116,7 @@ struct AttributedTextView: UIViewRepresentable {
         }
         
         //Change textView background if currently editing the message
-        if editing {
+        if editing && !isPending {
             uiTextView.backgroundColor = UIColor.gray.withAlphaComponent(0.5)
         } else {
             uiTextView.backgroundColor = .black
