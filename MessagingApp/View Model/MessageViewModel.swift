@@ -322,6 +322,61 @@ class MessageViewModel: ObservableObject {
             }
         }
     }
+    
+    func sendMessage(
+        sendButtonDisabled: Binding<Bool>,
+        channel: Binding<Channel>,
+        messageComposerViewModel: MessageComposerViewModel,
+        channelViewModel: ChannelViewModel,
+        userViewModel: UserViewModel,
+        alertViewModel: AlertMessageViewModel
+    ) async throws {
+        sendButtonDisabled.wrappedValue = true
+        do {
+            if let channelId = channel.wrappedValue.id,
+               let editMessageId = messageComposerViewModel.editedMessageId,
+               let finalizedText = messageComposerViewModel.finalizeText() {
+                try await updateMessageText(
+                    channelId: channelId,
+                    messageId: editMessageId,
+                    text: finalizedText
+                )
+                
+                if editMessageId == channel.wrappedValue.lastMessage?.messageId {
+                    let messageMap = messages.first(where: { $0.channelId == channelId })
+                    guard let currentMessage = messageMap?.messages.first(where: { $0.id == editMessageId }) else {
+                        print("Failed to get last message in channel")
+                        return
+                    }
+                    
+                    var newCurrentMessage = currentMessage
+                    newCurrentMessage.text = finalizedText
+                    guard let lastMessage = LastMessage(from: newCurrentMessage) else {
+                        print("Failed to create last message data")
+                        return
+                    }
+                    
+                    try await channelViewModel.updateLastMessage(channelId: channelId, lastMessage: lastMessage)
+                }
+            } else {
+                try await uploadFilesAndSendMessage(
+                    senderId: userViewModel.user?.id,
+                    selectionData: messageComposerViewModel.selectionData,
+                    channel: channel,
+                    finalizedText: messageComposerViewModel.finalizeText(),
+                    userViewModel: userViewModel,
+                    channelViewModel: channelViewModel
+                )
+                messageComposerViewModel.scrollToBottom = true
+            }
+            
+            messageComposerViewModel.resetInputs()
+        } catch {
+            print("Error sending message: \(error.localizedDescription)")
+            alertViewModel.presentAlert(message: "Failed to send message", type: .error)
+        }
+        sendButtonDisabled.wrappedValue = false
+    }
 
     // MARK: - Message Grouping
     

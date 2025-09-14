@@ -12,7 +12,7 @@ import FirebaseStorage
 @MainActor
 struct MessagingBarLayoutView: View {
     @Binding var channel: Channel
-    @Binding var sendButtonDisbaled: Bool
+    @Binding var sendButtonDisabled: Bool
     @Binding var showFileAndImageSelector: Bool
     @FocusState.Binding var focusedField: Field?
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
@@ -37,52 +37,17 @@ struct MessagingBarLayoutView: View {
             if messageComposerViewModel.showSendButton || !messageComposerViewModel.selectionData.isEmpty {
                 SendButtonView {
                     Task {
-                        sendButtonDisbaled = true
-                        do {
-                            if messageComposerViewModel.editMessage,
-                                let channelId = channel.id,
-                                let messageId = messageComposerViewModel.editedMessageId,
-                                let finalizedText = messageComposerViewModel.finalizeText() {
-                                try await messageViewModel.updateMessageText(channelId: channelId, messageId: messageId, text: finalizedText)
-                                
-                                if messageId == channel.lastMessage?.messageId {
-                                    let messageMap = messageViewModel.messages.first(where: { $0.channelId == channelId })
-                                    guard let currentMessage = messageMap?.messages.first(where: { $0.id == messageId }) else {
-                                        print("Failed to get last message in channel")
-                                        return
-                                    }
-                                    
-                                    var newCurrentMessage = currentMessage
-                                    newCurrentMessage.text = finalizedText
-                                    guard let lastMessage = LastMessage(from: newCurrentMessage) else {
-                                        print("Failed to create last message data")
-                                        return
-                                    }
-                                    
-                                    try await channelViewModel.updateLastMessage(channelId: channelId, lastMessage: lastMessage)
-                                }
-                            } else {
-                                try await messageViewModel.uploadFilesAndSendMessage(
-                                    senderId: userViewModel.user?.id,
-                                    selectionData: messageComposerViewModel.selectionData,
-                                    channel: $channel,
-                                    finalizedText: messageComposerViewModel.finalizeText(),
-                                    userViewModel: userViewModel,
-                                    channelViewModel: channelViewModel
-                                )
-                                messageComposerViewModel.scrollToBottom = true
-                            }
-                            
-                            messageComposerViewModel.resetInputs()
-                            
-                        } catch {
-                            print("Error sending message: \(error.localizedDescription)")
-                            alertViewModel.presentAlert(message: "Failed to send message", type: .error)
-                        }
-                        sendButtonDisbaled = false
+                        try await messageViewModel.sendMessage(
+                            sendButtonDisabled: $sendButtonDisabled,
+                            channel: $channel,
+                            messageComposerViewModel: messageComposerViewModel,
+                            channelViewModel: channelViewModel,
+                            userViewModel: userViewModel,
+                            alertViewModel: alertViewModel
+                        )
                     }
                 }
-                .disabled(sendButtonDisbaled)
+                .disabled(sendButtonDisabled)
             }
         }
         .padding(.horizontal, 13)
@@ -105,11 +70,10 @@ struct MessagingBarLayoutView: View {
                     .frame(maxWidth: .infinity)
                 }
                 
-                if messageComposerViewModel.editMessage {
+                if messageComposerViewModel.editedMessageId != nil {
                     DividerView()
                     HStack {
                         Button {
-                            messageComposerViewModel.editMessage = false
                             messageComposerViewModel.uiTextEditor.text = ""
                             messageComposerViewModel.editedMessageId = nil
                         } label: {
@@ -138,8 +102,8 @@ struct MessagingBarLayoutView: View {
             .offset(y: -currentOverlayOffset - editMessageHeightView)
         }
         .background(Color("PrimaryBackgroundColor"))
-        .onChange(of: messageComposerViewModel.editMessage) { oldValue, newValue in
-            if newValue {
+        .onChange(of: messageComposerViewModel.editedMessageId) { oldValue, newValue in
+            if newValue != nil {
                 focusedField = .textField
             }
         }
