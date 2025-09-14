@@ -10,10 +10,12 @@ import UIKit
 
 struct AttributedTextView: UIViewRepresentable {
     let text: String
+    let isPending: Bool
     @Binding var customTextViewHeight: CGFloat
     @Binding var showSafari: Bool
     @Binding var showMessageOptions: Bool
     let isEdited: Bool
+    let editing: Bool
     let onMentionTap: (String) -> Void
     
     let linkRegexPattern = /http(s)?:\/\/(www\.)?.+..+(\/.+)*/
@@ -43,6 +45,7 @@ struct AttributedTextView: UIViewRepresentable {
         let baseColor = UIColor.white
         let attributed = NSMutableAttributedString()
         let words = text.split(separator: " ")
+        let isPendingAlphaValue = 0.5
         
         for (index, word) in words.enumerated() {
             let wordString = String(word)
@@ -50,7 +53,7 @@ struct AttributedTextView: UIViewRepresentable {
             if word.contains(linkRegexPattern), let url = URL(string: wordString) {
                 let linkAttr = NSAttributedString(string: wordString, attributes: [
                     .link: url,
-                    .foregroundColor: UIColor.blue,
+                    .foregroundColor: isPending ? UIColor.blue.withAlphaComponent(isPendingAlphaValue) : .blue,
                     .font: baseFont,
                     .underlineStyle: NSUnderlineStyle.single
                 ])
@@ -68,7 +71,7 @@ struct AttributedTextView: UIViewRepresentable {
                 // Create attributed string for mention
                 let mentionAttr = NSMutableAttributedString(string: mentionString, attributes: [
                     .link: url,
-                    .foregroundColor: UIColor.white,
+                    .foregroundColor: isPending ? UIColor.white.withAlphaComponent(isPendingAlphaValue) : .white,
                     .font: UIFont.boldSystemFont(ofSize: 16),
                     .backgroundColor: UIColor.blue.withAlphaComponent(0.3)
                 ])
@@ -78,7 +81,7 @@ struct AttributedTextView: UIViewRepresentable {
             } else {
                 // Normal word - add with base style
                 let normalAttr = NSAttributedString(string: wordString, attributes: [
-                    .foregroundColor: baseColor,
+                    .foregroundColor: isPending ? baseColor.withAlphaComponent(isPendingAlphaValue) : baseColor,
                     .font: baseFont
                 ])
                 attributed.append(normalAttr)
@@ -87,7 +90,7 @@ struct AttributedTextView: UIViewRepresentable {
             // Append a space after every word except last
             if index != words.count - 1 {
                 attributed.append(NSAttributedString(string: " ", attributes: [
-                    .foregroundColor: baseColor,
+                    .foregroundColor: isPending ? baseColor.withAlphaComponent(isPendingAlphaValue) : baseColor,
                     .font: baseFont
                 ]))
             }
@@ -110,6 +113,13 @@ struct AttributedTextView: UIViewRepresentable {
             DispatchQueue.main.async {
                 customTextViewHeight = size.height
             }
+        }
+        
+        //Change textView background if currently editing the message
+        if editing {
+            uiTextView.backgroundColor = UIColor.gray.withAlphaComponent(0.5)
+        } else {
+            uiTextView.backgroundColor = .black
         }
     }
     

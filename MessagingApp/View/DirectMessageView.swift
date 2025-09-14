@@ -72,13 +72,15 @@ struct DirectMessageView: View {
                 
                 MessagingBarLayoutView(
                     channel: $channelInfo,
-                    sendButtonDisbaled: $sendButton,
+                    sendButtonDisabled: $sendButton,
                     showFileAndImageSelector: $showFileAndImageSelector,
                     focusedField: $focusedField,
                     messageComposerViewModel: messageComposerViewModel
                 )
             }
-            .padding(.bottom, bottomPaddingForSelector)
+            .padding(.bottom, bottomPaddingForSelector -
+                     (keyboardProvider.keyboardWillAppear || showFileAndImageSelector ? safeAreaInsetBottom : 0)
+            )
             .overlay {
                 if selectorHeight > SelectorView.threshold {
                     Color.black
@@ -89,7 +91,7 @@ struct DirectMessageView: View {
             }
             
             SelectorView(
-                minHeight: keyboardProvider.height,
+                minHeight: keyboardProvider.height - safeAreaInsetBottom,
                 channel: $channelInfo,
                 messageComposerViewModel: messageComposerViewModel,
                 sendButton: $sendButton,
