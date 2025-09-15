@@ -34,7 +34,6 @@ struct EmbededFileLayoutView: View {
         .padding()
         .background(Color("SecondaryBackgroundColor"))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        
     }
 }
 extension EmbededFileLayoutView {
