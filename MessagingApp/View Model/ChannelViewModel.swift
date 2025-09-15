@@ -26,21 +26,6 @@ class ChannelViewModel: ObservableObject {
         formatter.dateTimeStyle = .numeric
         return formatter.string(for: pastDate)!
     }
-    
-//    /// Maps the dmChannels to their corresponding friend objects.
-//    private func sortDmChannelWithFriends(currentUserId: String, friends: [User]) {
-//        dmChannelsMapWithFriends = channels.compactMap { channel -> FriendChannelMap? in
-//            // Find the other member's ID in the channel
-//            guard let friendId = channel.memberIds.first(where: { $0 != currentUserId }) else {
-//                return nil
-//            }
-//            // Find the corresponding friend object from the provided list
-//            guard let friend = friends.first(where: { $0.id == friendId }) else {
-//                return nil
-//            }
-//            return FriendChannelMap(friend: friend, channel: channel)
-//        }
-//    }
 
     /// Starts a listener to get real-time updates for all channels a user is a member of.
     func listenForChannels(userId: String, friends: [User]) {
@@ -50,9 +35,6 @@ class ChannelViewModel: ObservableObject {
                 let stream = FirebaseCloudStoreService.shared.listenForUserChannels(userId: userId)
                 for try await channels in stream {
                     self.channels = channels
-                    
-//                    // After channels are updated, re-sort the DM/friend mapping
-//                    self.sortDmChannelWithFriends(currentUserId: userId, friends: friends)
                 }
             } catch {
                 print("Error listening for channels: \(error.localizedDescription)")
