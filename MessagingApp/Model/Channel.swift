@@ -15,15 +15,9 @@ struct LastMessage: Codable, Equatable, Hashable {
     let timestamp: Timestamp
 }
 
-enum ChannelType: String, Codable {
-    case dm
-    case server
-}
-
 struct Channel: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     let memberIds: [String]
-    let type: ChannelType
     let lastActivity: Timestamp?
     let lastMessage: LastMessage?
 
@@ -35,7 +29,6 @@ struct Channel: Codable, Identifiable, Equatable, Hashable {
 // Use this struct when creating a new channel document in Firestore
 struct ChannelInsert: Codable {
     let memberIds: [String]
-    let type: ChannelType
     @ServerTimestamp var lastActivity: Timestamp? = nil
     var lastMessage: LastMessage? = nil
 }
