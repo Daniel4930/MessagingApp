@@ -153,34 +153,34 @@ class FirebaseCloudStoreService {
             }
 
             let listener = query.addSnapshotListener { querySnapshot, error in
-                    if let error = error {
-                        continuation.finish(throwing: error)
-                        return
-                    }
-                    guard let snapshot = querySnapshot else {
-                        continuation.yield(([], [], []))
-                        return
-                    }
-
-                    var addedMessages: [Message] = []
-                    var modifiedMessages: [Message] = []
-                    var removedMessages: [Message] = []
-
-                    snapshot.documentChanges.forEach { diff in
-                        guard let message = try? diff.document.data(as: Message.self) else {
-                            return
-                        }
-                        switch diff.type {
-                        case .added:
-                            addedMessages.append(message)
-                        case .modified:
-                            modifiedMessages.append(message)
-                        case .removed:
-                            removedMessages.append(message)
-                        }
-                    }
-                    continuation.yield((addedMessages, modifiedMessages, removedMessages))
+                if let error = error {
+                    continuation.finish(throwing: error)
+                    return
                 }
+                guard let snapshot = querySnapshot else {
+                    continuation.yield(([], [], []))
+                    return
+                }
+
+                var addedMessages: [Message] = []
+                var modifiedMessages: [Message] = []
+                var removedMessages: [Message] = []
+
+                snapshot.documentChanges.forEach { diff in
+                    guard let message = try? diff.document.data(as: Message.self) else {
+                        return
+                    }
+                    switch diff.type {
+                    case .added:
+                        addedMessages.append(message)
+                    case .modified:
+                        modifiedMessages.append(message)
+                    case .removed:
+                        removedMessages.append(message)
+                    }
+                }
+                continuation.yield((addedMessages, modifiedMessages, removedMessages))
+            }
             continuation.onTermination = { @Sendable _ in
                 listener.remove()
             }
@@ -313,6 +313,33 @@ class FirebaseCloudStoreService {
             try await updateData(collection: .users, documentId: userId, newData: ["fcmToken": token])
         } catch {
             print("Error updating FCM token: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Friends listener
+    func listenForFriendUpdates(friendId: String) -> AsyncThrowingStream<User, Error> {
+        return AsyncThrowingStream { continuation in
+            let documentRef = db.collection(FirebaseCloudStoreCollection.users.rawValue).document(friendId)
+
+            let listener = documentRef.addSnapshotListener { querySnapshot, error in
+                if let error = error {
+                    continuation.finish(throwing: error)
+                    return
+                }
+                guard let snapshot = querySnapshot else {
+                    continuation.finish()
+                    return
+                }
+            
+                guard let user = try? snapshot.data(as: User.self) else {
+                    continuation.finish()
+                    return
+                }
+                continuation.yield(user)
+            }
+            continuation.onTermination = { @Sendable _ in
+                listener.remove()
+            }
         }
     }
 }

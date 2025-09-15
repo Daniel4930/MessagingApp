@@ -10,13 +10,49 @@ import Foundation
 @MainActor
 class FriendViewModel: ObservableObject {
     @Published var friends: [User] = []
+    private var friendListenerTasks: [String: Task<Void, Never>] = [:]
     
-    // Cache for users who are not friends
-    @Published var fetchedUsers: [String: User] = [:]
+    deinit {
+        friendListenerTasks.values.forEach { $0.cancel() }
+    }
+    
+    func stopListening(friendId: String?) {
+        if let friendId {
+            friendListenerTasks[friendId]?.cancel()
+            friendListenerTasks[friendId] = nil
+        }
+    }
+    
+    func listenForFriend(friendId: String) {
+        guard friendListenerTasks[friendId] == nil else {
+            return
+        }
+        
+        let task = Task {
+            do {
+                let stream = FirebaseCloudStoreService.shared.listenForFriendUpdates(friendId: friendId)
+                
+                for try await friend in stream {
+                    if self.friends.contains(where: { $0.id == friend.id }), let index = self.friends.firstIndex(where: { $0.id == friend.id }) {
+                        self.friends[index] = friend
+                    }
+                }
+            } catch {
+                print("Error listening for updates of friend \(friendId): \(error.localizedDescription)")
+            }
+        }
+        
+        friendListenerTasks[friendId] = task
+    }
     
     func fetchFriends(for user: User) async {
         if !user.friends.isEmpty {
             self.friends = await FirebaseCloudStoreService.shared.fetchData(collection: FirebaseCloudStoreCollection.users, ids: user.friends)
+            for friend in friends {
+                if let id = friend.id {
+                    listenForFriend(friendId: id)
+                }
+            }
         } else {
             self.friends = []
         }
@@ -30,18 +66,7 @@ class FriendViewModel: ObservableObject {
         if let friend = friends.first(where: { $0.id == id }) {
             return friend
         }
-        return fetchedUsers[id]
-    }
-    
-    /// Fetches a user from the server if they aren't available locally and adds them to the cache.
-    func fetchUserIfNeeded(withId id: String) async {
-        // Avoid re-fetching if user is already in the cache
-        guard fetchedUsers[id] == nil else { return }
-        
-        let users: [User] = await FirebaseCloudStoreService.shared.fetchData(collection: .users, ids: [id])
-        if let user = users.first {
-            fetchedUsers[id] = user
-        }
+        return nil
     }
     
     func addFriend(for user: inout User, friendId: String) async {
@@ -79,6 +104,7 @@ class FriendViewModel: ObservableObject {
             
             user.friends = updatedFriends
             self.friends.removeAll { $0.id == friendId }
+            stopListening(friendId: friendId)
         } catch {
             print("Failed to remove friend: \(error.localizedDescription)")
         }
