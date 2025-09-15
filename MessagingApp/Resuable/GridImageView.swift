@@ -51,11 +51,13 @@ struct GridImageView: View {
         
         if let selectedImages {
             buildGrid(count: count) { index in
-                LocalImageView(
-                    uiImage: selectedImages[index].image,
-                    uploadTask: selectedImages[index].task,
-                    attachmentId: selectedImages[index].id
-                )
+                if selectedImages[index].attachmentType == .photo, let uiImage = selectedImages[index].image {
+                    LocalImageView(
+                        uiImage: uiImage,
+                        uploadTask: selectedImages[index].task,
+                        attachmentId: selectedImages[index].id
+                    )
+                }
             }
         }
     }

@@ -84,7 +84,8 @@ class MessageViewModel: ObservableObject {
                         if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
                             for message in added {
                                 if let clientId = message.clientId, let pendingIndex = self.messages[index].messages.firstIndex(where: { $0.clientId == clientId }) {
-                                    self.messages[index].messages[pendingIndex] = message
+                                    self.messages[index].messages[pendingIndex].id = message.id
+                                    self.messages[index].messages[pendingIndex].date = message.date
                                     self.messages[index].messages[pendingIndex].isPending = false
                                 } else {
                                     self.messages[index].messages.append(message)

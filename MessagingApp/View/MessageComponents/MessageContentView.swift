@@ -7,6 +7,23 @@
 
 import SwiftUI
 import UIKit
+import FirebaseStorage
+
+struct SelectedAttachment: Identifiable {
+    let id: String
+    let attachmentType: UploadedFile.FileType
+    let image: UIImage?
+    let file: FileData?
+    let videoData: Data?
+    let task: StorageUploadTask
+}
+
+struct Attachment {
+    var selectedAttachments: [SelectedAttachment]?
+    var photoUrls: [String]?
+    var videoUrls: [String]?
+    var files: [MessageFile]?
+}
 
 struct MessageContentView: View {
     let message: Message
@@ -28,6 +45,46 @@ struct MessageContentView: View {
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var messageViewModel: MessageViewModel
+    
+    var attachmentFromMessage: Attachment? {
+        var result: Attachment = Attachment(selectedAttachments: nil, photoUrls: nil, videoUrls: nil, files: nil)
+        
+        if !message.photoUrls.isEmpty {
+            result.photoUrls = message.photoUrls
+        }
+        if !message.videoUrls.isEmpty {
+            result.videoUrls = message.videoUrls
+        }
+        if !message.files.isEmpty {
+            result.files = message.files
+        }
+        
+        if let selectionData = message.selectionData, !selectionData.isEmpty {
+            let uploadProgress = messageViewModel.uploadProgress
+            
+            let photoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
+                guard let image = data.photoInfo?.image,
+                      let task = uploadProgress[data.identifier] else { return nil }
+                return SelectedAttachment(id: data.identifier, attachmentType: .photo, image: image, file: nil, videoData: nil, task: task)
+            }
+            
+            let videoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
+                guard let image = data.videoInfo?.thumbnail, let videoData = data.videoInfo?.videoData,
+                      let task = uploadProgress[data.identifier] else { return nil }
+                return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoData: videoData, task: task)
+            }
+            
+            let fileAttachments: [SelectedAttachment] = selectionData.compactMap { data in
+                guard let file = data.fileInfo,
+                      let task = uploadProgress[data.identifier] else { return nil }
+                return SelectedAttachment(id: data.identifier, attachmentType: .video, image: nil, file: file, videoData: nil, task: task)
+            }
+            
+            result.selectedAttachments = photoAttachments + videoAttachments + fileAttachments
+        }
+        
+        return result
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -76,20 +133,32 @@ struct MessageContentView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            if message.isPending, let selectionData = message.selectionData, !selectionData.isEmpty {
-                PendingAttachmentsView(selectionData: selectionData, uploadProgress: messageViewModel.uploadProgress)
-            }
-            if !message.photoUrls.isEmpty {
-                GridImageView(imageUrls: message.photoUrls, selectedImages: nil)
-            }
-            if !message.videoUrls.isEmpty {
-                VideoView(videoUrls: message.videoUrls)
-            }
-            if !message.files.isEmpty {
-                ForEach(message.files.indices, id: \.self) { index in
-                    EmbededFileLayoutView(file: message.files[index])
-                }
-            }
+            
+            GridImageView(
+                imageUrls: attachmentFromMessage?.photoUrls,
+                selectedImages: attachmentFromMessage?.selectedAttachments
+            )
+            
+            VideoView(
+                videoUrls: attachmentFromMessage?.videoUrls,
+                selectedAttachment: attachmentFromMessage?.selectedAttachments
+            )
+            
+            
+//            if message.isPending, let selectionData = message.selectionData, !selectionData.isEmpty {
+//                PendingAttachmentsView(selectionData: selectionData, uploadProgress: messageViewModel.uploadProgress)
+//            }
+//            if !message.photoUrls.isEmpty {
+//                GridImageView(imageUrls: message.photoUrls, selectedImages: nil)
+//            }
+//            if !message.videoUrls.isEmpty {
+//                VideoView(videoUrls: message.videoUrls)
+//            }
+//            if !message.files.isEmpty {
+//                ForEach(message.files.indices, id: \.self) { index in
+//                    EmbededFileLayoutView(file: message.files[index])
+//                }
+//            }
         }
         .onLongPressGesture(perform: {
             showMessageOptions.toggle()

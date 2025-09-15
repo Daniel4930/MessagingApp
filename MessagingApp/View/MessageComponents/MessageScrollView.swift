@@ -54,8 +54,8 @@ struct MessageScrollView: View {
             messageComposerViewModel.scrollToMessageId = messageId
         }
         .onScrollPhaseChange { oldPhase, newPhase, context in
-            if let dy = context.velocity?.dy, abs(dy) >= 2 {
-                hideKeyboard()
+            if let dy = context.velocity?.dy, abs(dy) >= 1.5 {
+                focusedField = nil
             }
         }
         .onChange(of: messageComposerViewModel.scrollToBottom) { _, newValue in

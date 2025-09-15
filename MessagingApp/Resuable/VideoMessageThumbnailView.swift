@@ -15,41 +15,49 @@ struct VideoMessageThumbnailView: View {
     
     var body: some View {
         ZStack {
-            if showPlayer {
-                VideoPlayer(player: AVPlayer(url: url))
-                    .onAppear {
-                        let player = AVPlayer(url: url)
-                        player.play() // autoplay on tap
+            if let image = thumbnail {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 250)
+                    .clipped()
+                    .cornerRadius(12)
+                    .shadow(radius: 4)
+                    .overlay(
+                        Image(systemName: "play.circle.fill")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    )
+                    .onTapGesture {
+                        showPlayer = true
                     }
             } else {
-                if let image = thumbnail {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 250)
-                        .clipped()
-                        .cornerRadius(12)
-                        .shadow(radius: 4)
-                        .overlay(
-                            Image(systemName: "play.circle.fill")
-                                .resizable()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
-                        )
-                        .onTapGesture {
-                            showPlayer = true
-                        }
-                } else {
-                    ProgressView() // loading spinner
-                        .frame(height: 250)
-                        .onAppear {
-                            generateThumbnail()
-                        }
-                }
+                ProgressView()
+                    .frame(height: 250)
+                    .onAppear {
+                        generateThumbnail()
+                    }
             }
         }
         .frame(height: 250)
+        .fullScreenCover(isPresented: $showPlayer) {
+            ZStack(alignment: .topTrailing) {
+                FittingVideoPlayer(url: url)
+                    .ignoresSafeArea()
+
+                Button {
+                    showPlayer = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
+                        .padding([.leading, .bottom, .trailing])
+                }
+                .contentShape(Rectangle())
+            }
+        }
     }
     
     private func generateThumbnail() {
