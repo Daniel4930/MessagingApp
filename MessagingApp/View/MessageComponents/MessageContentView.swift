@@ -13,7 +13,7 @@ struct SelectedAttachment: Identifiable {
     let id: String
     let attachmentType: UploadedFile.FileType
     let image: UIImage?
-    let file: FileData?
+    let file: MessageFile?
     let videoData: Data?
     let task: StorageUploadTask
 }
@@ -69,7 +69,8 @@ struct MessageContentView: View {
             }
             
             let videoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let image = data.videoInfo?.thumbnail, let videoData = data.videoInfo?.videoData,
+                guard let image = data.videoInfo?.thumbnail,
+                        let videoData = data.videoInfo?.videoData,
                       let task = uploadProgress[data.identifier] else { return nil }
                 return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoData: videoData, task: task)
             }
@@ -77,12 +78,18 @@ struct MessageContentView: View {
             let fileAttachments: [SelectedAttachment] = selectionData.compactMap { data in
                 guard let file = data.fileInfo,
                       let task = uploadProgress[data.identifier] else { return nil }
-                return SelectedAttachment(id: data.identifier, attachmentType: .video, image: nil, file: file, videoData: nil, task: task)
+                
+                let messageFile = MessageFile(url: nil, data: file.fileData, name: file.name, size: file.size)
+                
+                return SelectedAttachment(id: data.identifier, attachmentType: .file, image: nil, file: messageFile, videoData: nil, task: task)
             }
             
             result.selectedAttachments = photoAttachments + videoAttachments + fileAttachments
         }
         
+        if result.photoUrls == nil && result.videoUrls == nil && result.files == nil && result.selectedAttachments == nil {
+            return nil
+        }
         return result
     }
     
@@ -134,31 +141,22 @@ struct MessageContentView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             
-            GridImageView(
-                imageUrls: attachmentFromMessage?.photoUrls,
-                selectedImages: attachmentFromMessage?.selectedAttachments
-            )
+            if let attachmentFromMessage {
+                GridImageView(
+                    imageUrls: attachmentFromMessage.photoUrls,
+                    selectedImages: attachmentFromMessage.selectedAttachments
+                )
             
-            VideoView(
-                videoUrls: attachmentFromMessage?.videoUrls,
-                selectedAttachment: attachmentFromMessage?.selectedAttachments
-            )
-            
-            
-//            if message.isPending, let selectionData = message.selectionData, !selectionData.isEmpty {
-//                PendingAttachmentsView(selectionData: selectionData, uploadProgress: messageViewModel.uploadProgress)
-//            }
-//            if !message.photoUrls.isEmpty {
-//                GridImageView(imageUrls: message.photoUrls, selectedImages: nil)
-//            }
-//            if !message.videoUrls.isEmpty {
-//                VideoView(videoUrls: message.videoUrls)
-//            }
-//            if !message.files.isEmpty {
-//                ForEach(message.files.indices, id: \.self) { index in
-//                    EmbededFileLayoutView(file: message.files[index])
-//                }
-//            }
+                VideoView(
+                    videoUrls: attachmentFromMessage.videoUrls,
+                    selectedAttachment: attachmentFromMessage.selectedAttachments
+                )
+                
+                GridFilesView(
+                    files: attachmentFromMessage.files,
+                    selectedAttachment: attachmentFromMessage.selectedAttachments
+                )
+            }
         }
         .onLongPressGesture(perform: {
             showMessageOptions.toggle()

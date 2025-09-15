@@ -25,11 +25,9 @@ struct VideoView: View {
             }
             
             if let selectedAttachment {
-                ForEach(selectedAttachment.indices, id: \.self) { index in
-                    let currentAttachment = selectedAttachment[index]
-                    
-                    if currentAttachment.attachmentType == .video, let url = getVideoTemporaryUrl(videoData: currentAttachment.videoData) {
-                        PendingAttachmentsView(task: currentAttachment.task, attachmentId: currentAttachment.id) {
+                ForEach(selectedAttachment) { attachment in
+                    if attachment.attachmentType == .video, let url = getVideoTemporaryUrl(videoData: attachment.videoData) {
+                        PendingAttachmentsView(task: attachment.task, attachmentId: attachment.id) {
                             VideoMessageThumbnailView(url: url)
                         }
                     }

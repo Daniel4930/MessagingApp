@@ -15,6 +15,7 @@ enum DataSize {
 
 struct EmbededFileLayoutView: View {
     let file: MessageFile
+    @State private var showFile = false
     
     var body: some View {
         HStack(alignment: .center) {
@@ -34,7 +35,14 @@ struct EmbededFileLayoutView: View {
         .padding()
         .background(Color("SecondaryBackgroundColor"))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        
+        .onTapGesture {
+            showFile.toggle()
+        }
+        .sheet(isPresented: $showFile) {
+            if let urlString = file.url, let url = URL(string: urlString) {
+                SafariView(url: url)
+            }
+        }
     }
 }
 extension EmbededFileLayoutView {
