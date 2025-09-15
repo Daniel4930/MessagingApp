@@ -33,7 +33,7 @@ class MessageViewModel: ObservableObject {
         messageListenerTasks.values.forEach { $0.cancel() }
     }
     
-    private func sendMessage(channelId: String, message: Message) async {
+    private func uploadMessage(channelId: String, message: Message) async {
         do {
             try await FirebaseCloudStoreService.shared.sendMessage(channelId: channelId, message: message)
         } catch {
@@ -160,7 +160,7 @@ class MessageViewModel: ObservableObject {
         let _ = uploadProgress.removeValue(forKey: attachmentIdentifier)
     }
     
-    func uploadFilesAndSendMessage(
+    private func uploadFilesAndSendMessage(
         senderId: String?,
         selectionData: [UploadedFile],
         channel: Binding<Channel>,
@@ -280,7 +280,7 @@ class MessageViewModel: ObservableObject {
                         case .video:
                             videoUrls.append(url.absoluteString)
                         case .file:
-                            let messageFile = MessageFile(url: url.absoluteString, name: fileName, size: fileSize)
+                            let messageFile = MessageFile(url: url.absoluteString, data: nil, name: fileName, size: fileSize)
                             files.append(messageFile)
                         }
                     case .failure(let error):
@@ -319,7 +319,7 @@ class MessageViewModel: ObservableObject {
                     clientId: clientId
                 )
                 
-                await self.sendMessage(channelId: channelId, message: message)
+                await self.uploadMessage(channelId: channelId, message: message)
             }
         }
     }

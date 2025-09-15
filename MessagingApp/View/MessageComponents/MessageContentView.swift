@@ -69,7 +69,8 @@ struct MessageContentView: View {
             }
             
             let videoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let image = data.videoInfo?.thumbnail, let videoData = data.videoInfo?.videoData,
+                guard let image = data.videoInfo?.thumbnail,
+                        let videoData = data.videoInfo?.videoData,
                       let task = uploadProgress[data.identifier] else { return nil }
                 return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoData: videoData, task: task)
             }
