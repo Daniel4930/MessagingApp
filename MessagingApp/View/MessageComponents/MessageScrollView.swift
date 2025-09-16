@@ -67,13 +67,5 @@ struct MessageScrollView: View {
         .onChange(of: messageComposerViewModel.scrollToMessageId) { oldValue, newValue in
             scrollPosition.scrollTo(id: newValue, anchor: .bottom)
         }
-        .task {
-            guard let currentUserId = userViewModel.user?.id else { return }
-            let otherMemberIds = channelInfo.memberIds.filter { $0 != currentUserId }
-            
-            for memberId in otherMemberIds {
-                await friendViewModel.fetchUserIfNeeded(withId: memberId)
-            }
-        }
     }
 }
