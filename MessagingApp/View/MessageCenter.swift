@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MessageCenter: View {
-    @State private var selectedDmChannel: Channel?
+    @State private var selectedChannel: Channel?
     @State private var selectedFriendIcon: User?
     @State private var showFriendList = false
     @EnvironmentObject var userViewModel: UserViewModel
@@ -43,23 +43,23 @@ struct MessageCenter: View {
                     .scrollIndicators(.hidden)
                     .padding(.vertical, 10)
                 
-                ForEach(channelViewModel.dmChannelsMapWithFriends, id: \.channel.id) { map in
-                    let friend = map.friend
-                    let channel = map.channel
-                    
-                    Button {
-                       selectedDmChannel = channel
-                    } label: {
-                        ChannelPreview(
-                            friend: friend,
-                            channel: channel
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
+                ForEach(channelViewModel.channels) { channel in
+                    let friendId = channel.memberIds.first(where: { $0 != userViewModel.user?.id })
+                    if let friend = friendViewModel.friends.first(where: {$0.id == friendId}) {
+                        Button {
+                            selectedChannel = channel
+                        } label: {
+                            ChannelPreview(
+                                friend: friend,
+                                channel: channel
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                        }
+                        .tint(.white)
                     }
-                    .tint(.white)
                 }
-                .navigationDestination(item: $selectedDmChannel) { destinationChannel in
+                .navigationDestination(item: $selectedChannel) { destinationChannel in
                     DirectMessageView(channelInfo: destinationChannel)
                 }
             }
@@ -91,7 +91,7 @@ struct MessageCenter: View {
                 .presentationDetents([.fraction(0.95)])
         }
         .sheet(isPresented: $showFriendList) {
-            FriendListView(selectedDmChannel: $selectedDmChannel)
+            FriendListView(selectedDmChannel: $selectedChannel)
         }
     }
 }

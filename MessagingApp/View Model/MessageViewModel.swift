@@ -191,7 +191,7 @@ class MessageViewModel: ObservableObject {
         var currentChannel = channel.wrappedValue
         
         if currentChannel.id == nil {
-            let newChannel = ChannelInsert(memberIds: currentChannel.memberIds, type: currentChannel.type)
+            let newChannel = ChannelInsert(memberIds: currentChannel.memberIds)
             do {
                 let documentId = try await FirebaseCloudStoreService.shared.addDocument(
                     collection: .channels,
@@ -200,7 +200,7 @@ class MessageViewModel: ObservableObject {
                 )
                 currentChannel.id = documentId
                 listenForMessages(channelId: documentId, userViewModel: userViewModel)
-                if let newChannelWithListener = channelViewModel.dmChannels.first(where: { $0.id == documentId }) {
+                if let newChannelWithListener = channelViewModel.channels.first(where: { $0.id == documentId }) {
                     channel.wrappedValue = newChannelWithListener
                 }
                 

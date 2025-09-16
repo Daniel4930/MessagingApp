@@ -29,7 +29,7 @@ struct NavigationTopBar: View {
                 if channelInfo.memberIds.isEmpty {
                     Text("Unable to get user information")
                 }
-                else if channelInfo.type == ChannelType.dm, let friend = friendViewModel.getFriendDmChannel(memberIds: channelInfo.memberIds) {
+                else if let friend = friendViewModel.getFriendDmChannel(memberIds: channelInfo.memberIds) {
                     UserIconView(urlString: friend.icon)
                         .overlay(alignment: .bottomTrailing) {
                             OnlineStatusCircle(status: friend.onlineStatus.rawValue, color: Color("PrimaryBackgroundColor"))
