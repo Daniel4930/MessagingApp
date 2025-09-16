@@ -96,6 +96,7 @@ struct CustomUITextView: UIViewRepresentable {
         textView.delegate = context.coordinator
         textView.font = UIFont.systemFont(ofSize: 16)
         textView.backgroundColor = UIColor(named: "SecondaryBackgroundColor")
+        textView.textContainerInset = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
         DispatchQueue.main.async {
             messageComposerViewModel.uiTextEditor = textView
             
@@ -104,7 +105,15 @@ struct CustomUITextView: UIViewRepresentable {
         return textView
     }
     
-    func updateUIView(_ uiView: UITextView, context: Context) {}
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        DispatchQueue.main.async {
+            let fittingSize = CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude)
+            let newSize = uiView.sizeThatFits(fittingSize)
+            if self.messageComposerViewModel.customTextEditorHeight != newSize.height {
+                self.messageComposerViewModel.customTextEditorHeight = newSize.height
+            }
+        }
+    }
     
     class Coordinator: NSObject, UITextViewDelegate {
         var parent: CustomUITextView
@@ -205,11 +214,6 @@ struct CustomUITextView: UIViewRepresentable {
                     print(error.localizedDescription)
                 }
             }
-            
-            let fittingSize = CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)
-            let newSize = textView.sizeThatFits(fittingSize)
-            parent.messageComposerViewModel.customTextEditorHeight = newSize.height
-            
             parent.onMessageChange()
         }
     }
