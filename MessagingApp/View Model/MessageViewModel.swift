@@ -147,6 +147,28 @@ class MessageViewModel: ObservableObject {
     }
     
     func deleteMessage(messageId: String, channelId: String) {
+        // Find the message before deleting it locally
+        if let channelIndex = messages.firstIndex(where: { $0.channelId == channelId }),
+           let messageToDelete = messages[channelIndex].messages.first(where: { $0.id == messageId }) {
+            
+            // Combine all attachment URLs
+            let photoUrls = messageToDelete.photoUrls
+            let videoUrls = messageToDelete.videoUrls
+            let fileUrls = messageToDelete.files.map { $0.url }
+            let allUrls = photoUrls + videoUrls + fileUrls
+
+            // Delete each attachment from Firebase Storage
+            for url in allUrls {
+                if let url {
+                    FirebaseStorageService.shared.deleteFile(from: url) { error in
+                        if let error = error {
+                            print("Failed to delete attachment at \(url): \(error.localizedDescription)")
+                        }
+                    }
+                }
+            }
+        }
+
         // Optimistically remove the message from the local array for a responsive UI.
         if let index = messages.firstIndex(where: { $0.channelId == channelId }) {
             messages[index].messages.removeAll { $0.id == messageId }
