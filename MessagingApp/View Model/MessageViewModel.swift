@@ -286,6 +286,9 @@ class MessageViewModel: ObservableObject {
                     case .failure(let error):
                         print("Failed to upload file: \(error)")
                     }
+                    DispatchQueue.main.async {
+                        self.removeAttachmentFromUploadTask(attachmentIdentifier: file.identifier)
+                    }
                     dispatchGroup.leave()
                 }
                 
