@@ -121,4 +121,12 @@ class FirebaseStorageService {
             }
         }
     }
+    
+    func deleteFile(from urlString: String, completion: @escaping (Error?) -> Void) {
+        let storageRef = storage.reference(forURL: urlString)
+        
+        storageRef.delete { error in
+            completion(error)
+        }
+    }
 }
