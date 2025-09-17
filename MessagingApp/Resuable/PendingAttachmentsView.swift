@@ -25,6 +25,7 @@ struct PendingAttachmentsView<Content: View>: View {
     @State private var turnOffOverlay = false
     @State private var cancelButtonSystemImage: String = "xmark"
     @State private var uploadProgress: UploadProgress = .unknown
+    @State private var progressValue: Double = .zero
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -42,17 +43,22 @@ struct PendingAttachmentsView<Content: View>: View {
                     uploadTask: task,
                     attachmentId: attachmentId,
                     uploadProgress: $uploadProgress,
-                    cancelButtonSystemImage: $cancelButtonSystemImage
+                    cancelButtonSystemImage: $cancelButtonSystemImage,
+                    progressValue: $progressValue
                 )
                 .padding(6)
             }
         }
+        .animation(.spring(duration: 1), value: progressValue)
         .onAppear {
             task.observe(.failure) { _ in
                 self.uploadProgress = .failure
             }
-            task.observe(.progress) { _ in
+            task.observe(.progress) { snapshot in
                 self.uploadProgress = .progress
+                if let value = snapshot.progress?.fractionCompleted {
+                    self.progressValue = value
+                }
             }
             task.observe(.resume) { _ in
                 self.uploadProgress = .resume
@@ -60,13 +66,11 @@ struct PendingAttachmentsView<Content: View>: View {
             task.observe(.success) { _ in
                 self.uploadProgress = .success
                 self.cancelButtonSystemImage = "checkmark"
-            }
-        }
-        .animation(.spring, value: cancelButtonSystemImage)
-        .onChange(of: cancelButtonSystemImage) { _, newValue in
-            if newValue == "checkmark" {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    self.turnOffOverlay = true
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    withAnimation(.spring()) {
+                        self.turnOffOverlay = true
+                    }
                 }
             }
         }

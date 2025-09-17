@@ -13,6 +13,7 @@ struct CancelImageUploadButton: View {
     let attachmentId: String
     @Binding var uploadProgress: UploadProgress
     @Binding var cancelButtonSystemImage: String
+    @Binding var progressValue: Double
     
     @EnvironmentObject var messageViewModel: MessageViewModel
     
@@ -33,7 +34,7 @@ struct CancelImageUploadButton: View {
                 )
                 .overlay(
                     Circle()
-                        .trim(from: 0, to: progressValue(for: uploadProgress))
+                        .trim(from: 0, to: progressValue)
                         .stroke(strokeColor(for: uploadProgress), lineWidth: 2)
                 )
                 .padding(5)
@@ -45,16 +46,6 @@ struct CancelImageUploadButton: View {
 }
 
 extension CancelImageUploadButton {
-    private func progressValue(for state: UploadProgress) -> CGFloat {
-        switch state {
-        case .failure: return 1.0
-        case .progress: return uploadTask.snapshot.progress?.fractionCompleted ?? 0.0
-        case .resume: return uploadTask.snapshot.progress?.fractionCompleted ?? 0.0
-        case .success: return 1.0
-        case .unknown: return 0.0
-        }
-    }
-
     private func strokeColor(for state: UploadProgress) -> Color {
         switch state {
         case .failure: return .red
