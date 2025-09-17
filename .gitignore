@@ -11,9 +11,8 @@ firebase-debug.*.log*
 firestore.rules
 storage.rules
 
-#info.plist
-GoogleService-Info.plist
-
+#Google-info.plist
+MessagingApp/GoogleService-Info.plist
 
 # Firebase cache
 .firebase/
