@@ -9,10 +9,10 @@ import SwiftUI
 
 struct ProfileView: View {
     let user: User
+    
     @State private var showOptions: Bool = false
     @State private var bannerHeight: CGFloat = .zero
     @State private var disableScroll = false
-    @EnvironmentObject var userViewModel: UserViewModel
 
     var body: some View {
         ScrollView {
@@ -27,7 +27,7 @@ struct ProfileView: View {
                         .frame(width: 35, height: 35)
                         .contentShape(Rectangle())
                         .popover(isPresented: $showOptions, arrowEdge: .top) {
-                            ProfileOptionsView(username: user.userName)
+                            ProfileOptionsView(user: user, showOptions: $showOptions)
                         }
                 }
                 .background {
@@ -108,17 +108,27 @@ private extension ProfileView {
 }
 
 private struct ProfileOptionsView: View {
-    let username: String
+    let user: User
+    @Binding var showOptions: Bool
+    
     @EnvironmentObject var alertViewModel: AlertMessageViewModel
-    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var friendViewModel: FriendViewModel
+    @EnvironmentObject var userViewModel: UserViewModel
     
     var body: some View {
         VStack(spacing: 0) {
-            ProfileOptionButton(title: "Copy Username") {
+            ProfileOptionButton(title: "Copy Username", role: .cancel) {
                 let pasteboard = UIPasteboard.general
-                pasteboard.string = username
+                pasteboard.string = user.userName
                 alertViewModel.presentAlert(message: "Username copied", type: .success)
-                dismiss()
+                showOptions = false
+            }
+            if let currentUser = userViewModel.user, user.id != currentUser.id, let friendId = user.id {
+                ProfileOptionButton(title: "Remove Friend", role: .destructive) {
+                    Task {
+                        await friendViewModel.removeFriend(for: currentUser, friendId: friendId)
+                    }
+                }
             }
         }
         .frame(minWidth: 180)
@@ -128,10 +138,11 @@ private struct ProfileOptionsView: View {
 
 private struct ProfileOptionButton: View {
     let title: String
+    let role: ButtonRole
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(role: role , action: action) {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()

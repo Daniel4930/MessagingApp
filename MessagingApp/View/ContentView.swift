@@ -99,7 +99,3 @@ struct ContentView: View {
         }
     }
 }
-
-extension Notification.Name {
-    static let didLogOut = Notification.Name("didLogOut")
-}

@@ -9,7 +9,10 @@ import SwiftUI
 
 struct FriendListView: View {
     @Binding var selectedDmChannel: Channel?
+    
     @State private var nameToSearch: String = ""
+    @State private var listItemWidth: CGFloat = .zero
+    
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
     @EnvironmentObject var userViewModel: UserViewModel
@@ -29,29 +32,54 @@ struct FriendListView: View {
         NavigationStack {
             List {
                 ForEach(searchResult, id: \.self) { friend in
-                    Button {
-                        guard let currentUserId = userViewModel.user?.id else { return }
-                        guard let channel = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: friend) else { return }
+                    HStack(alignment: .center) {
+                        UserIconView(urlString: friend.icon)
                         
-                        selectedDmChannel = channel
-                        dismiss()
-                    } label: {
-                        HStack(alignment: .center) {
-                            UserIconView(urlString: friend.icon)
-                            VStack(alignment: .leading) {
-                                let displayNameIsEmpty = friend.displayName.isEmpty
-                                
-                                if !displayNameIsEmpty {
-                                    Text(friend.displayName)
-                                        .bold()
-                                }
-                                Text(friend.userName)
-                                    .font(displayNameIsEmpty ? .body : .footnote)
-                                    .bold(displayNameIsEmpty)
+                        VStack(alignment: .leading) {
+                            let displayNameIsEmpty = friend.displayName.isEmpty
+                            
+                            if !displayNameIsEmpty {
+                                Text(friend.displayName)
+                                    .bold()
                             }
+                            Text(friend.userName)
+                                .font(displayNameIsEmpty ? .body : .footnote)
+                                .bold(displayNameIsEmpty)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            guard let currentUserId = userViewModel.user?.id else { return }
+                            guard let channel = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: friend) else { return }
+                            
+                            selectedDmChannel = channel
+                            dismiss()
+                        } label: {
+                            Image(systemName: "message.fill")
+                        }
+                        .modifier(ListButtonModifer(backgroundColor: .blue, listItemWidth: listItemWidth))
+                        
+                        Button {
+                            guard let user = userViewModel.user else { return }
+                            guard let friendId = friend.id else { return }
+                            Task {
+                                await friendViewModel.removeFriend(for: user, friendId: friendId)
+                            }
+                        } label: {
+                            Image(systemName: "person.fill.badge.minus")
+                        }
+                        .modifier(ListButtonModifer(backgroundColor: .red, listItemWidth: listItemWidth))
+                    }
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear { listItemWidth = proxy.size.width * 0.1 }
+                                .allowsHitTesting(false)
                         }
                     }
-                    .tint(.white)
+                    .contentShape(Rectangle())
+                    .buttonStyle(.borderless)
                 }
             }
             .toolbar {
@@ -68,5 +96,20 @@ struct FriendListView: View {
             }
         }
         .searchable(text: $nameToSearch, prompt: Text("Search your friends"))
+    }
+}
+extension FriendListView {
+    private struct ListButtonModifer: ViewModifier {
+        let backgroundColor: Color
+        let listItemWidth: CGFloat
+        
+        func body(content: Content) -> some View {
+            content
+                .tint(.white)
+                .frame(width: listItemWidth)
+                .padding()
+                .background(backgroundColor)
+                .clipShape(Circle())
+        }
     }
 }

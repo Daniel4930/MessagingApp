@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
 @MainActor
 class FriendViewModel: ObservableObject {
@@ -89,20 +90,22 @@ class FriendViewModel: ObservableObject {
         }
     }
     
-    func removeFriend(for user: inout User, friendId: String) async {
-        guard let userId = user.id, let index = user.friends.firstIndex(of: friendId) else { return }
-        
-        var updatedFriends = user.friends
-        updatedFriends.remove(at: index)
+    func removeFriend(for user: User, friendId: String) async {
+        guard let userId = user.id else { return }
         
         do {
             try await FirebaseCloudStoreService.shared.updateData(
                 collection: FirebaseCloudStoreCollection.users,
                 documentId: userId,
-                newData: ["friends": updatedFriends]
+                newData: ["friends": FieldValue.arrayRemove([friendId])]
             )
             
-            user.friends = updatedFriends
+            try await FirebaseCloudStoreService.shared.updateData(
+                collection: FirebaseCloudStoreCollection.users,
+                documentId: friendId,
+                newData: ["friends" : FieldValue.arrayRemove([userId])]
+            )
+            
             self.friends.removeAll { $0.id == friendId }
             stopListening(friendId: friendId)
         } catch {

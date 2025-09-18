@@ -14,7 +14,7 @@ enum SidebarItem: Equatable {
     case searchServer
 }
 
-struct HomeView: View {
+struct HomeView: View {    
     var body: some View {
         MessageCenter()
             .frame(maxWidth: .infinity, maxHeight: .infinity)

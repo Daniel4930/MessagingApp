@@ -168,3 +168,8 @@ extension LastMessage {
         }
     }
 }
+
+extension Notification.Name {
+    // This notification is for log out
+    static let didLogOut = Notification.Name("didLogOut")
+}

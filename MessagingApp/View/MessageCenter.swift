@@ -49,9 +49,9 @@ struct MessageCenter: View {
                                 friend: friend,
                                 channel: channel
                             )
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(10)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .tint(.white)
                     }
                 }
@@ -81,7 +81,7 @@ struct MessageCenter: View {
         .task {
             guard let currentUser = userViewModel.user, let userId = currentUser.id else { return }
             channelViewModel.listenForChannels(userId: userId, friends: friendViewModel.friends)
-            userViewModel.listenForUserChanges(userId: userId)
+            userViewModel.listenForUserChanges(userId: userId, friendViewModel: friendViewModel)
         }
         .sheet(item: $selectedFriendIcon) { friend in
             ProfileView(user: friend)
