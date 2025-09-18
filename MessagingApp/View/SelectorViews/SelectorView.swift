@@ -28,7 +28,6 @@ struct SelectorView: View {
     @State private var openCamera = false
     @State private var accessStatus: PhotoLibraryAccessStatus?
     @State private var assets: [PHAsset] = []
-    @State private var lastCreationDate: Date?
     @State private var enableHighPriorityGesture = false
     @State private var fetchMoreAssets = false
     @State private var changeTopBarAppear = false
@@ -39,7 +38,6 @@ struct SelectorView: View {
     static let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.88
     static let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     let velocityThreshold: CGFloat = 20
-    let fetchLimit = 20
     
     var gesture: some Gesture {
         DragGesture(minimumDistance: 6)
@@ -80,7 +78,7 @@ struct SelectorView: View {
                             }
                         
                     case .limitedAccess:
-                        LimitedLibraryAccessMessageView(getAssets: getPhotosAndVideosAssets)
+                        LimitedLibraryAccessMessageView(getAssets: getPhotosAndVideosAssets, refreshAssets: refreshLibraryAssets)
                         
                         PhotosAndVideosGridView(assets: $assets, refreshAssets: refreshLibraryAssets, messageComposerViewModel: messageComposerViewModel)
                         
@@ -202,10 +200,6 @@ extension SelectorView {
     
     func getPhotosAndVideosAssets() {
         let fetchOptions = PHFetchOptions()
-        fetchOptions.fetchLimit = fetchLimit
-        if let lastCreationDate {
-            fetchOptions.predicate = NSPredicate(format: "creationDate < %@", lastCreationDate as NSDate)
-        }
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let results: PHFetchResult = PHAsset.fetchAssets(with: fetchOptions)
         
@@ -218,13 +212,11 @@ extension SelectorView {
                     }
                 }
             }
-            lastCreationDate = results.lastObject?.creationDate
         }
     }
     
     func refreshLibraryAssets() {
         let fetchOptions = PHFetchOptions()
-        fetchOptions.fetchLimit = assets.count
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let results: PHFetchResult = PHAsset.fetchAssets(with: fetchOptions)
         
@@ -235,7 +227,6 @@ extension SelectorView {
                     assets.append(results[i])
                 }
             }
-            lastCreationDate = results.lastObject?.creationDate
         }
     }
 }
