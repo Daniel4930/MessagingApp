@@ -9,7 +9,8 @@ import SwiftUI
 
 struct LimitedLibraryAccessMessageView: View {
     @State private var presentLimitedLibraryPicker = false
-    var getAssets: () -> Void
+    let getAssets: () -> Void
+    let refreshAssets: () -> Void
     
     var body: some View {
         HStack {
@@ -33,7 +34,7 @@ struct LimitedLibraryAccessMessageView: View {
         }
         .onChange(of: presentLimitedLibraryPicker) { _, isPresented in
             if !isPresented {
-                getAssets()
+                refreshAssets()
             }
         }
         .task {
