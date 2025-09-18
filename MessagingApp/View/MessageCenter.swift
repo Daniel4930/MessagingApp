@@ -39,10 +39,6 @@ struct MessageCenter: View {
             }
             
             ScrollView {
-                FriendsHorizontalView(selectedFriendIcon: $selectedFriendIcon)
-                    .scrollIndicators(.hidden)
-                    .padding(.vertical, 10)
-                
                 ForEach(channelViewModel.channels) { channel in
                     let friendId = channel.memberIds.first(where: { $0 != userViewModel.user?.id })
                     if let friend = friendViewModel.friends.first(where: {$0.id == friendId}) {
@@ -63,24 +59,25 @@ struct MessageCenter: View {
                     DirectMessageView(channelInfo: destinationChannel)
                 }
             }
-            .overlay(alignment: .bottomTrailing) {
-                Button {
-                    showFriendList.toggle()
-                } label: {
-                    Image(systemName: "message.fill")
-                        .resizable()
-                        .frame(width: 35, height: 35)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .background {
-                            Circle()
-                                .fill(.blue)
-                        }
-                }
-                .padding([.trailing, .bottom], 10)
-            }
+            .padding(.top)
         }
         .padding()
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                showFriendList.toggle()
+            } label: {
+                Image(systemName: "message.fill")
+                    .resizable()
+                    .frame(width: 35, height: 35)
+                    .foregroundStyle(.white)
+                    .padding()
+                    .background {
+                        Circle()
+                            .fill(.blue)
+                    }
+            }
+            .padding([.trailing, .bottom])
+        }
         .task {
             guard let currentUser = userViewModel.user, let userId = currentUser.id else { return }
             channelViewModel.listenForChannels(userId: userId, friends: friendViewModel.friends)
