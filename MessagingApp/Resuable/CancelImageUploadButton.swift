@@ -9,7 +9,7 @@ import SwiftUI
 import FirebaseStorage
 
 struct CancelImageUploadButton: View {
-    let uploadTask: StorageUploadTask
+    let uploadTask: StorageUploadTask?
     let attachmentId: String
     @Binding var uploadProgress: UploadProgress
     @Binding var cancelButtonSystemImage: String
@@ -19,9 +19,11 @@ struct CancelImageUploadButton: View {
     
     var body: some View {
         Button {
-            uploadTask.cancel()
-            uploadProgress = .failure
-            messageViewModel.removeAttachmentFromUploadTask(attachmentIdentifier: attachmentId)
+            if let uploadTask {
+                uploadTask.cancel()
+                uploadProgress = .failure
+                messageViewModel.removeAttachmentFromUploadTask(attachmentIdentifier: attachmentId)
+            }
         } label: {
             Image(systemName: cancelButtonSystemImage)
                 .frame(width: 20, height: 20)

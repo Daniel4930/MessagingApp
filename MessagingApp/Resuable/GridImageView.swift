@@ -18,9 +18,8 @@ struct GridImageView: View {
     @State private var selectedIndex = 0
     
     var body: some View {
-        let count = imageUrls?.count ?? selectedImages?.count ?? 0
-        
-        if let imageUrls {
+        if let imageUrls, !imageUrls.isEmpty {
+            let count = imageUrls.count
             buildGrid(count: count) { index in
                 let url = URL(string: imageUrls[index])
                 KFImage(url)
@@ -49,14 +48,19 @@ struct GridImageView: View {
             }
         }
         
-        if let selectedImages {
-            buildGrid(count: count) { index in
-                if selectedImages[index].attachmentType == .photo, let uiImage = selectedImages[index].image {
-                    LocalImageView(
-                        uiImage: uiImage,
-                        uploadTask: selectedImages[index].task,
-                        attachmentId: selectedImages[index].id
-                    )
+        if let selectedImages, !selectedImages.isEmpty {
+            let photoAttachments = selectedImages.filter { $0.attachmentType == .photo }
+            if !photoAttachments.isEmpty {
+                let count = photoAttachments.count
+                buildGrid(count: count) { index in
+                    if let uiImage = photoAttachments[index].image {
+                        PendingAttachmentsView(task: photoAttachments[index].task, attachmentId: photoAttachments[index].id) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
                 }
             }
         }
