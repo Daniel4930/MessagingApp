@@ -33,9 +33,8 @@ struct UserIconView: View {
                         .frame(width: iconDimension.width, height: iconDimension.height)
                         .clipShape(.circle)
                 }
-                .onFailure { error in
+                .onFailure { _ in
                     didFail = true
-                    print(error)
                 }
                 .resizable()
                 .iconStyle(iconDimension, borderColor: borderColor, borderWidth: borderWidth)
