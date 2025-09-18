@@ -175,7 +175,13 @@ class MessageViewModel: ObservableObject {
         }
         
         // Trigger the backend deletion.
-        FirebaseCloudStoreService.shared.deleteMessage(messageId: messageId, channelId: channelId)
+        Task {
+            do {
+                try await FirebaseCloudStoreService.shared.deleteMessage(messageId: messageId, channelId: channelId)
+            } catch {
+                print("Failed to delete message: \(error.localizedDescription)")
+            }
+        }
     }
     
     func removeAttachmentFromUploadTask(attachmentIdentifier: String) {
