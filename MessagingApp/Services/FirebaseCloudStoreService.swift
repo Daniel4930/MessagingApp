@@ -114,7 +114,6 @@ class FirebaseCloudStoreService {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue)
                 .whereField("memberIds", arrayContains: userId)
-                .order(by: "lastActivity", descending: true)
                 .addSnapshotListener { querySnapshot, error in
                     if let error = error {
                         continuation.finish(throwing: error)
@@ -240,13 +239,42 @@ class FirebaseCloudStoreService {
         }
     }
     
-    func deleteMessage(messageId: String, channelId: String) {
-        db
-        .collection(FirebaseCloudStoreCollection.channels.rawValue)
-        .document(channelId)
-        .collection(FirebaseCloudStoreCollection.messages.rawValue)
-        .document(messageId)
-        .delete()
+    func deleteMessage(messageId: String, channelId: String) async throws {
+        let channelRef = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId)
+        let messageRef = channelRef.collection(FirebaseCloudStoreCollection.messages.rawValue).document(messageId)
+
+        let channel = try await channelRef.getDocument(as: Channel.self)
+
+        // If the message to be deleted is not the last message, just delete it without updating the channel.
+        guard channel.lastMessage?.messageId == messageId else {
+            try await messageRef.delete()
+            return
+        }
+
+        // If it is the last message, fetch the message right before it to set as the new last message.
+        let previousMessageSnapshot = try await channelRef.collection(FirebaseCloudStoreCollection.messages.rawValue)
+            .order(by: "date", descending: true)
+            .start(after: [channel.lastMessage?.timestamp as Any]) // Use a cursor to fetch the next document
+            .limit(to: 1)
+            .getDocuments()
+
+        let batch = db.batch()
+
+        // Delete the message
+        batch.deleteDocument(messageRef)
+
+        // Update the channel's last message
+        if let previousMessageDocument = previousMessageSnapshot.documents.first,
+           let previousMessage = try? previousMessageDocument.data(as: Message.self),
+           let lastMessage = LastMessage(from: previousMessage) {
+            let lastMessageData = try Firestore.Encoder().encode(lastMessage)
+            batch.updateData(["lastMessage": lastMessageData, "lastActivity": lastMessage.timestamp], forDocument: channelRef)
+        } else {
+            // No previous message, so remove the lastMessage and lastActivity fields
+            batch.updateData(["lastMessage": FieldValue.delete(), "lastActivity": FieldValue.delete()], forDocument: channelRef)
+        }
+
+        try await batch.commit()
     }
 
     // MARK: - NotificationContent Functions

@@ -45,18 +45,20 @@ struct EditMessageView: View {
             if message.senderId == userViewModel.user?.id {
                 Section {
                     Button {
-                        guard let messageId = message.id else {
-                            print("Failed to get message id")
-                            return
+                        Task {
+                            guard let messageId = message.id else {
+                                print("Failed to get message id")
+                                return
+                            }
+                            guard let messageMap = messageViewModel.messages.first(where: { $0.messages.contains(message) }) else {
+                                print("Can't find a message map that contains the current message")
+                                return
+                            }
+                            let channelId = messageMap.channelId
+                            
+                            messageViewModel.deleteMessage(messageId: messageId, channelId: channelId)
+                            dismiss()
                         }
-                        guard let messageMap = messageViewModel.messages.first(where: { $0.messages.contains(message) }) else {
-                            print("Can't find a message map that contains the current message")
-                            return
-                        }
-                        let channelId = messageMap.channelId
-                        
-                        messageViewModel.deleteMessage(messageId: messageId, channelId: channelId)
-                        dismiss()
                     } label: {
                         Label("Delete Message", systemImage: "trash.fill")
                             .foregroundStyle(.red)
