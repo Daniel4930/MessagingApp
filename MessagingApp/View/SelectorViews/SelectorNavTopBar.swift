@@ -12,7 +12,6 @@ struct SelectorNavTopBar: View {
     let minHeight: CGFloat
     let accessStatus: PhotoLibraryAccessStatus
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
-    @Binding var changeTopBarAppear: Bool
     
     var body: some View {
         HStack(alignment: .center) {
@@ -20,7 +19,6 @@ struct SelectorNavTopBar: View {
                 withAnimation(.smooth(duration: 0.3)) {
                     height = minHeight
                 }
-                changeTopBarAppear = false
             }
             .foregroundStyle(.blue)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -39,7 +37,7 @@ struct SelectorNavTopBar: View {
                 Spacer()
             }
             
-            if accessStatus == .denied || accessStatus == .restricted || accessStatus == .undetermined {
+            if accessStatus == .denied || accessStatus == .restricted || accessStatus == .undetermined || accessStatus == .limitedAccess {
                 Button {
                     height = minHeight
                 } label: {
@@ -49,12 +47,11 @@ struct SelectorNavTopBar: View {
                         .foregroundStyle(.blue)
                 }
             } else {
-                CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
+                CustomPhotoPickerView(height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
                     Text("All Albums")
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(14)
                         .foregroundStyle(.blue)
-                        .opacity(accessStatus != .limitedAccess ? 0.5 : 1.0)
                 }
             }
         }

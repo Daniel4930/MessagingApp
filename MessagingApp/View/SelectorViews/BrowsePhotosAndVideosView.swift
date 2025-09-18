@@ -19,7 +19,7 @@ struct BrowsePhotosAndVideosView: View {
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
         
-        CustomPhotoPickerView(accessStatus: accessStatus, height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
+        CustomPhotoPickerView(height: $height, minHeight: minHeight, messageComposerViewModel: messageComposerViewModel) {
             Text("Browse Photos")
                 .frame(maxWidth: .infinity, alignment: .center)
                 .bold()
