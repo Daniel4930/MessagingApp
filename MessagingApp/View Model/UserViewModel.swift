@@ -32,12 +32,16 @@ class UserViewModel: ObservableObject {
         self.user = await FirebaseCloudStoreService.shared.fetchUserByEmail(email: email)
     }
     
-    func listenForUserChanges(userId: String) {
+    func listenForUserChanges(userId: String, friendViewModel: FriendViewModel) {
         userListenerTask?.cancel()
         userListenerTask = Task {
             do {
                 let stream = FirebaseCloudStoreService.shared.listenForUser(userId: userId)
                 for try await updatedUser in stream {
+                    if updatedUser.friends != self.user?.friends {
+                        await friendViewModel.fetchFriends(for: updatedUser)
+                    }
+                    
                     self.user = updatedUser
                 }
             } catch {
