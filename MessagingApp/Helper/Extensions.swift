@@ -172,7 +172,4 @@ extension LastMessage {
 extension Notification.Name {
     // This notification is for log out
     static let didLogOut = Notification.Name("didLogOut")
-    
-    //This notification is for after removed friend, pop navigation stack back to message center
-    static let popToRootView = Notification.Name("popToRootView")
 }

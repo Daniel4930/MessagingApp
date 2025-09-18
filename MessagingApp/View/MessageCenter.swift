@@ -60,9 +60,7 @@ struct MessageCenter: View {
                     }
                 }
                 .navigationDestination(item: $selectedChannel) { destinationChannel in
-                    DirectMessageView(channelInfo: destinationChannel) {
-                        selectedChannel = nil
-                    }
+                    DirectMessageView(channelInfo: destinationChannel)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
@@ -89,7 +87,7 @@ struct MessageCenter: View {
             userViewModel.listenForUserChanges(userId: userId, friendViewModel: friendViewModel)
         }
         .sheet(item: $selectedFriendIcon) { friend in
-            ProfileView(user: friend, popView: {})
+            ProfileView(user: friend)
                 .presentationDetents([.fraction(0.95)])
         }
         .sheet(isPresented: $showFriendList) {

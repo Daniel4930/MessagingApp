@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProfileView: View {
     let user: User
-    let popView: () -> Void
     
     @State private var showOptions: Bool = false
     @State private var bannerHeight: CGFloat = .zero
@@ -28,7 +27,7 @@ struct ProfileView: View {
                         .frame(width: 35, height: 35)
                         .contentShape(Rectangle())
                         .popover(isPresented: $showOptions, arrowEdge: .top) {
-                            ProfileOptionsView(user: user, showOptions: $showOptions, popView: popView)
+                            ProfileOptionsView(user: user, showOptions: $showOptions)
                         }
                 }
                 .background {
@@ -111,7 +110,6 @@ private extension ProfileView {
 private struct ProfileOptionsView: View {
     let user: User
     @Binding var showOptions: Bool
-    let popView: () -> Void
     
     @EnvironmentObject var alertViewModel: AlertMessageViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
@@ -130,7 +128,6 @@ private struct ProfileOptionsView: View {
                     Task {
                         await friendViewModel.removeFriend(for: currentUser, friendId: friendId)
                     }
-                    popView()
                 }
             }
         }

@@ -13,7 +13,6 @@ enum Field {
 
 struct DirectMessageView: View {
     @State private var channelInfo: Channel
-    let popView: () -> Void
     
     @State private var showFileAndImageSelector = false
     @State private var showPhotoAndFile = false
@@ -30,9 +29,8 @@ struct DirectMessageView: View {
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     
-    init(channelInfo: Channel, popView: @escaping () -> Void) {
+    init(channelInfo: Channel) {
         self.channelInfo = channelInfo
-        self.popView = popView
     }
     
     var selectorViewYOffset: CGFloat {
@@ -142,7 +140,7 @@ struct DirectMessageView: View {
                 .presentationDetents([.fraction(0.6), .fraction(0.945)])
         }
         .sheet(item: $messageComposerViewModel.userProfile) { user in
-            ProfileView(user: user, popView: popView)
+            ProfileView(user: user)
                 .presentationDetents([.fraction(0.95)])
         }
         .task(id: channelInfo.id) {
