@@ -18,7 +18,7 @@ enum UploadProgress {
 }
 
 struct PendingAttachmentsView<Content: View>: View {
-    let task: StorageUploadTask
+    let task: StorageUploadTask?
     let attachmentId: String
     let content: () -> Content
     
@@ -51,27 +51,31 @@ struct PendingAttachmentsView<Content: View>: View {
         }
         .animation(.spring(duration: 1), value: progressValue)
         .onAppear {
-            task.observe(.failure) { _ in
-                self.uploadProgress = .failure
-            }
-            task.observe(.progress) { snapshot in
-                self.uploadProgress = .progress
-                if let value = snapshot.progress?.fractionCompleted {
-                    self.progressValue = value
+            if let task {
+                task.observe(.failure) { _ in
+                    self.uploadProgress = .failure
                 }
-            }
-            task.observe(.resume) { _ in
-                self.uploadProgress = .resume
-            }
-            task.observe(.success) { _ in
-                self.uploadProgress = .success
-                self.cancelButtonSystemImage = "checkmark"
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    withAnimation(.spring()) {
-                        self.turnOffOverlay = true
+                task.observe(.progress) { snapshot in
+                    self.uploadProgress = .progress
+                    if let value = snapshot.progress?.fractionCompleted {
+                        self.progressValue = value
                     }
                 }
+                task.observe(.resume) { _ in
+                    self.uploadProgress = .resume
+                }
+                task.observe(.success) { _ in
+                    self.uploadProgress = .success
+                    self.cancelButtonSystemImage = "checkmark"
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        withAnimation(.spring()) {
+                            self.turnOffOverlay = true
+                        }
+                    }
+                }
+            } else {
+                turnOffOverlay = true
             }
         }
     }

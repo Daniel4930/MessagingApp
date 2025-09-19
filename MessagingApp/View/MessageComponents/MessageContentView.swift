@@ -15,7 +15,7 @@ struct SelectedAttachment: Identifiable {
     let image: UIImage?
     let file: MessageFile?
     let videoData: Data?
-    let task: StorageUploadTask
+    let task: StorageUploadTask?
 }
 
 struct Attachment {
@@ -63,22 +63,23 @@ struct MessageContentView: View {
             let uploadProgress = messageViewModel.uploadProgress
             
             let photoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let image = data.photoInfo?.image,
-                      let task = uploadProgress[data.identifier] else { return nil }
+                guard let image = data.photoInfo?.image else { return nil }
+                let task = uploadProgress[data.identifier]
+                
                 return SelectedAttachment(id: data.identifier, attachmentType: .photo, image: image, file: nil, videoData: nil, task: task)
             }
             
             let videoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let image = data.videoInfo?.thumbnail,
-                        let videoData = data.videoInfo?.videoData,
-                      let task = uploadProgress[data.identifier] else { return nil }
+                guard let image = data.videoInfo?.thumbnail, let videoData = data.videoInfo?.videoData else { return nil }
+                let task = uploadProgress[data.identifier]
+                
                 return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoData: videoData, task: task)
             }
             
             let fileAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let file = data.fileInfo,
-                      let task = uploadProgress[data.identifier] else { return nil }
+                guard let file = data.fileInfo else { return nil }
                 
+                let task = uploadProgress[data.identifier]
                 let messageFile = MessageFile(url: nil, data: file.fileData, name: file.name, size: file.size)
                 
                 return SelectedAttachment(id: data.identifier, attachmentType: .file, image: nil, file: messageFile, videoData: nil, task: task)
