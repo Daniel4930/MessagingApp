@@ -21,7 +21,6 @@ enum PhotoPickerResultError: Error {
 }
 
 struct CustomPhotoPickerView<Content: View>: View {
-    let accessStatus: PhotoLibraryAccessStatus
     @Binding var height: CGFloat
     let minHeight: CGFloat
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
@@ -29,17 +28,13 @@ struct CustomPhotoPickerView<Content: View>: View {
     @State private var showPhotoPicker = false
     
     var body: some View {
-        if accessStatus == .limitedAccess {
-            photoPickerContent()
-                .sheet(isPresented: $showPhotoPicker) {
-                    PickerViewController(messageComposerViewModel: messageComposerViewModel, height: $height, minHeight: minHeight)
-                }
-                .onTapGesture {
-                    showPhotoPicker.toggle()
-                }
-        } else {
-            photoPickerContent()
-        }
+        photoPickerContent()
+            .sheet(isPresented: $showPhotoPicker) {
+                PickerViewController(messageComposerViewModel: messageComposerViewModel, height: $height, minHeight: minHeight)
+            }
+            .onTapGesture {
+                showPhotoPicker.toggle()
+            }
     }
 }
 
@@ -143,7 +138,7 @@ struct PickerViewController: UIViewControllerRepresentable {
                                         fileType: .video,
                                         photoInfo: nil,
                                         videoInfo: VideoFile(
-                                            name: url.lastPathComponent,
+                                            name: UUID().uuidString + ".mp4",
                                             duration: duration,
                                             videoData: videoData,
                                             thumbnail: UIImage(cgImage: cgImage)
@@ -198,7 +193,21 @@ struct PickerViewController: UIViewControllerRepresentable {
 
         func extractVideoData(from url: URL) async throws -> Result<Data?, Error> {
             do {
-                let data = try Data(contentsOf: url)
+                let outputURL = URL(fileURLWithPath: NSTemporaryDirectory())
+                    .appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension("mp4")
+                
+                guard let exportSession = AVAssetExportSession(
+                    asset: AVURLAsset(url: url),
+                    presetName: AVAssetExportPresetMediumQuality
+                ) else {
+                    return .success(nil)
+                }
+                
+                try await exportSession.export(to: outputURL, as: .mp4)
+                
+                let data = try Data(contentsOf: outputURL)
+                
                 return .success(data)
             } catch {
                 return .failure(error)

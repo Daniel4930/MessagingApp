@@ -31,12 +31,11 @@ struct SelectorView: View {
     @State private var lastCreationDate: Date?
     @State private var enableHighPriorityGesture = false
     @State private var fetchMoreAssets = false
-    @State private var changeTopBarAppear = false
     
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     
-    static let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.88
+    static let selectorMaxHeight: CGFloat = UIScreen.main.bounds.height * 0.83
     static let threshold: CGFloat = UIScreen.main.bounds.height * 0.6
     let velocityThreshold: CGFloat = 20
     let fetchLimit = 20
@@ -56,13 +55,12 @@ struct SelectorView: View {
             VStack(spacing: 0) {
                 LineIndicator()
                 
-                if changeTopBarAppear {
+                if selectorHeight > SelectorView.threshold {
                     SelectorNavTopBar(
                         height: $selectorHeight,
                         minHeight: minHeight,
                         accessStatus: accessStatus ?? .undetermined,
-                        messageComposerViewModel: messageComposerViewModel,
-                        changeTopBarAppear: $changeTopBarAppear
+                        messageComposerViewModel: messageComposerViewModel
                     )
                 } else {
                     FilesButtonsView(messageComposerViewModel: messageComposerViewModel)
@@ -124,7 +122,7 @@ struct SelectorView: View {
                 fetchMoreAssets = newValue
             }
         }
-        .animation(.smooth(duration: 0.3), value: changeTopBarAppear)
+        .animation(.smooth(duration: 0.3), value: selectorHeight > SelectorView.threshold)
         .foregroundStyle(Color.button)
         .frame(maxWidth: .infinity)
         .frame(height: selectorHeight)
@@ -156,27 +154,18 @@ extension SelectorView {
                 selectorHeight -= dragValue.translation.height
             }
         }
-        
-        if selectorHeight > SelectorView.threshold {
-            changeTopBarAppear = true
-        } else {
-            changeTopBarAppear = false
-        }
     }
     
     func onDragEnded(_ dragValue: DragGesture.Value) {
         withAnimation(.smooth(duration: 0.3)) {
             if selectorHeight > SelectorView.threshold || dragValue.velocity.height >= velocityThreshold {
                 selectorHeight = SelectorView.selectorMaxHeight
-                changeTopBarAppear = true
             } else {
                 selectorHeight = minHeight
-                changeTopBarAppear = false
             }
             
             if dragValue.translation.height > 0 && abs(dragValue.velocity.height) >= velocityThreshold {
                 selectorHeight = minHeight
-                changeTopBarAppear = false
             }
         }
     }
@@ -246,6 +235,7 @@ struct CustomSendButtonView: View {
     @Binding var height: CGFloat
     @Binding var sendButtonDisabled: Bool
     let minHeight: CGFloat
+    
     @EnvironmentObject var messageViewModel: MessageViewModel
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var alertViewModel: AlertMessageViewModel
@@ -258,7 +248,7 @@ struct CustomSendButtonView: View {
                 .init(color: Color.black.opacity(0.6), location: 0.9),
                 .init(color: Color.black.opacity(0.9), location: 1.0)
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .allowsHitTesting(false)
+                .allowsHitTesting(false)
                 .overlay(alignment: .bottomTrailing) {
                     SendButtonView {
                         Task {
