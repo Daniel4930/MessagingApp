@@ -272,57 +272,20 @@ class MessageViewModel: ObservableObject {
         
         for file in selectionData {
             dispatchGroup.enter()
-            var fileData: Data?
-            let fileName: String
-            var fileSize: Int = 0
-            let storageFolder: FirebaseStorageFolder
             
             switch file.fileType {
             case .photo:
-                guard let photoInfo = file.photoInfo else { continue }
-                fileData = photoInfo.image.pngData()
-                fileName = photoInfo.name
-                storageFolder = .images
-            case .video:
-                guard let videoInfo = file.videoInfo else { continue }
-                fileData = videoInfo.videoData
-                fileName = videoInfo.name
-                storageFolder = .videos
-            case .file:
-                guard let fileInfo = file.fileInfo else { continue }
-                fileData = fileInfo.fileData
-                fileName = fileInfo.name
-                fileSize = fileInfo.size
-                storageFolder = .files
-            }
-            
-            let storageRef = FirebaseStorageService.shared.createChildReference(folder: storageFolder, fileName: fileName)
-            
-            if let fileData = fileData {
-                let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileData) { result in
-                    switch result {
-                    case .success(let url):
-                        switch file.fileType {
-                        case .photo:
-                            photoUrls.append(url.absoluteString)
-                        case .video:
-                            videoUrls.append(url.absoluteString)
-                        case .file:
-                            let messageFile = MessageFile(url: url.absoluteString, data: nil, name: fileName, size: fileSize)
-                            files.append(messageFile)
-                        }
-                    case .failure(let error):
-                        print("Failed to upload file: \(error)")
-                    }
-                    DispatchQueue.main.async {
-                        self.removeAttachmentFromUploadTask(attachmentIdentifier: file.identifier)
-                    }
-                    dispatchGroup.leave()
+                handlePhotoUpload(file: file, dispatchGroup: dispatchGroup) { url in
+                    photoUrls.append(url)
                 }
-                
-                self.uploadProgress[file.identifier] = uploadTask
-            } else {
-                dispatchGroup.leave()
+            case .video:
+                handleVideoUpload(file: file, dispatchGroup: dispatchGroup) { url in
+                    videoUrls.append(url)
+                }
+            case .file:
+                handleFileUpload(file: file, dispatchGroup: dispatchGroup) { messageFile in
+                    files.append(messageFile)
+                }
             }
         }
         
@@ -408,6 +371,115 @@ class MessageViewModel: ObservableObject {
             alertViewModel.presentAlert(message: "Failed to send message", type: .error)
         }
         sendButtonDisabled.wrappedValue = false
+    }
+    
+    private func handleTempChannel(
+        _ currentChannel: inout Channel,
+        _ userViewModel: UserViewModel,
+        _ channelViewModel: ChannelViewModel,
+        _ channel: Binding<Channel>,
+        _ clientId: String
+    ) async {
+        do {
+            let documentId = try await channelViewModel.createChannel(memberIds: currentChannel.memberIds)
+            
+            currentChannel.id = documentId
+            listenForMessages(channelId: documentId, userViewModel: userViewModel)
+            if let newChannelWithListener = channelViewModel.channels.first(where: { $0.id == documentId }) {
+                channel.wrappedValue = newChannelWithListener
+            }
+            
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                for memberId in currentChannel.memberIds {
+                    group.addTask {
+                        try await FirebaseCloudStoreService.shared.updateData(
+                            collection: .users,
+                            documentId: memberId,
+                            newData: ["channelId": FieldValue.arrayUnion([documentId])]
+                        )
+                    }
+                }
+                try await group.waitForAll()
+            }
+        } catch {
+            print("Error creating channel: \(error.localizedDescription)")
+            if let index = messages.firstIndex(where: { $0.channelId == currentChannel.id }) {
+                messages[index].messages.removeAll { $0.clientId == clientId }
+            }
+            return
+        }
+    }
+    
+    private func handlePhotoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String) -> Void) {
+        guard let photoInfo = file.photoInfo, let data = photoInfo.image.jpegData(compressionQuality: 0.8) else {
+            dispatchGroup.leave()
+            return
+        }
+        let fileName = UUID().uuidString + ".jpeg"
+
+        let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.images, fileName: fileName)
+        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: data) { result in
+            switch result {
+            case .success(let url):
+                completion(url.absoluteString)
+            case .failure(let error):
+                print("Failed to upload photo: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        self.uploadProgress[file.identifier] = uploadTask
+    }
+    
+    private func handleVideoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String) -> Void) {
+        guard let videoInfo = file.videoInfo else {
+            dispatchGroup.leave()
+            return
+        }
+        
+        Task {
+            let fileName = UUID().uuidString + ".mp4"
+            
+            let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.videos, fileName: fileName)
+            let videoData = await PhotoLibraryService.shared.compressVideo(asset: videoInfo.videoAsset)
+            guard let videoData else {
+                dispatchGroup.leave()
+                return
+            }
+            let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: videoData) { result in
+                switch result {
+                case .success(let url):
+                    DispatchQueue.main.async {
+                        completion(url.absoluteString)
+                    }
+                case .failure(let error):
+                    print("Failed to upload video: \(error)")
+                }
+                dispatchGroup.leave()
+            }
+            await MainActor.run {
+                self.uploadProgress[file.identifier] = uploadTask
+            }
+        }
+    }
+    
+    private func handleFileUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (MessageFile) -> Void) {
+        guard let fileInfo = file.fileInfo else {
+            dispatchGroup.leave()
+            return
+        }
+
+        let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.files, fileName: fileInfo.name)
+        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileInfo.fileData) { result in
+            switch result {
+            case .success(let url):
+                let messageFile = MessageFile(url: url.absoluteString, data: nil, name: fileInfo.name, size: fileInfo.size)
+                completion(messageFile)
+            case .failure(let error):
+                print("Failed to upload file: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        self.uploadProgress[file.identifier] = uploadTask
     }
 
     // MARK: - Message Grouping
