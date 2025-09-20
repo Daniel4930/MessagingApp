@@ -2,6 +2,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AlertMessageViewModel: ObservableObject {
     @Published var alertMessage: AlertMessage? = nil
     @Published var showAlert: Bool = false

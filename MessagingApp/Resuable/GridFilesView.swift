@@ -14,18 +14,18 @@ struct GridFilesView: View {
     
     var body: some View {
         LazyVGrid(columns: columns) {
-            if let files {
-                ForEach(files.indices, id: \.self) { index in
-                    EmbededFileLayoutView(file: files[index])
-                }
-            }
-            
             if let selectedAttachment {
                 ForEach(selectedAttachment) { attachment in
                     if attachment.attachmentType == .file, let file = attachment.file {
-                        PendingAttachmentsView(task: attachment.task, attachmentId: attachment.id) {
+                        PendingAttachmentsView(attachmentId: attachment.id) {
                             EmbededFileLayoutView(file: file)
                         }
+                    }
+                }
+            } else {
+                if let files {
+                    ForEach(files.indices, id: \.self) { index in
+                        EmbededFileLayoutView(file: files[index])
                     }
                 }
             }

@@ -51,7 +51,7 @@ struct FriendListView: View {
                         
                         Button {
                             guard let currentUserId = userViewModel.user?.id else { return }
-                            guard let channel = channelViewModel.findOrCreateDmChannel(currentUserId: currentUserId, otherUser: friend) else { return }
+                            guard let channel = channelViewModel.findOrCreateTempChannel(currentUserId: currentUserId, otherUser: friend) else { return }
                             
                             selectedDmChannel = channel
                             dismiss()

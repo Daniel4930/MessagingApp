@@ -18,49 +18,49 @@ struct GridImageView: View {
     @State private var selectedIndex = 0
     
     var body: some View {
-        if let imageUrls, !imageUrls.isEmpty {
-            let count = imageUrls.count
-            buildGrid(count: count) { index in
-                let url = URL(string: imageUrls[index])
-                KFImage(url)
-                    .cacheMemoryOnly()
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .onTapGesture {
-                        selectedIndex = index
-                        showImage = true
-                    }
-            }
-            .sheet(isPresented: $showImage) {
-                TabView(selection: $selectedIndex) {
-                    ForEach(0..<count, id: \.self) { index in
-                        let url = URL(string: imageUrls[index])
-                        KFImage(url)
-                            .cacheMemoryOnly()
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .tag(index)
-                    }
-                }
-                .tabViewStyle(.page)
-            }
-        }
-        
         if let selectedImages, !selectedImages.isEmpty {
             let photoAttachments = selectedImages.filter { $0.attachmentType == .photo }
             if !photoAttachments.isEmpty {
                 let count = photoAttachments.count
                 buildGrid(count: count) { index in
                     if let uiImage = photoAttachments[index].image {
-                        PendingAttachmentsView(task: photoAttachments[index].task, attachmentId: photoAttachments[index].id) {
+                        PendingAttachmentsView(attachmentId: photoAttachments[index].id) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFit()
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                     }
+                }
+            }
+        } else {
+            if let imageUrls, !imageUrls.isEmpty {
+                let count = imageUrls.count
+                buildGrid(count: count) { index in
+                    let url = URL(string: imageUrls[index])
+                    KFImage(url)
+                        .cacheMemoryOnly()
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .onTapGesture {
+                            selectedIndex = index
+                            showImage = true
+                        }
+                }
+                .sheet(isPresented: $showImage) {
+                    TabView(selection: $selectedIndex) {
+                        ForEach(0..<count, id: \.self) { index in
+                            let url = URL(string: imageUrls[index])
+                            KFImage(url)
+                                .cacheMemoryOnly()
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page)
                 }
             }
         }
