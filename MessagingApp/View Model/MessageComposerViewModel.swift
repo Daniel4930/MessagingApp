@@ -64,24 +64,6 @@ class MessageComposerViewModel: ObservableObject {
         }
     }
     
-    func requestImageFromAsset(asset: PHAsset, size: CGSize, options: PHImageRequestOptions) async -> UIImage? {
-        var uiImage: UIImage?
-        
-        uiImage = await withCheckedContinuation { continuation in
-            PHImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { uiImage, _ in
-                if let uiImage = uiImage {
-                    continuation.resume(returning: uiImage)
-                }
-            }
-        }
-        
-        if uiImage == nil {
-            print("Image data returned nil when requesting an image from the asset")
-        }
-        
-        return uiImage
-    }
-    
     func resetInputs() {
         uiTextEditor.text = ""
         selectionData = []
