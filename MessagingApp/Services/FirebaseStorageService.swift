@@ -66,8 +66,8 @@ class FirebaseStorageService {
         return storageRef.child(path)
     }
     
-    func uploadFileToBucket(reference: StorageReference, url: URL, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) {
-        reference.putFile(from: url, metadata: nil) { _, error in
+    func uploadFileToBucket(reference: StorageReference, url: URL, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) -> StorageUploadTask {
+        let uploadTask = reference.putFile(from: url) { _, error in
             if let error = error {
                 completion(.failure(FirebaseStorageUploadError.uploadFailed(error.localizedDescription)))
             }
@@ -84,6 +84,7 @@ class FirebaseStorageService {
                 }
             }
         }
+        return uploadTask
     }
     
     func uploadDataToBucket(reference: StorageReference, data: Data, completion: @escaping (Result<URL, FirebaseStorageUploadError>) -> Void) -> StorageUploadTask {
@@ -122,10 +123,8 @@ class FirebaseStorageService {
         }
     }
     
-    func deleteFile(from urlString: String, completion: @escaping (Error?) -> Void) {
-        let storageRef = storage.reference(forURL: urlString)
-        
-        storageRef.delete { error in
+    func deleteFile(reference: StorageReference, completion: @escaping (Error?) -> Void) {
+        reference.delete { error in
             completion(error)
         }
     }

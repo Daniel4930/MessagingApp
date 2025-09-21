@@ -86,6 +86,9 @@ class MessageViewModel: ObservableObject {
                                 if let clientId = message.clientId, let pendingIndex = self.messages[index].messages.firstIndex(where: { $0.clientId == clientId }) {
                                     self.messages[index].messages[pendingIndex].id = message.id
                                     self.messages[index].messages[pendingIndex].date = message.date
+                                    self.messages[index].messages[pendingIndex].photoUrls = message.photoUrls
+                                    self.messages[index].messages[pendingIndex].videoUrls = message.videoUrls
+                                    self.messages[index].messages[pendingIndex].files = message.files
                                     self.messages[index].messages[pendingIndex].isPending = false
                                 } else {
                                     self.messages[index].messages.append(message)
@@ -146,6 +149,10 @@ class MessageViewModel: ObservableObject {
         }
     }
     
+    func removeAttachmentFromUploadTask(attachmentIdentifier: String) {
+        let _ = uploadProgress.removeValue(forKey: attachmentIdentifier)
+    }
+    
     func deleteMessage(messageId: String, channelId: String) {
         // Find the message before deleting it locally
         if let channelIndex = messages.firstIndex(where: { $0.channelId == channelId }),
@@ -160,7 +167,8 @@ class MessageViewModel: ObservableObject {
             // Delete each attachment from Firebase Storage
             for url in allUrls {
                 if let url {
-                    FirebaseStorageService.shared.deleteFile(from: url) { error in
+                    let ref = FirebaseStorageService.shared.storage.reference(forURL: url)
+                    FirebaseStorageService.shared.deleteFile(reference: ref) { error in
                         if let error = error {
                             print("Failed to delete attachment at \(url): \(error.localizedDescription)")
                         }
@@ -182,10 +190,6 @@ class MessageViewModel: ObservableObject {
                 print("Failed to delete message: \(error.localizedDescription)")
             }
         }
-    }
-    
-    func removeAttachmentFromUploadTask(attachmentIdentifier: String) {
-        let _ = uploadProgress.removeValue(forKey: attachmentIdentifier)
     }
     
     private func uploadFilesAndSendMessage(
@@ -219,38 +223,7 @@ class MessageViewModel: ObservableObject {
         var currentChannel = channel.wrappedValue
         
         if currentChannel.id == nil {
-            let newChannel = ChannelInsert(memberIds: currentChannel.memberIds)
-            do {
-                let documentId = try await FirebaseCloudStoreService.shared.addDocument(
-                    collection: .channels,
-                    data: newChannel,
-                    additionalData: nil
-                )
-                currentChannel.id = documentId
-                listenForMessages(channelId: documentId, userViewModel: userViewModel)
-                if let newChannelWithListener = channelViewModel.channels.first(where: { $0.id == documentId }) {
-                    channel.wrappedValue = newChannelWithListener
-                }
-                
-                try await withThrowingTaskGroup(of: Void.self) { group in
-                    for memberId in currentChannel.memberIds {
-                        group.addTask {
-                            try await FirebaseCloudStoreService.shared.updateData(
-                                collection: .users,
-                                documentId: memberId,
-                                newData: ["channelId": FieldValue.arrayUnion([documentId])]
-                            )
-                        }
-                    }
-                    try await group.waitForAll()
-                }
-            } catch {
-                print("Error creating channel: \(error.localizedDescription)")
-                if let index = messages.firstIndex(where: { $0.channelId == currentChannel.id }) {
-                    messages[index].messages.removeAll { $0.clientId == clientId }
-                }
-                return
-            }
+            await handleTempChannel(&currentChannel, userViewModel, channelViewModel, channel, clientId)
         }
         
         if let index = messages.firstIndex(where: { $0.channelId == currentChannel.id }) {

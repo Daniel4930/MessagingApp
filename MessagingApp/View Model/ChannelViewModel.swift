@@ -42,8 +42,20 @@ class ChannelViewModel: ObservableObject {
         }
     }
     
+    func createChannel(memberIds: [String]) async throws -> String {
+        let newChannel = ChannelInsert(memberIds: memberIds)
+        
+        let documentId = try await FirebaseCloudStoreService.shared.addDocument(
+            collection: .channels,
+            data: newChannel,
+            additionalData: nil
+        )
+        
+        return documentId
+    }
+    
     /// Finds an existing DM channel with another user or creates a new one if it doesn't exist.
-    func findOrCreateDmChannel(currentUserId: String, otherUser: User) -> Channel? {
+    func findOrCreateTempChannel(currentUserId: String, otherUser: User) -> Channel? {
         if let existingChannel = channels.first(where: { $0.memberIds.contains(otherUser.id!) }) {
             return existingChannel
         }
