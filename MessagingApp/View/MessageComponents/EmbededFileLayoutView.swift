@@ -7,15 +7,14 @@
 
 import SwiftUI
 
-enum DataSize {
-    case byte(unit: String = "byte")
-    case KB(unit: String = "KB")
-    case MB(unit: String = "MB")
-}
-
 struct EmbededFileLayoutView: View {
-    let file: MessageFile
+    @StateObject var embeddedFileViewModel: EmbededFileViewModel
     @State private var showFile = false
+    @EnvironmentObject var alertVM: AlertMessageViewModel
+    
+    init(file: MessageFile) {
+        self._embeddedFileViewModel = StateObject(wrappedValue: EmbededFileViewModel(file: file))
+    }
     
     var body: some View {
         HStack(alignment: .center) {
@@ -25,10 +24,12 @@ struct EmbededFileLayoutView: View {
                 .frame(width: 40, height: 40)
                 .foregroundStyle(.gray)
             VStack(alignment: .leading) {
-                Text(file.name)
+                Text(embeddedFileViewModel.file.name)
                     .font(.callout)
                     .foregroundStyle(.blue)
-                Text("\(fileSizeTextFormat())")
+                
+                let fileSizeString = embeddedFileViewModel.fileSizeTextFormat()
+                Text(fileSizeString)
                     .font(.caption)
             }
         }
@@ -36,56 +37,19 @@ struct EmbededFileLayoutView: View {
         .background(Color("SecondaryBackgroundColor"))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .onTapGesture {
-            showFile.toggle()
-        }
-        .sheet(isPresented: $showFile) {
-            if let urlString = file.url, let url = URL(string: urlString) {
-                SafariView(url: url)
+            if embeddedFileViewModel.fileUrl != nil {
+                showFile.toggle()
+            } else {
+                alertVM.presentAlert(message: "File can't be viewed.", type: .error)
             }
         }
-    }
-}
-extension EmbededFileLayoutView {
-    func fileSizeTextFormat() -> String {
-        let size = file.size
-        var sizeUnit = DataSize.byte()
-        var result = ""
-        var quotient: Float = Float(size)
-        var iteration = 0
-        
-        while quotient > 1000 {
-            quotient = quotient / 1000
-            iteration += 1
+        .sheet(isPresented: $showFile) {
+            if let fileUrl = embeddedFileViewModel.fileUrl {
+                FilePreviewView(fileURL: fileUrl)
+            }
         }
-        
-        let convertedSize = quotient
-        if iteration == 0 {
-            sizeUnit = DataSize.byte()
+        .task {
+            embeddedFileViewModel.fileUrl = await embeddedFileViewModel.prepareFileUrl()
         }
-        else if iteration == 1 {
-            sizeUnit = DataSize.KB()
-        } else {
-            sizeUnit = DataSize.MB()
-        }
-        
-        let trailingDecimal = convertedSize - convertedSize.rounded(.down)
-        
-        switch sizeUnit {
-        case .byte(let unit):
-            result = String(Int(convertedSize)) + " " + unit + (ceilf(convertedSize) > 1 ? "s" : "")
-        case .KB(let unit):
-            result = (trailingDecimal.rounded(toPlaces: 2) > 0 ? String(format: "%.2f", convertedSize) : String(Int(convertedSize))) + " " + unit
-        case .MB(let unit):
-            result = (trailingDecimal.rounded(toPlaces: 2) > 0 ? String(format: "%.2f", convertedSize) : String(Int(convertedSize))) + " " + unit
-        }
-        
-        return result
-    }
-}
-extension Float {
-    /// Rounds the double to decimal places value
-    func rounded(toPlaces places:Int) -> Float {
-        let divisor = pow(10.0, Float(places))
-        return (self * divisor).rounded() / divisor
     }
 }
