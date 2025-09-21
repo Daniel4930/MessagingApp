@@ -66,7 +66,7 @@ struct MessageContentView: View {
             let fileAttachments: [SelectedAttachment] = selectionData.compactMap { data in
                 guard let file = data.fileInfo else { return nil }
                 
-                let messageFile = MessageFile(url: nil, data: file.fileData, name: file.name, size: file.size)
+                let messageFile = MessageFile(storageUniqueName: nil, url: nil, data: file.fileData, name: file.name, size: file.size)
                 
                 return SelectedAttachment(id: data.identifier, attachmentType: .file, image: nil, file: messageFile, videoAsset: nil)
             }
