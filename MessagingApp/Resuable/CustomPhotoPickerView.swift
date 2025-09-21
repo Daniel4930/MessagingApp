@@ -96,56 +96,47 @@ struct PickerViewController: UIViewControllerRepresentable {
                 
                 if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
                     provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                        guard error == nil else {
+                            print("Failed to load video file representation")
+                            return
+                        }
+                        
+                        guard let url = url else {
+                            return
+                        }
+                        
                         Task {
                             do {
-                                if let error { throw PhotoPickerResultError.providerError(error) }
-                                guard let url else { throw PhotoPickerResultError.noURL }
-                                
-                                // Copy to a safe location
-                                let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-                                do {
-                                    if FileManager.default.fileExists(atPath: tmpURL.path) {
-                                        try FileManager.default.removeItem(at: tmpURL)
-                                    }
-                                    try FileManager.default.copyItem(at: url, to: tmpURL)
-                                } catch {
-                                    throw PhotoPickerResultError.copyFailed(error)
-                                }
-                                
-                                let asset = AVURLAsset(url: tmpURL)
-                                let duration = try await CMTimeGetSeconds(asset.load(.duration))
-                                
-                                let result = try await self.extractVideoData(from: tmpURL)
-                                guard case let .success(videoData?) = result else {
-                                    throw PhotoPickerResultError.videoDataMissing
-                                }
-                                
-                                // Generate thumbnail
-                                let imageGenerator = AVAssetImageGenerator(asset: asset)
+                                let avUrlAsset = AVURLAsset(url: url)
+                                let duration = try await CMTimeGetSeconds(avUrlAsset.load(.duration))
+
+                                let imageGenerator = AVAssetImageGenerator(asset: avUrlAsset)
                                 imageGenerator.appliesPreferredTrackTransform = true
                                 imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: .zero)]) { _, cgImage, _, _, error in
-                                    guard error == nil else {
+
+                                    guard error == nil, let cgImage = cgImage else {
                                         print(PhotoPickerResultError.thumbnailGenerationFailed(error))
                                         return
                                     }
-                                    guard let cgImage else {
-                                        print(PhotoPickerResultError.thumbnailGenerationFailed(nil))
+                                    
+                                    let fetchPHAssetResult = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
+                                    guard let photoLibraryAsset = fetchPHAssetResult.firstObject else {
+                                        print("Failed to get PHAsset")
                                         return
                                     }
-                                    
+
                                     let uploadedFile = UploadedFile(
                                         identifier: identifier,
                                         fileType: .video,
                                         photoInfo: nil,
                                         videoInfo: VideoFile(
-                                            name: UUID().uuidString + ".mp4",
                                             duration: duration,
-                                            videoData: videoData,
-                                            thumbnail: UIImage(cgImage: cgImage)
+                                            thumbnail: UIImage(cgImage: cgImage),
+                                            videoAsset: photoLibraryAsset
                                         ),
                                         fileInfo: nil
                                     )
-                                    
+
                                     DispatchQueue.main.async {
                                         self.parent.messageComposerViewModel.selectionData.append(uploadedFile)
                                     }
@@ -169,7 +160,7 @@ struct PickerViewController: UIViewControllerRepresentable {
                                     throw PhotoPickerResultError.imageConversionFailed
                                 }
                                 
-                                let photoInfo = PhotoFile(name: identifier, image: uiImage)
+                                let photoInfo = PhotoFile(image: uiImage)
                                 let uploadedFile = UploadedFile(
                                     identifier: identifier,
                                     fileType: .photo,
@@ -191,27 +182,6 @@ struct PickerViewController: UIViewControllerRepresentable {
             }
         }
 
-        func extractVideoData(from url: URL) async throws -> Result<Data?, Error> {
-            do {
-                let outputURL = URL(fileURLWithPath: NSTemporaryDirectory())
-                    .appendingPathComponent(UUID().uuidString)
-                    .appendingPathExtension("mp4")
-                
-                guard let exportSession = AVAssetExportSession(
-                    asset: AVURLAsset(url: url),
-                    presetName: AVAssetExportPresetMediumQuality
-                ) else {
-                    return .success(nil)
-                }
-                
-                try await exportSession.export(to: outputURL, as: .mp4)
-                
-                let data = try Data(contentsOf: outputURL)
-                
-                return .success(data)
-            } catch {
-                return .failure(error)
-            }
-        }
+        
     }
 }

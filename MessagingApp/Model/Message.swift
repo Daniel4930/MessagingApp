@@ -18,9 +18,9 @@ struct Message: Codable, Identifiable, Hashable {
     @DocumentID var id: String?
     let senderId: String
     var text: String?
-    let photoUrls: [String]
-    let videoUrls: [String]
-    let files: [MessageFile]
+    var photoUrls: [String]
+    var videoUrls: [String]
+    var files: [MessageFile]
     @ServerTimestamp var date: Timestamp?
     let edited: Bool
     let reaction: String?

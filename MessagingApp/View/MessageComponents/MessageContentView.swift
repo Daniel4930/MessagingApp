@@ -8,14 +8,14 @@
 import SwiftUI
 import UIKit
 import FirebaseStorage
+import Photos
 
 struct SelectedAttachment: Identifiable {
     let id: String
     let attachmentType: UploadedFile.FileType
     let image: UIImage?
     let file: MessageFile?
-    let videoData: Data?
-    let task: StorageUploadTask?
+    let videoAsset: PHAsset?
 }
 
 struct Attachment {
@@ -48,44 +48,40 @@ struct MessageContentView: View {
     
     var attachmentFromMessage: Attachment? {
         var result: Attachment = Attachment(selectedAttachments: nil, photoUrls: nil, videoUrls: nil, files: nil)
-        
-        if !message.photoUrls.isEmpty {
-            result.photoUrls = message.photoUrls
-        }
-        if !message.videoUrls.isEmpty {
-            result.videoUrls = message.videoUrls
-        }
-        if !message.files.isEmpty {
-            result.files = message.files
-        }
-        
+                
         if let selectionData = message.selectionData, !selectionData.isEmpty {
-            let uploadProgress = messageViewModel.uploadProgress
             
             let photoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
                 guard let image = data.photoInfo?.image else { return nil }
-                let task = uploadProgress[data.identifier]
                 
-                return SelectedAttachment(id: data.identifier, attachmentType: .photo, image: image, file: nil, videoData: nil, task: task)
+                return SelectedAttachment(id: data.identifier, attachmentType: .photo, image: image, file: nil, videoAsset: nil)
             }
             
             let videoAttachments: [SelectedAttachment] = selectionData.compactMap { data in
-                guard let image = data.videoInfo?.thumbnail, let videoData = data.videoInfo?.videoData else { return nil }
-                let task = uploadProgress[data.identifier]
+                guard let image = data.videoInfo?.thumbnail, let videoAsset = data.videoInfo?.videoAsset else { return nil }
                 
-                return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoData: videoData, task: task)
+                return SelectedAttachment(id: data.identifier, attachmentType: .video, image: image, file: nil, videoAsset: videoAsset)
             }
             
             let fileAttachments: [SelectedAttachment] = selectionData.compactMap { data in
                 guard let file = data.fileInfo else { return nil }
                 
-                let task = uploadProgress[data.identifier]
                 let messageFile = MessageFile(url: nil, data: file.fileData, name: file.name, size: file.size)
                 
-                return SelectedAttachment(id: data.identifier, attachmentType: .file, image: nil, file: messageFile, videoData: nil, task: task)
+                return SelectedAttachment(id: data.identifier, attachmentType: .file, image: nil, file: messageFile, videoAsset: nil)
             }
             
             result.selectedAttachments = photoAttachments + videoAttachments + fileAttachments
+        } else {
+            if !message.photoUrls.isEmpty {
+                result.photoUrls = message.photoUrls
+            }
+            if !message.videoUrls.isEmpty {
+                result.videoUrls = message.videoUrls
+            }
+            if !message.files.isEmpty {
+                result.files = message.files
+            }
         }
         
         if result.photoUrls == nil && result.videoUrls == nil && result.files == nil && result.selectedAttachments == nil {
@@ -249,5 +245,3 @@ extension MessageContentView {
         return attributedString
     }
 }
-
-
