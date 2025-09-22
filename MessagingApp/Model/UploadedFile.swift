@@ -37,6 +37,7 @@ struct VideoFile {
 }
 
 struct FileData {
+    let storageUniqueName = UUID().uuidString
     let name: String
     let fileData: Data
     let size: Int

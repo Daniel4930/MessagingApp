@@ -8,6 +8,7 @@
 import FirebaseFirestore
 
 struct MessageFile: Codable, Hashable {
+    var storageUniqueName: String?
     let url: String?
     let data: Data?
     let name: String

@@ -441,11 +441,11 @@ class MessageViewModel: ObservableObject {
             return
         }
 
-        let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.files, fileName: fileInfo.name)
+        let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.files, fileName: fileInfo.storageUniqueName)
         let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileInfo.fileData) { result in
             switch result {
             case .success(let url):
-                let messageFile = MessageFile(url: url.absoluteString, data: nil, name: fileInfo.name, size: fileInfo.size)
+                let messageFile = MessageFile(storageUniqueName: fileInfo.storageUniqueName, url: url.absoluteString, data: nil, name: fileInfo.name, size: fileInfo.size)
                 completion(messageFile)
             case .failure(let error):
                 print("Failed to upload file: \(error)")
