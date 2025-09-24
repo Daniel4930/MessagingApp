@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7A142F862E82FB0A0045C3A8 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 7A142F852E82FB0A0045C3A8 /* FirebaseCrashlytics */; };
+		7A142F882E82FB6B0045C3A8 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 7A142F872E82FB6B0045C3A8 /* FirebaseAnalytics */; };
 		7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 7A2B2C4F2E610B5F00C54E3A /* Kingfisher */; };
 		7A4309472E63B8DB0052D45C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7A4309462E63B8DB0052D45C /* FirebaseMessaging */; };
 		7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A70E0AA2E4FCC0C00429722 /* FirebaseCore */; };
@@ -80,8 +82,10 @@
 				7A2B2C502E610B5F00C54E3A /* Kingfisher in Frameworks */,
 				7A70E0AB2E4FCC0C00429722 /* FirebaseCore in Frameworks */,
 				7A70E0B12E4FDCE600429722 /* FirebaseAuth in Frameworks */,
+				7A142F862E82FB0A0045C3A8 /* FirebaseCrashlytics in Frameworks */,
 				7A70E0BB2E506DF600429722 /* FirebaseFirestore in Frameworks */,
 				7A70E0AF2E4FDC8F00429722 /* FirebaseStorage in Frameworks */,
+				7A142F882E82FB6B0045C3A8 /* FirebaseAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,12 +106,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7A142F842E82FB0A0045C3A8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7A843DBE2E1E6908003B69F4 = {
 			isa = PBXGroup;
 			children = (
 				7A843DC92E1E6908003B69F4 /* MessagingApp */,
 				7A843DDC2E1E690A003B69F4 /* MessagingAppTests */,
 				7A843DE62E1E690A003B69F4 /* MessagingAppUITests */,
+				7A142F842E82FB0A0045C3A8 /* Frameworks */,
 				7A843DC82E1E6908003B69F4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -132,6 +144,7 @@
 				7A843DC32E1E6908003B69F4 /* Sources */,
 				7A843DC42E1E6908003B69F4 /* Frameworks */,
 				7A843DC52E1E6908003B69F4 /* Resources */,
+				7A142F892E82FE090045C3A8 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -149,6 +162,8 @@
 				7A2B2C4F2E610B5F00C54E3A /* Kingfisher */,
 				7A4309462E63B8DB0052D45C /* FirebaseMessaging */,
 				7AB4713C2E64F3D0006597F9 /* FirebaseFunctions */,
+				7A142F852E82FB0A0045C3A8 /* FirebaseCrashlytics */,
+				7A142F872E82FB6B0045C3A8 /* FirebaseAnalytics */,
 			);
 			productName = MessagingApp;
 			productReference = 7A843DC72E1E6908003B69F4 /* MessagingApp.app */;
@@ -272,6 +287,32 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		7A142F892E82FE090045C3A8 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		7A843DC32E1E6908003B69F4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -344,7 +385,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -362,7 +403,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -419,7 +460,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -436,7 +477,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MessagingApp/MessagingApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 4GFZH8QBGY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -475,7 +516,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MessagingApp/MessagingApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 4GFZH8QBGY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -636,6 +677,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7A142F852E82FB0A0045C3A8 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		7A142F872E82FB6B0045C3A8 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A70E0A92E4FCB6300429722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
 		7A2B2C4F2E610B5F00C54E3A /* Kingfisher */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7A2B2C4E2E610B5F00C54E3A /* XCRemoteSwiftPackageReference "Kingfisher" */;
