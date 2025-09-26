@@ -28,6 +28,7 @@ struct SelectorView: View {
     @State private var openCamera = false
     @State private var accessStatus: PhotoLibraryAccessStatus?
     @State private var assets: [PHAsset] = []
+    @State private var assetsDict: [String: PHAsset] = [:]
     @State private var enableHighPriorityGesture = false
     @State private var fetchMoreAssets = false
     
@@ -190,15 +191,25 @@ extension SelectorView {
     func getPhotosAndVideosAssets() {
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        fetchOptions.fetchLimit = 200
         let results: PHFetchResult = PHAsset.fetchAssets(with: fetchOptions)
-        
+
         DispatchQueue.main.async {
             if results.count > 0 {
                 for i in 0..<results.count {
                     let asset = results[i]
-                    if !assets.contains(where: { $0.localIdentifier == asset.localIdentifier }) {
-                        assets.append(asset)
+                    if assetsDict[asset.localIdentifier] == nil {
+                        assetsDict[asset.localIdentifier] = asset
                     }
+                }
+
+                // Update assets array with sorted values from dictionary
+                assets = assetsDict.values.sorted { asset1, asset2 in
+                    guard let date1 = asset1.creationDate,
+                          let date2 = asset2.creationDate else {
+                        return false
+                    }
+                    return date1 > date2
                 }
             }
         }
