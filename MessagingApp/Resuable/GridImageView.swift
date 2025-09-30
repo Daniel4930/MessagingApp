@@ -30,8 +30,29 @@ struct GridImageView: View {
                                 .scaledToFit()
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
+                        .onTapGesture {
+                            selectedIndex = index
+                            showImage = true
+                        }
                     }
                 }
+                .modifier(ImageGridSheetModifier(
+                    isPresented: $showImage,
+                    selectedIndex: $selectedIndex,
+                    count: count,
+                    content: { index in
+                        if let uiImage = photoAttachments[index].image {
+                            return AnyView(
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            )
+                        } else {
+                            return AnyView(EmptyView())
+                        }
+                    }
+                ))
             }
         } else {
             if let imageUrls, !imageUrls.isEmpty {
@@ -48,20 +69,21 @@ struct GridImageView: View {
                             showImage = true
                         }
                 }
-                .sheet(isPresented: $showImage) {
-                    TabView(selection: $selectedIndex) {
-                        ForEach(0..<count, id: \.self) { index in
-                            let url = URL(string: imageUrls[index])
+                .modifier(ImageGridSheetModifier(
+                    isPresented: $showImage,
+                    selectedIndex: $selectedIndex,
+                    count: count,
+                    content: { index in
+                        let url = URL(string: imageUrls[index])
+                        return AnyView(
                             KFImage(url)
                                 .cacheMemoryOnly()
                                 .resizable()
                                 .scaledToFit()
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .tag(index)
-                        }
+                        )
                     }
-                    .tabViewStyle(.page)
-                }
+                ))
             }
         }
     }
@@ -80,5 +102,26 @@ struct GridImageView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Sheet Modifier
+struct ImageGridSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Binding var selectedIndex: Int
+    let count: Int
+    let content: (Int) -> AnyView
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $isPresented) {
+                TabView(selection: $selectedIndex) {
+                    ForEach(0..<count, id: \.self) { index in
+                        self.content(index)
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(.page)
+            }
     }
 }
