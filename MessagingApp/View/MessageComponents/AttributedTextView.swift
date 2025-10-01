@@ -63,7 +63,7 @@ struct AttributedTextView: UIViewRepresentable {
             else if word.hasPrefix("@"),
                     let user = userViewModel.fetchUserByUsername(name: String(wordString.dropFirst()), friends: friendViewModel.friends),
                     let url = URL(string: "mention://\(user.userName)") {
-                let name = user.displayName.isEmpty ? user.userName : user.displayName
+                let name = user.userName
                 
                 // Build mention string with '@' + name
                 let mentionString = "@" + name
