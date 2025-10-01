@@ -54,6 +54,11 @@ struct VideoMessageThumbnailView: View {
                 } else {
                     ProgressView()
                         .frame(height: 250)
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 250)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
                 }
             }
         }
