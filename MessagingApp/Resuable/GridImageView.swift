@@ -60,6 +60,9 @@ struct GridImageView: View {
                 buildGrid(count: count) { index in
                     let url = URL(string: imageUrls[index])
                     KFImage(url)
+                                ProgressView()
+                                    .background(Color.gray.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                         .cacheMemoryOnly()
                         .resizable()
                         .scaledToFit()
@@ -77,6 +80,9 @@ struct GridImageView: View {
                         let url = URL(string: imageUrls[index])
                         return AnyView(
                             KFImage(url)
+                                        ProgressView()
+                                            .background(Color.gray.opacity(0.1))
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .cacheMemoryOnly()
                                 .resizable()
                                 .scaledToFit()
