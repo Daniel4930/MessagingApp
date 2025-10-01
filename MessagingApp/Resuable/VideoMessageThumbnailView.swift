@@ -12,16 +12,18 @@ import Photos
 struct VideoMessageThumbnailView: View {
     let url: URL?
     let phAsset: PHAsset?
+    let dimension: MediaDimension?
     @State private var thumbnail: UIImage?
     @State private var showPlayer = false
     @State private var failedToLoadVideo = false
     @State private var assetUrl: URL?
-    
+
     let frame = CGSize(width: 100, height: 250)
-    
-    init(url: URL?, phAsset: PHAsset?, thumbnail: UIImage?) {
+
+    init(url: URL?, phAsset: PHAsset?, thumbnail: UIImage?, dimension: MediaDimension?) {
         self.url = url
         self.phAsset = phAsset
+        self.dimension = dimension
         self._thumbnail = State(initialValue: thumbnail)
     }
     
@@ -52,12 +54,21 @@ struct VideoMessageThumbnailView: View {
                     Text("Failed to load video")
                         .frame(height: 250)
                 } else {
-                    ProgressView()
-                        .frame(height: 250)
+                    if let dimension {
+                        Color.gray.opacity(0.1)
+                            .aspectRatio(CGSize(width: dimension.width, height: dimension.height), contentMode: .fit)
+                            .frame(maxHeight: 250)
+                            .cornerRadius(12)
+                            .overlay {
+                                ProgressView()
+                            }
+                    } else {
+                    }
                 }
             }
         }
-        .frame(height: 250)
+        .frame(height: dimension != nil ? nil : 250)
+        .frame(maxHeight: 250)
         .fullScreenCover(isPresented: $showPlayer, onDismiss: {
             if let assetUrl, phAsset != nil {
                 do {
@@ -76,13 +87,13 @@ struct VideoMessageThumbnailView: View {
                     .ignoresSafeArea()
             }
         }
-        .onAppear {
+        .task {
             generateThumbnail()
         }
     }
     
     private func generateThumbnail() {
-        Task {
+        Task.detached(priority: .userInitiated) {
             do {
                 if let url {
                     let avAsset = AVURLAsset(url: url)
@@ -90,41 +101,50 @@ struct VideoMessageThumbnailView: View {
                         avAsset: avAsset,
                         frame: frame
                     )
-                    
-                    thumbnail = UIImage(cgImage: cgImage)
+                    await MainActor.run {
+                        thumbnail = UIImage(cgImage: cgImage)
+                    }
                 } else if let phAsset {
                     let videoRequest = PHVideoRequestOptions()
                     videoRequest.isNetworkAccessAllowed = true
                     videoRequest.deliveryMode = .highQualityFormat
-                    
+
                     guard let avAsset = await PhotoLibraryService.shared.requestVideoAsset(asset: phAsset, options: videoRequest) else {
-                        failedToLoadVideo = true
+                        await MainActor.run {
+                            failedToLoadVideo = true
+                        }
                         return
                     }
-                    
+
                     if let avURLAsset = avAsset as? AVURLAsset {
                         let sourceURL = avURLAsset.url
                         let tempDirectory = FileManager.default.temporaryDirectory
                         let fileName = UUID().uuidString + "." + sourceURL.pathExtension
                         let destinationURL = tempDirectory.appendingPathComponent(fileName)
-                        
+
                         if FileManager.default.fileExists(atPath: destinationURL.path) {
                             try FileManager.default.removeItem(at: destinationURL)
                         }
-                        
+
                         try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-                        self.assetUrl = destinationURL
+                        await MainActor.run {
+                            self.assetUrl = destinationURL
+                        }
                     }
-                    
+
                     let cgImage = try await PhotoLibraryService.shared.generateVideoThumbnail(
                         avAsset: avAsset,
                         frame: frame
                     )
-                    thumbnail = UIImage(cgImage: cgImage)
+                    await MainActor.run {
+                        thumbnail = UIImage(cgImage: cgImage)
+                    }
                 }
             } catch {
                 print("Failed to process video asset: \(error)")
-                failedToLoadVideo = true
+                await MainActor.run {
+                    failedToLoadVideo = true
+                }
             }
         }
     }

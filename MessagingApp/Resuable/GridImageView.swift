@@ -12,7 +12,8 @@ import FirebaseStorage
 struct GridImageView: View {
     let imageUrls: [String]?
     let selectedImages: [SelectedAttachment]?
-    
+    let dimensions: [MediaDimension]?
+
     let numImagePerRow = 3
     @State private var showImage = false
     @State private var selectedIndex = 0
@@ -59,10 +60,26 @@ struct GridImageView: View {
                 let count = imageUrls.count
                 buildGrid(count: count) { index in
                     let url = URL(string: imageUrls[index])
+                    let dimension = dimensions?[safe: index]
+                    let size = CGSize(width: dimension?.width ?? .zero, height: dimension?.height ?? .zero)
+
                     KFImage(url)
+                        .placeholder {
+                            if let dimension {
+                                Color.gray.opacity(0.1)
+                                    .aspectRatio(CGSize(width: dimension.width, height: dimension.height), contentMode: .fit)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .overlay {
+                                        ProgressView()
+                                    }
+                            } else {
+                            }
+                        }
+                        .fade(duration: 0.25)
                         .cacheMemoryOnly()
+                        .backgroundDecode()
                         .resizable()
-                        .scaledToFit()
+                        .aspectRatio(size, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .onTapGesture {
                             selectedIndex = index
@@ -75,11 +92,27 @@ struct GridImageView: View {
                     count: count,
                     content: { index in
                         let url = URL(string: imageUrls[index])
+                        let dimension = dimensions?[safe: index]
+                        let size = CGSize(width: dimension?.width ?? .zero, height: dimension?.height ?? .zero)
+
                         return AnyView(
                             KFImage(url)
+                                .placeholder {
+                                    if let dimension {
+                                        Color.gray.opacity(0.1)
+                                            .aspectRatio(CGSize(width: dimension.width, height: dimension.height), contentMode: .fit)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                                            .overlay {
+                                                ProgressView()
+                                            }
+                                    } else {
+                                    }
+                                }
+                                .fade(duration: 0.25)
                                 .cacheMemoryOnly()
+                                .backgroundDecode()
                                 .resizable()
-                                .scaledToFit()
+                                .aspectRatio(size, contentMode: .fit)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         )
                     }

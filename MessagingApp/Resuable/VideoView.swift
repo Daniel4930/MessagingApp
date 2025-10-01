@@ -11,8 +11,9 @@ import AVKit
 struct VideoView: View {
     let videoUrls: [String]?
     let selectedAttachment: [SelectedAttachment]?
+    let dimensions: [MediaDimension]?
     let columns = Array(repeating: GridItem(.flexible()), count: 2)
-    
+
     @State private var uploadProgress: UploadProgress = .unknown
     @State private var cancelButtonSystemImage = "xmark"
 
@@ -22,14 +23,16 @@ struct VideoView: View {
                 ForEach(selectedAttachment) { attachment in
                     if attachment.attachmentType == .video, let videoAsset = attachment.videoAsset, let thumbnail = attachment.image {
                         PendingAttachmentsView(attachmentId: attachment.id) {
-                            VideoMessageThumbnailView(url: nil, phAsset: videoAsset, thumbnail: thumbnail)
+                            VideoMessageThumbnailView(url: nil, phAsset: videoAsset, thumbnail: thumbnail, dimension: nil)
                         }
                     }
                 }
             } else {
                 if let videoUrls {
-                    ForEach(videoUrls.compactMap { URL(string: $0) }, id: \.self) { url in
-                        VideoMessageThumbnailView(url: url, phAsset: nil, thumbnail: nil)
+                    ForEach(Array(videoUrls.enumerated()), id: \.element) { index, urlString in
+                        if let url = URL(string: urlString) {
+                            VideoMessageThumbnailView(url: url, phAsset: nil, thumbnail: nil, dimension: dimensions?[safe: index])
+                        }
                     }
                 }
             }
