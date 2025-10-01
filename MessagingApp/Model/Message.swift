@@ -15,6 +15,11 @@ struct MessageFile: Codable, Hashable {
     let size: Int
 }
 
+struct MediaDimension: Codable, Hashable {
+    let width: Double
+    let height: Double
+}
+
 struct Message: Codable, Identifiable, Hashable {
     @DocumentID var id: String?
     let senderId: String
@@ -27,11 +32,13 @@ struct Message: Codable, Identifiable, Hashable {
     let reaction: String?
     let forwardMessageId: String?
     let replayMessageId: String?
-    
+    var photoDimensions: [MediaDimension]?
+    var videoDimensions: [MediaDimension]?
+
     var clientId: String?
     var isPending: Bool = false
     var selectionData: [UploadedFile]?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case senderId
@@ -45,6 +52,8 @@ struct Message: Codable, Identifiable, Hashable {
         case forwardMessageId
         case replayMessageId
         case clientId
+        case photoDimensions
+        case videoDimensions
     }
     
     // Implement Hashable
