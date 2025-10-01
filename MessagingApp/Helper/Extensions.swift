@@ -181,6 +181,9 @@ extension Float {
         return (self * divisor).rounded() / divisor
     }
 }
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
 
 //MARK: - KFImage Extension
 extension KFImage {

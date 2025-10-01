@@ -141,14 +141,16 @@ struct MessageContentView: View {
             if let attachmentFromMessage {
                 GridImageView(
                     imageUrls: attachmentFromMessage.photoUrls,
-                    selectedImages: attachmentFromMessage.selectedAttachments
+                    selectedImages: attachmentFromMessage.selectedAttachments,
+                    dimensions: message.photoDimensions
                 )
-            
+
                 VideoView(
                     videoUrls: attachmentFromMessage.videoUrls,
-                    selectedAttachment: attachmentFromMessage.selectedAttachments
+                    selectedAttachment: attachmentFromMessage.selectedAttachments,
+                    dimensions: message.videoDimensions
                 )
-                
+
                 GridFilesView(
                     files: attachmentFromMessage.files,
                     selectedAttachment: attachmentFromMessage.selectedAttachments

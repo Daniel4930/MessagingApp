@@ -240,20 +240,24 @@ class MessageViewModel: ObservableObject {
         var photoUrls: [String] = []
         var videoUrls: [String] = []
         var files: [MessageFile] = []
-        
+        var photoDimensions: [MediaDimension] = []
+        var videoDimensions: [MediaDimension] = []
+
         let dispatchGroup = DispatchGroup()
-        
+
         for file in selectionData {
             dispatchGroup.enter()
-            
+
             switch file.fileType {
             case .photo:
-                handlePhotoUpload(file: file, dispatchGroup: dispatchGroup) { url in
+                handlePhotoUpload(file: file, dispatchGroup: dispatchGroup) { url, dimension in
                     photoUrls.append(url)
+                    photoDimensions.append(dimension)
                 }
             case .video:
-                handleVideoUpload(file: file, dispatchGroup: dispatchGroup) { url in
+                handleVideoUpload(file: file, dispatchGroup: dispatchGroup) { url, dimension in
                     videoUrls.append(url)
+                    videoDimensions.append(dimension)
                 }
             case .file:
                 handleFileUpload(file: file, dispatchGroup: dispatchGroup) { messageFile in
@@ -283,6 +287,8 @@ class MessageViewModel: ObservableObject {
                     reaction: nil,
                     forwardMessageId: nil,
                     replayMessageId: nil,
+                    photoDimensions: photoDimensions.isEmpty ? nil : photoDimensions,
+                    videoDimensions: videoDimensions.isEmpty ? nil : videoDimensions,
                     clientId: clientId
                 )
                 
@@ -383,18 +389,19 @@ class MessageViewModel: ObservableObject {
         }
     }
     
-    private func handlePhotoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String) -> Void) {
+    private func handlePhotoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String, MediaDimension) -> Void) {
         guard let photoInfo = file.photoInfo, let data = photoInfo.image.jpegData(compressionQuality: 0.8) else {
             dispatchGroup.leave()
             return
         }
         let fileName = UUID().uuidString + ".jpeg"
+        let dimension = MediaDimension(width: photoInfo.image.size.width, height: photoInfo.image.size.height)
 
         let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.images, fileName: fileName)
         let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: data) { result in
             switch result {
             case .success(let url):
-                completion(url.absoluteString)
+                completion(url.absoluteString, dimension)
             case .failure(let error):
                 print("Failed to upload photo: \(error)")
             }
@@ -403,17 +410,22 @@ class MessageViewModel: ObservableObject {
         self.uploadProgress[file.identifier] = uploadTask
     }
     
-    private func handleVideoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String) -> Void) {
+    private func handleVideoUpload(file: UploadedFile, dispatchGroup: DispatchGroup, completion: @escaping (String, MediaDimension) -> Void) {
         guard let videoInfo = file.videoInfo else {
             dispatchGroup.leave()
             return
         }
-        
+
         Task {
             let fileName = UUID().uuidString + ".mp4"
-            
+            let videoAsset = videoInfo.videoAsset
+            let dimension = MediaDimension(
+                width: Double(videoAsset.pixelWidth),
+                height: Double(videoAsset.pixelHeight)
+            )
+
             let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.videos, fileName: fileName)
-            let videoData = await PhotoLibraryService.shared.compressVideo(asset: videoInfo.videoAsset)
+            let videoData = await PhotoLibraryService.shared.compressVideo(asset: videoAsset)
             guard let videoData else {
                 dispatchGroup.leave()
                 return
@@ -422,7 +434,7 @@ class MessageViewModel: ObservableObject {
                 switch result {
                 case .success(let url):
                     DispatchQueue.main.async {
-                        completion(url.absoluteString)
+                        completion(url.absoluteString, dimension)
                     }
                 case .failure(let error):
                     print("Failed to upload video: \(error)")
