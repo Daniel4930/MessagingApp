@@ -184,5 +184,30 @@ extension Float {
 extension Array {
     subscript(safe index: Int) -> Element? {
         return indices.contains(index) ? self[index] : nil
+
+//MARK: - KFImage Extension
+extension KFImage {
+    func thumbnailStyle() -> some View {
+        self
+            .placeholder {
+                ProgressView()
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .onFailureView {
+                VStack(alignment: .center) {
+                    Image(systemName: "photo")
+                    Text("Failed to load attachment")
+                        .font(.caption)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+                .foregroundColor(.gray)
+            }
+            .cacheMemoryOnly()
+            .resizable()
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
