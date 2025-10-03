@@ -49,7 +49,10 @@ struct EmbededFileLayoutView: View {
             }
         }
         .task {
-            embeddedFileViewModel.fileUrl = await embeddedFileViewModel.prepareFileUrl()
+            // Only fetch if we don't already have the URL
+            if embeddedFileViewModel.fileUrl == nil {
+                embeddedFileViewModel.fileUrl = await embeddedFileViewModel.prepareFileUrl()
+            }
         }
     }
 }
