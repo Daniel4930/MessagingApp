@@ -29,7 +29,7 @@ struct MessageScrollView: View {
                         .padding(.horizontal, 13)
                     
                     ForEach(dayGroup.messageGroups, id: \.time) { messageGroup in
-                        ForEach(messageGroup.userGroups, id: \.userId) { userGroup in
+                        ForEach(messageGroup.userGroups) { userGroup in
                             if let user = friendViewModel.getUser(withId: userGroup.userId, currentUser: userViewModel.user) {
                                 MessageLayoutView(
                                     user: user,
