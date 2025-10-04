@@ -468,8 +468,19 @@ class MessageViewModel: ObservableObject {
     }
 
     // MARK: - Message Grouping
-    
-    typealias MessageGroup = (time: Date, userGroups: [(userId: String, messages: [Message])])
+
+    struct UserGroup: Identifiable {
+        let userId: String
+        let messages: [Message]
+
+        var id: String {
+            // Use first message ID as stable identifier
+            // If no ID (pending message), fall back to clientId or userId
+            messages.first?.id ?? messages.first?.clientId ?? userId
+        }
+    }
+
+    typealias MessageGroup = (time: Date, userGroups: [UserGroup])
     typealias DayGroup = (date: Date, messageGroups: [MessageGroup])
 
     func groupedMessages(for channelId: String) -> [DayGroup] {
@@ -488,7 +499,6 @@ class MessageViewModel: ObservableObject {
             
             let messageGroups = groupedByHourMinute.map { (time, messagesInMinute) -> MessageGroup in
                 let userGroups = self.groupMessagesByUser(messages: messagesInMinute)
-                    .map { (userId, messages) in (userId: userId, messages: messages) }
                 return (time: time, userGroups: userGroups)
             }
             return (date: date, messageGroups: messageGroups)
@@ -496,54 +506,100 @@ class MessageViewModel: ObservableObject {
     }
 
     private func groupMessagesByDate(messages: [Message]) -> [(Date, [Message])] {
-        var result: [Date: [Message]] = [:]
-        
-        for message in messages {
-            if let date = message.date {
-                let date = Calendar.current.startOfDay(for: date.dateValue())
-                result[date, default: []].append(message)
-            }
-        }
-        return result.sorted { $0.key < $1.key }
-    }
-    
-    private func groupMessagesByHourMinute(messages: [Message]) -> [(Date, [Message])] {
-        let calendar = Calendar.current
-        let groupedByMinute = Dictionary(grouping: messages) { message -> Date in
-            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: message.date!.dateValue())
-            return calendar.date(from: components)!
-        }
+        guard !messages.isEmpty else { return [] }
 
-        let sortedGroups = groupedByMinute.mapValues { messagesInMinute -> [Message] in
-            return messagesInMinute.sorted { $0.date!.dateValue() < $1.date!.dateValue() }
-        }
-
-        return sortedGroups.sorted { $0.key < $1.key }
-    }
-    
-    private func groupMessagesByUser(messages: [Message]) -> [(String, [Message])] {
-        var result: [(String, [Message])] = []
-        guard !messages.isEmpty else { return result }
-        
+        var result: [(Date, [Message])] = []
+        var currentDate: Date?
         var currentGroup: [Message] = []
+
         for message in messages {
-            if let lastMessage = currentGroup.last, let date = message.date, let lastMessageDate = lastMessage.date {
-                let sameUser = lastMessage.senderId == message.senderId
-                let sameMinute = Calendar.current.isDate(lastMessageDate.dateValue(), equalTo: date.dateValue(), toGranularity: .minute)
-                
-                if sameUser && sameMinute {
-                    currentGroup.append(message)
-                } else {
-                    result.append((lastMessage.senderId, currentGroup))
-                    currentGroup = [message]
-                }
+            guard let messageDate = message.date?.dateValue() else { continue }
+            let dayStart = Calendar.current.startOfDay(for: messageDate)
+
+            if currentDate == dayStart {
+                currentGroup.append(message)
             } else {
+                if let date = currentDate, !currentGroup.isEmpty {
+                    result.append((date, currentGroup))
+                }
+                currentDate = dayStart
                 currentGroup = [message]
             }
         }
-        if let lastMessage = currentGroup.last {
-            result.append((lastMessage.senderId, currentGroup))
+
+        if let date = currentDate, !currentGroup.isEmpty {
+            result.append((date, currentGroup))
         }
+
+        return result
+    }
+    
+    private func groupMessagesByHourMinute(messages: [Message]) -> [(Date, [Message])] {
+        guard !messages.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        var result: [(Date, [Message])] = []
+        var currentMinute: Date?
+        var currentGroup: [Message] = []
+
+        for message in messages {
+            guard let messageDate = message.date?.dateValue(),
+                  let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: messageDate) as DateComponents?,
+                  let minuteDate = calendar.date(from: components) else {
+                continue
+            }
+
+            if currentMinute == minuteDate {
+                currentGroup.append(message)
+            } else {
+                if let minute = currentMinute, !currentGroup.isEmpty {
+                    result.append((minute, currentGroup))
+                }
+                currentMinute = minuteDate
+                currentGroup = [message]
+            }
+        }
+
+        if let minute = currentMinute, !currentGroup.isEmpty {
+            result.append((minute, currentGroup))
+        }
+
+        return result
+    }
+    
+    private func groupMessagesByUser(messages: [Message]) -> [UserGroup] {
+        guard !messages.isEmpty else { return [] }
+
+        var result: [UserGroup] = []
+        var currentUserId: String?
+        var currentGroup: [Message] = []
+
+        for message in messages {
+            // Check if we should start a new group (different user or first message)
+            if let userId = currentUserId {
+                if userId == message.senderId {
+                    // Same user, append to current group
+                    currentGroup.append(message)
+                } else {
+                    // Different user, save current group and start new one
+                    if !currentGroup.isEmpty {
+                        result.append(UserGroup(userId: userId, messages: currentGroup))
+                    }
+                    currentUserId = message.senderId
+                    currentGroup = [message]
+                }
+            } else {
+                // First message in the batch
+                currentUserId = message.senderId
+                currentGroup = [message]
+            }
+        }
+
+        // Don't forget the last group
+        if let userId = currentUserId, !currentGroup.isEmpty {
+            result.append(UserGroup(userId: userId, messages: currentGroup))
+        }
+
         return result
     }
 }
