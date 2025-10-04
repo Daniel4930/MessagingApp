@@ -59,17 +59,28 @@ class EmbededFileViewModel: ObservableObject {
     
     func prepareFileUrl() async -> URL? {
         var tempUrl: URL?
-        
+
         // If file retrieved from locally (from file -> contains data only)
         if let data = file.data {
             tempUrl = writeDataToTempDirectory(data: data, fileName: file.name)
         }
-        
+
         // If file retrieved from firebase (only contains url (https)), save it to a temp directory
         else if let fileURLString = file.url {
+            // Use storageUniqueName if available, otherwise fall back to regular name
+            let fileName = file.storageUniqueName ?? file.name
+
+            // Check if file already exists in temp directory
+            let tempDir = FileManager.default.temporaryDirectory
+            let cachedFileURL = tempDir.appendingPathComponent(fileName)
+
+            if FileManager.default.fileExists(atPath: cachedFileURL.path) {
+                return cachedFileURL
+            }
+
             guard let data = await saveDataFromRemoteURL(from: fileURLString) else { return nil }
-            
-            tempUrl = writeDataToTempDirectory(data: data, fileName: file.name)
+
+            tempUrl = writeDataToTempDirectory(data: data, fileName: fileName)
         }
         return tempUrl
     }
@@ -90,18 +101,21 @@ class EmbededFileViewModel: ObservableObject {
     /// If file retrieved from firebase (only contains url (https)), get data
     private func saveDataFromRemoteURL(from urlString: String) async -> Data? {
         guard let fileUrl = URL(string: urlString) else { return nil }
-        
+
         do {
             let urlRequest = URLRequest(url: fileUrl)
             let (tempURL, _) = try await URLSession.shared.download(for: urlRequest)
-            
+
             let data = try Data(contentsOf: tempURL)
-            
+
             return data
+        } catch is CancellationError {
+            // Task was cancelled (view disappeared during scroll) - this is expected
+            return nil
         } catch {
             print("Failed to retrieve tempURL downloaded from remote URL: \(error)")
         }
-        
+
         return nil
     }
 }
