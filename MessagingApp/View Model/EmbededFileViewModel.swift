@@ -67,8 +67,18 @@ class EmbededFileViewModel: ObservableObject {
 
         // If file retrieved from firebase (only contains url (https)), save it to a temp directory
         else if let fileURLString = file.url {
+            
+            //Get file extension
+            let fileExtension = file.name.split(separator: ".")[1]
+            
             // Use storageUniqueName if available, otherwise fall back to regular name
-            let fileName = file.storageUniqueName ?? file.name
+            var fileName: String
+            
+            if let storageUniqueName = file.storageUniqueName {
+                fileName = "\(storageUniqueName).\(fileExtension)"
+            } else {
+                fileName = file.name
+            }
 
             // Check if file already exists in temp directory
             let tempDir = FileManager.default.temporaryDirectory
