@@ -14,6 +14,7 @@ struct MessageMap {
     let channelId: String
     var messages: [Message]
     var documentSnapshot: DocumentSnapshot?
+    var dateToListen: Date?
 }
 
 enum UploadError: Error {
@@ -55,61 +56,73 @@ class MessageViewModel: ObservableObject {
         
         let task = Task {
             do {
-                // 1. Initial Fetch
-                let (initialMessages, oldestDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId, limit: 20)
+                var stream: AsyncThrowingStream<(added: [Message], modified: [Message], removed: [Message]), Error>? = nil
                 
-                await MainActor.run {
-                    let messageMap = MessageMap(
+                // 1. Initial Fetch
+                if let index = self.messages.firstIndex(where: { $0.channelId == channelId}) {
+                    stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(
                         channelId: channelId,
-                        messages: initialMessages,
-                        documentSnapshot: oldestDocument
+                        from: self.messages[index].dateToListen
                     )
-                    if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                        self.messages[index] = messageMap
-                    } else {
-                        self.messages.append(messageMap)
+                } else {
+                    let (initialMessages, oldestDocument) = try await FirebaseCloudStoreService.shared.fetchLastMessages(channelId: channelId, limit: 20)
+                    
+                    // 2. Listen for real-time updates, fall back to current date for temporary channel
+                    let oldestMessageDate = initialMessages.first?.date?.dateValue() ?? Date()
+                    
+                    await MainActor.run {
+                        let messageMap = MessageMap(
+                            channelId: channelId,
+                            messages: initialMessages,
+                            documentSnapshot: oldestDocument,
+                            dateToListen: oldestMessageDate
+                        )
+                        if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                            self.messages[index] = messageMap
+                        } else {
+                            self.messages.append(messageMap)
+                        }
                     }
+                    
+                    stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(
+                        channelId: channelId,
+                        from: oldestMessageDate
+                    )
                 }
                 
-                // 2. Listen for real-time updates, fall back to current date for temporary channel
-                let oldestMessageDate = initialMessages.first?.date?.dateValue() ?? Date()
-                
-                let stream = FirebaseCloudStoreService.shared.listenForMessageUpdates(
-                    channelId: channelId,
-                    from: oldestMessageDate
-                )
-                
-                for try await (added, modified, removed) in stream {
-                    await MainActor.run {
-                        if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
-                            for message in added {
-                                if let clientId = message.clientId, let pendingIndex = self.messages[index].messages.firstIndex(where: { $0.clientId == clientId }) {
-                                    self.messages[index].messages[pendingIndex].id = message.id
-                                    self.messages[index].messages[pendingIndex].date = message.date
-                                    self.messages[index].messages[pendingIndex].photoUrls = message.photoUrls
-                                    self.messages[index].messages[pendingIndex].videoUrls = message.videoUrls
-                                    self.messages[index].messages[pendingIndex].files = message.files
-                                    self.messages[index].messages[pendingIndex].isPending = false
-                                } else {
-                                    self.messages[index].messages.append(message)
+                if let stream {
+                    for try await (added, modified, removed) in stream {
+                        await MainActor.run {
+                            if let index = self.messages.firstIndex(where: { $0.channelId == channelId }) {
+                                for message in added {
+                                    if let clientId = message.clientId, let pendingIndex = self.messages[index].messages.firstIndex(where: { $0.clientId == clientId }) {
+                                        self.messages[index].messages[pendingIndex].id = message.id
+                                        self.messages[index].messages[pendingIndex].date = message.date
+                                        self.messages[index].messages[pendingIndex].photoUrls = message.photoUrls
+                                        self.messages[index].messages[pendingIndex].videoUrls = message.videoUrls
+                                        self.messages[index].messages[pendingIndex].files = message.files
+                                        self.messages[index].messages[pendingIndex].isPending = false
+                                    } else {
+                                        self.messages[index].messages.append(message)
+                                    }
                                 }
-                            }
-                            
-                            // Update modified messages
-                            for message in modified {
-                                if let msgIndex = self.messages[index].messages.firstIndex(where: { $0.id == message.id }) {
-                                    self.messages[index].messages[msgIndex] = message
+                                
+                                // Update modified messages
+                                for message in modified {
+                                    if let msgIndex = self.messages[index].messages.firstIndex(where: { $0.id == message.id }) {
+                                        self.messages[index].messages[msgIndex] = message
+                                    }
                                 }
+                                
+                                // Remove deleted messages
+                                if !removed.isEmpty {
+                                    let removedIds = Set(removed.map { $0.id })
+                                    self.messages[index].messages.removeAll { removedIds.contains($0.id ?? "") }
+                                }
+                                
+                                // Ensure sorting
+                                self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
                             }
-                            
-                            // Remove deleted messages
-                            if !removed.isEmpty {
-                                let removedIds = Set(removed.map { $0.id })
-                                self.messages[index].messages.removeAll { removedIds.contains($0.id ?? "") }
-                            }
-                            
-                            // Ensure sorting
-                            self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
                         }
                     }
                 }
