@@ -63,6 +63,7 @@ struct VideoMessageThumbnailView: View {
                                 ProgressView()
                             }
                     } else {
+                        ProgressView()
                     }
                 }
             }
