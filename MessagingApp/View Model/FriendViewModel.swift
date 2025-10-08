@@ -49,9 +49,15 @@ class FriendViewModel: ObservableObject {
     func fetchFriends(for user: User) async {
         if !user.friends.isEmpty {
             self.friends = await FirebaseCloudStoreService.shared.fetchData(collection: FirebaseCloudStoreCollection.users, ids: user.friends)
-            for friend in friends {
-                if let id = friend.id {
-                    listenForFriend(friendId: id)
+
+            // Set up listeners concurrently for better performance
+            await withTaskGroup(of: Void.self) { group in
+                for friend in friends {
+                    if let id = friend.id {
+                        group.addTask {
+                            await self.listenForFriend(friendId: id)
+                        }
+                    }
                 }
             }
         } else {

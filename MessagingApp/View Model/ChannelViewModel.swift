@@ -12,19 +12,38 @@ import FirebaseFirestore
 @MainActor
 class ChannelViewModel: ObservableObject {
     @Published var channels: [Channel] = []
-    
+
     private var channelListenerTask: Task<Void, Never>? = nil
+    private var formattedTimeCache: [Date: String] = [:]
+    private static let timeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        formatter.dateTimeStyle = .numeric
+        return formatter
+    }()
 
     deinit {
         channelListenerTask?.cancel()
     }
-    
+
     func formatLastMessageTime(time: Date) -> String {
+        // Cache key rounded to nearest minute to avoid excessive cache entries
+        let roundedTime = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: time)) ?? time
+
+        if let cached = formattedTimeCache[roundedTime] {
+            return cached
+        }
+
         let pastDate = Date().addingTimeInterval(time.timeIntervalSinceNow)
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        formatter.dateTimeStyle = .numeric
-        return formatter.string(for: pastDate)!
+        let formatted = Self.timeFormatter.string(for: pastDate)!
+        formattedTimeCache[roundedTime] = formatted
+
+        // Clean cache if it gets too large
+        if formattedTimeCache.count > 100 {
+            formattedTimeCache.removeAll()
+        }
+
+        return formatted
     }
 
     /// Starts a listener to get real-time updates for all channels a user is a member of.
