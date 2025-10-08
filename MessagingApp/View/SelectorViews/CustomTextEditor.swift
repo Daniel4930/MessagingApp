@@ -10,20 +10,23 @@ struct CustomTextEditor: View {
     @ObservedObject var messageComposerViewModel: MessageComposerViewModel
     @FocusState.Binding var focusedField: Field?
     let memberIds: [String]
-    
+
+    @State private var cachedChannelMembers: [User] = []
+    @State private var lastMemberIds: [String] = []
+
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
-    
+
     let horizontalPaddingSpace: CGFloat = 10
-    
+
     var body: some View {
         ZStack(alignment: .leading) {
             CustomUITextView(messageComposerViewModel: messageComposerViewModel, memberIds: memberIds) {
                 messageComposerViewModel.showSendButton = !messageComposerViewModel.uiTextEditor.text.isEmpty
-                
+
                 if let user = userViewModel.user {
                     var users = Array(arrayLiteral: user)
-                    users.append(contentsOf: friendViewModel.friends.filter({ memberIds.contains($0.id!) }))
+                    users.append(contentsOf: cachedChannelMembers)
                     let matched = searchUser(users: users)
                     messageComposerViewModel.mathchUsers = matched
                     messageComposerViewModel.showMention = !matched.isEmpty
@@ -32,10 +35,10 @@ struct CustomTextEditor: View {
             .frame(height: min(messageComposerViewModel.customTextEditorHeight, MessageComposerViewModel.customTextEditorMaxHeight))
             .padding(.horizontal, horizontalPaddingSpace)
             .focused($focusedField, equals: .textField)
-            
+
             if let friend = friendViewModel.friends.first, messageComposerViewModel.uiTextEditor.text.isEmpty {
                 let displayName = friend.displayName
-                
+
                 Text("Message @\(displayName.isEmpty ? friend.userName : displayName)")
                     .padding(.horizontal)
                     .foregroundStyle(.gray)
@@ -43,39 +46,52 @@ struct CustomTextEditor: View {
         }
         .background(Color("SecondaryBackgroundColor"))
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .onChange(of: memberIds) { _, _ in
+            updateCachedMembers()
+        }
+        .onChange(of: friendViewModel.friends) { _, _ in
+            updateCachedMembers()
+        }
+        .onAppear {
+            updateCachedMembers()
+        }
+    }
+
+    private func updateCachedMembers() {
+        if memberIds != lastMemberIds {
+            lastMemberIds = memberIds
+            cachedChannelMembers = friendViewModel.friends.filter({ memberIds.contains($0.id!) })
+        }
     }
 }
 extension CustomTextEditor {
     func searchUser(users: [User]) -> [User] {
-        if let message = messageComposerViewModel.uiTextEditor.text {
-            //message = "@"
-            guard let commandIndex = message.lastIndex(of: "@") else { return [] }
-            
-            if message.count == 1 {
+        guard let message = messageComposerViewModel.uiTextEditor.text else { return [] }
+
+        //message = "@"
+        guard let commandIndex = message.lastIndex(of: "@") else { return [] }
+
+        if message.count == 1 {
+            return users
+        }
+
+        if commandIndex != message.startIndex {
+            guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
+            //message = "text@ " && message = "text @ "
+            guard message.distance(from: spaceIndex, to: commandIndex) == 1 else { return [] }
+
+            //message = "text @"
+            if message[commandIndex] == message.last {
                 return users
             }
-            
-            if commandIndex != message.startIndex {
-                guard let spaceIndex = message.lastIndex(of: " ") else { return [] }
-                //message = "text@ " && message = "text @ "
-                guard message.distance(from: spaceIndex, to: commandIndex) == 1 else { return [] }
-                
-                //message = "text @"
-                if message[commandIndex] == message.last {
-                    return users
-                }
-            }
-            
-            //message = "text @name"
-            let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
-            
-            return users.filter { user in
-                let userName = user.userName
-                let displayName = user.displayName
-                return userName.lowercased().contains(nameToSearch) || displayName.lowercased().contains(nameToSearch)
-            }
-        } else {
-            return []
+        }
+
+        //message = "text @name"
+        let nameToSearch = String(message[commandIndex...]).dropFirst().lowercased()
+
+        // Optimized filtering with pre-lowercased comparison
+        return users.filter { user in
+            user.userName.lowercased().contains(nameToSearch) || user.displayName.lowercased().contains(nameToSearch)
         }
     }
 }
@@ -117,28 +133,40 @@ struct CustomUITextView: UIViewRepresentable {
     
     class Coordinator: NSObject, UITextViewDelegate {
         var parent: CustomUITextView
-        
+        private var cachedRegexPattern: String?
+        private var cachedMemberIds: [String] = []
+        private var cachedFriendsCount: Int = 0
+
         init(_ parent: CustomUITextView) {
             self.parent = parent
         }
-        
+
         private func generateNameMatchPattern(user: User) -> String? {
-            let userName = user.userName
-            let displayName = user.displayName
-            let friends = parent.friendViewModel.friends.filter({ parent.memberIds.contains($0.id!) })
-            
-            var pattern = "@(\(userName)\(displayName.isEmpty ? "" : "|\(displayName)")"
-            
-            for friend in friends {
-                if !friend.displayName.isEmpty {
-                    pattern.append("|\(friend.displayName)|\(friend.userName)")
-                } else {
-                    pattern.append("|\(friend.userName)")
+            let currentFriendsCount = parent.friendViewModel.friends.count
+
+            // Only regenerate pattern if friends or members changed
+            if cachedRegexPattern == nil || cachedMemberIds != parent.memberIds || cachedFriendsCount != currentFriendsCount {
+                let userName = user.userName
+                let displayName = user.displayName
+                let friends = parent.friendViewModel.friends.filter({ parent.memberIds.contains($0.id!) })
+
+                var pattern = "@(\(userName)\(displayName.isEmpty ? "" : "|\(displayName)")"
+
+                for friend in friends {
+                    if !friend.displayName.isEmpty {
+                        pattern.append("|\(friend.displayName)|\(friend.userName)")
+                    } else {
+                        pattern.append("|\(friend.userName)")
+                    }
                 }
+                pattern.append(")")
+
+                cachedRegexPattern = pattern
+                cachedMemberIds = parent.memberIds
+                cachedFriendsCount = currentFriendsCount
             }
-            pattern.append(")")
-            
-            return pattern
+
+            return cachedRegexPattern
         }
         
         func textViewDidChange(_ textView: UITextView) {
