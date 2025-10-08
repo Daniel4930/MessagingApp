@@ -11,17 +11,19 @@ struct MessageCenter: View {
     @State private var selectedChannel: Channel?
     @State private var selectedFriendIcon: User?
     @State private var showFriendList = false
+    @State private var channelToFriendMap: [String: User] = [:]
+
     @EnvironmentObject var userViewModel: UserViewModel
     @EnvironmentObject var friendViewModel: FriendViewModel
     @EnvironmentObject var channelViewModel: ChannelViewModel
-    
+
     var body: some View {
         VStack {
             Text("Messages")
                 .font(.title3)
                 .bold()
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             NavigationLink(destination: AddFriendView()) {
                 HStack {
                     Image(systemName: "person.fill.badge.plus")
@@ -37,11 +39,10 @@ struct MessageCenter: View {
                 .background(Color.buttonBackground)
                 .clipShape(.capsule)
             }
-            
+
             ScrollView {
                 ForEach(channelViewModel.channels) { channel in
-                    let friendId = channel.memberIds.first(where: { $0 != userViewModel.user?.id })
-                    if let friend = friendViewModel.friends.first(where: {$0.id == friendId}) {
+                    if let channelId = channel.id, let friend = channelToFriendMap[channelId] {
                         Button {
                             selectedChannel = channel
                         } label: {
@@ -83,6 +84,15 @@ struct MessageCenter: View {
             channelViewModel.listenForChannels(userId: userId, friends: friendViewModel.friends)
             userViewModel.listenForUserChanges(userId: userId, friendViewModel: friendViewModel)
         }
+        .onChange(of: channelViewModel.channels) { _, _ in
+            updateChannelToFriendMap()
+        }
+        .onChange(of: friendViewModel.friends) { _, _ in
+            updateChannelToFriendMap()
+        }
+        .onAppear {
+            updateChannelToFriendMap()
+        }
         .sheet(item: $selectedFriendIcon) { friend in
             ProfileView(user: friend)
                 .presentationDetents([.fraction(0.95)])
@@ -90,5 +100,19 @@ struct MessageCenter: View {
         .sheet(isPresented: $showFriendList) {
             FriendListView(selectedDmChannel: $selectedChannel)
         }
+    }
+
+    private func updateChannelToFriendMap() {
+        var map: [String: User] = [:]
+
+        for channel in channelViewModel.channels {
+            guard let channelId = channel.id else { continue }
+            if let friendId = channel.memberIds.first(where: { $0 != userViewModel.user?.id }),
+               let friend = friendViewModel.friends.first(where: { $0.id == friendId }) {
+                map[channelId] = friend
+            }
+        }
+
+        channelToFriendMap = map
     }
 }

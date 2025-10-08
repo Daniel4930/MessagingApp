@@ -10,7 +10,7 @@ import FirebaseFirestore
 import FirebaseStorage
 import SwiftUI
 
-struct MessageMap {
+struct MessageMap: Equatable {
     let channelId: String
     var messages: [Message]
     var documentSnapshot: DocumentSnapshot?
@@ -119,9 +119,12 @@ class MessageViewModel: ObservableObject {
                                     let removedIds = Set(removed.map { $0.id })
                                     self.messages[index].messages.removeAll { removedIds.contains($0.id ?? "") }
                                 }
-                                
-                                // Ensure sorting
-                                self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
+
+                                // Keep messages sorted - only sort if we added messages
+                                // Most updates are single messages, so only sort when necessary
+                                if !added.isEmpty && self.messages[index].messages.count > 1 {
+                                    self.messages[index].messages.sort { ($0.date?.dateValue() ?? .distantPast) < ($1.date?.dateValue() ?? .distantPast) }
+                                }
                             }
                         }
                     }
@@ -411,7 +414,7 @@ class MessageViewModel: ObservableObject {
         let dimension = MediaDimension(width: photoInfo.image.size.width, height: photoInfo.image.size.height)
 
         let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.images, fileName: fileName)
-        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: data) { result in
+        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: data) { [weak self] result in
             switch result {
             case .success(let url):
                 completion(url.absoluteString, dimension)
@@ -419,6 +422,11 @@ class MessageViewModel: ObservableObject {
                 print("Failed to upload photo: \(error)")
             }
             dispatchGroup.leave()
+
+            // Clean up upload task after completion
+            Task { @MainActor in
+                self?.uploadProgress.removeValue(forKey: file.identifier)
+            }
         }
         self.uploadProgress[file.identifier] = uploadTask
     }
@@ -429,7 +437,7 @@ class MessageViewModel: ObservableObject {
             return
         }
 
-        Task {
+        Task { [weak self] in
             let fileName = UUID().uuidString + ".mp4"
             let videoAsset = videoInfo.videoAsset
             let dimension = MediaDimension(
@@ -453,9 +461,14 @@ class MessageViewModel: ObservableObject {
                     print("Failed to upload video: \(error)")
                 }
                 dispatchGroup.leave()
+
+                // Clean up upload task after completion
+                Task { @MainActor in
+                    self?.uploadProgress.removeValue(forKey: file.identifier)
+                }
             }
             await MainActor.run {
-                self.uploadProgress[file.identifier] = uploadTask
+                self?.uploadProgress[file.identifier] = uploadTask
             }
         }
     }
@@ -467,7 +480,7 @@ class MessageViewModel: ObservableObject {
         }
 
         let storageRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.files, fileName: fileInfo.storageUniqueName)
-        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileInfo.fileData) { result in
+        let uploadTask = FirebaseStorageService.shared.uploadDataToBucket(reference: storageRef, data: fileInfo.fileData) { [weak self] result in
             switch result {
             case .success(let url):
                 let messageFile = MessageFile(storageUniqueName: fileInfo.storageUniqueName, url: url.absoluteString, data: nil, name: fileInfo.name, size: fileInfo.size)
@@ -476,6 +489,11 @@ class MessageViewModel: ObservableObject {
                 print("Failed to upload file: \(error)")
             }
             dispatchGroup.leave()
+
+            // Clean up upload task after completion
+            Task { @MainActor in
+                self?.uploadProgress.removeValue(forKey: file.identifier)
+            }
         }
         self.uploadProgress[file.identifier] = uploadTask
     }
@@ -505,114 +523,83 @@ class MessageViewModel: ObservableObject {
     }
     
     func groupedMessages(messages: [Message]) -> [DayGroup] {
-        let groupedByDate = self.groupMessagesByDate(messages: messages)
-        
-        return groupedByDate.map { (date, messagesInDay) -> DayGroup in
-            let groupedByHourMinute = self.groupMessagesByHourMinute(messages: messagesInDay)
-            
-            let messageGroups = groupedByHourMinute.map { (time, messagesInMinute) -> MessageGroup in
-                let userGroups = self.groupMessagesByUser(messages: messagesInMinute)
-                return (time: time, userGroups: userGroups)
-            }
-            return (date: date, messageGroups: messageGroups)
-        }
-    }
-
-    private func groupMessagesByDate(messages: [Message]) -> [(Date, [Message])] {
-        guard !messages.isEmpty else { return [] }
-
-        var result: [(Date, [Message])] = []
-        var currentDate: Date?
-        var currentGroup: [Message] = []
-
-        for message in messages {
-            guard let messageDate = message.date?.dateValue() else { continue }
-            let dayStart = Calendar.current.startOfDay(for: messageDate)
-
-            if currentDate == dayStart {
-                currentGroup.append(message)
-            } else {
-                if let date = currentDate, !currentGroup.isEmpty {
-                    result.append((date, currentGroup))
-                }
-                currentDate = dayStart
-                currentGroup = [message]
-            }
-        }
-
-        if let date = currentDate, !currentGroup.isEmpty {
-            result.append((date, currentGroup))
-        }
-
-        return result
-    }
-    
-    private func groupMessagesByHourMinute(messages: [Message]) -> [(Date, [Message])] {
+        // Optimized single-pass grouping algorithm
         guard !messages.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        var result: [(Date, [Message])] = []
+        var dayGroups: [DayGroup] = []
+
+        var currentDay: Date?
         var currentMinute: Date?
-        var currentGroup: [Message] = []
+        var currentUserId: String?
+
+        var dayMessageGroups: [MessageGroup] = []
+        var minuteUserGroups: [UserGroup] = []
+        var userMessages: [Message] = []
 
         for message in messages {
-            guard let messageDate = message.date?.dateValue(),
-                  let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: messageDate) as DateComponents?,
+            guard let messageDate = message.date?.dateValue() else { continue }
+            let dayStart = calendar.startOfDay(for: messageDate)
+
+            guard let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: messageDate) as DateComponents?,
                   let minuteDate = calendar.date(from: components) else {
                 continue
             }
 
-            if currentMinute == minuteDate {
-                currentGroup.append(message)
-            } else {
-                if let minute = currentMinute, !currentGroup.isEmpty {
-                    result.append((minute, currentGroup))
+            // Check if we need to finalize user group
+            if let userId = currentUserId, userId != message.senderId {
+                if !userMessages.isEmpty {
+                    minuteUserGroups.append(UserGroup(userId: userId, messages: userMessages))
+                    userMessages = []
                 }
-                currentMinute = minuteDate
-                currentGroup = [message]
             }
-        }
 
-        if let minute = currentMinute, !currentGroup.isEmpty {
-            result.append((minute, currentGroup))
-        }
-
-        return result
-    }
-    
-    private func groupMessagesByUser(messages: [Message]) -> [UserGroup] {
-        guard !messages.isEmpty else { return [] }
-
-        var result: [UserGroup] = []
-        var currentUserId: String?
-        var currentGroup: [Message] = []
-
-        for message in messages {
-            // Check if we should start a new group (different user or first message)
-            if let userId = currentUserId {
-                if userId == message.senderId {
-                    // Same user, append to current group
-                    currentGroup.append(message)
-                } else {
-                    // Different user, save current group and start new one
-                    if !currentGroup.isEmpty {
-                        result.append(UserGroup(userId: userId, messages: currentGroup))
-                    }
-                    currentUserId = message.senderId
-                    currentGroup = [message]
+            // Check if we need to finalize minute group
+            if let minute = currentMinute, minute != minuteDate {
+                if let userId = currentUserId, !userMessages.isEmpty {
+                    minuteUserGroups.append(UserGroup(userId: userId, messages: userMessages))
+                    userMessages = []
                 }
-            } else {
-                // First message in the batch
-                currentUserId = message.senderId
-                currentGroup = [message]
+                if !minuteUserGroups.isEmpty {
+                    dayMessageGroups.append((time: minute, userGroups: minuteUserGroups))
+                    minuteUserGroups = []
+                }
             }
+
+            // Check if we need to finalize day group
+            if let day = currentDay, day != dayStart {
+                if let userId = currentUserId, !userMessages.isEmpty {
+                    minuteUserGroups.append(UserGroup(userId: userId, messages: userMessages))
+                    userMessages = []
+                }
+                if let minute = currentMinute, !minuteUserGroups.isEmpty {
+                    dayMessageGroups.append((time: minute, userGroups: minuteUserGroups))
+                    minuteUserGroups = []
+                }
+                if !dayMessageGroups.isEmpty {
+                    dayGroups.append((date: day, messageGroups: dayMessageGroups))
+                    dayMessageGroups = []
+                }
+            }
+
+            // Add message to current group
+            userMessages.append(message)
+            currentDay = dayStart
+            currentMinute = minuteDate
+            currentUserId = message.senderId
         }
 
-        // Don't forget the last group
-        if let userId = currentUserId, !currentGroup.isEmpty {
-            result.append(UserGroup(userId: userId, messages: currentGroup))
+        // Finalize remaining groups
+        if let userId = currentUserId, !userMessages.isEmpty {
+            minuteUserGroups.append(UserGroup(userId: userId, messages: userMessages))
+        }
+        if let minute = currentMinute, !minuteUserGroups.isEmpty {
+            dayMessageGroups.append((time: minute, userGroups: minuteUserGroups))
+        }
+        if let day = currentDay, !dayMessageGroups.isEmpty {
+            dayGroups.append((date: day, messageGroups: dayMessageGroups))
         }
 
-        return result
+        return dayGroups
     }
 }

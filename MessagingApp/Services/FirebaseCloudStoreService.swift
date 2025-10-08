@@ -68,9 +68,23 @@ class FirebaseCloudStoreService {
     func fetchData<T: Decodable>(collection: FirebaseCloudStoreCollection, ids: [String]) async -> [T] {
         guard !ids.isEmpty else { return [] }
 
+        // Firestore 'in' queries are limited to 10 items - batch the requests
+        let batchSize = 10
+        var allResults: [T] = []
+
         do {
-            let snapshot = try await db.collection(collection.rawValue).whereField(FieldPath.documentID(), in: ids).getDocuments()
-            return snapshot.documents.compactMap { try? $0.data(as: T.self) }
+            for batch in stride(from: 0, to: ids.count, by: batchSize) {
+                let endIndex = min(batch + batchSize, ids.count)
+                let batchIds = Array(ids[batch..<endIndex])
+
+                let snapshot = try await db.collection(collection.rawValue)
+                    .whereField(FieldPath.documentID(), in: batchIds)
+                    .getDocuments()
+
+                let results = snapshot.documents.compactMap { try? $0.data(as: T.self) }
+                allResults.append(contentsOf: results)
+            }
+            return allResults
         } catch {
             print("Error fetching data: \(error.localizedDescription)")
             return []
@@ -110,10 +124,12 @@ class FirebaseCloudStoreService {
         return stream
     }
 
-    func listenForUserChannels(userId: String) -> AsyncThrowingStream<[Channel], Error> {
+    func listenForUserChannels(userId: String, limit: Int = 50) -> AsyncThrowingStream<[Channel], Error> {
         return AsyncThrowingStream { continuation in
             let listener = db.collection(FirebaseCloudStoreCollection.channels.rawValue)
                 .whereField("memberIds", arrayContains: userId)
+                .order(by: "lastMessage.timestamp", descending: true)
+                .limit(to: limit)
                 .addSnapshotListener { querySnapshot, error in
                     if let error = error {
                         continuation.finish(throwing: error)
@@ -143,12 +159,17 @@ class FirebaseCloudStoreService {
         return (messages.reversed(), snapshot.documents.last)
     }
 
-    func listenForMessageUpdates(channelId: String, from startDate: Date? = nil) -> AsyncThrowingStream<(added: [Message], modified: [Message], removed: [Message]), Error> {
+    func listenForMessageUpdates(channelId: String, from startDate: Date? = nil, limit: Int = 100) -> AsyncThrowingStream<(added: [Message], modified: [Message], removed: [Message]), Error> {
         return AsyncThrowingStream { continuation in
             var query: Query = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId).collection(FirebaseCloudStoreCollection.messages.rawValue)
 
             if let startDate = startDate {
                 query = query.whereField("date", isGreaterThanOrEqualTo: startDate)
+                    .order(by: "date", descending: false)
+                    .limit(to: limit)
+            } else {
+                query = query.order(by: "date", descending: true)
+                    .limit(to: limit)
             }
 
             let listener = query.addSnapshotListener { querySnapshot, error in
