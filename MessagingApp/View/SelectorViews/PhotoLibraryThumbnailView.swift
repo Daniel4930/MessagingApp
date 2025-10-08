@@ -46,12 +46,9 @@ struct PhotoLibraryThumbnailView: View {
         }
         .onChange(of: messageComposerViewModel.selectionData) { oldValue, newValue in
             if let data = photoLibraryVM.uploadedFile {
-                if messageComposerViewModel.checkDataExist(identifier: data.identifier) {
-                    dataExistInSelection = true
-                }
-                else {
-                    dataExistInSelection = false
-                }
+                // Use Set-based lookup for O(1) complexity instead of O(n)
+                let selectionIdentifiers = Set(newValue.map { $0.identifier })
+                dataExistInSelection = selectionIdentifiers.contains(data.identifier)
             }
         }
     }
