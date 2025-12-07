@@ -8,18 +8,6 @@
 import FirebaseFirestore
 import FirebaseCore
 
-enum FirebaseError: Error {
-    case operationFailed(String)
-    case encodingFailed
-}
-
-enum FirebaseCloudStoreCollection: String {
-    case users = "users"
-    case channels = "channels"
-    case messages = "messages"
-    case notifications = "notifications"
-}
-
 class FirebaseCloudStoreService {
     static let shared = FirebaseCloudStoreService()
     let db = Firestore.firestore(app: FirebaseApp.app()!, database: "messaging-app")
@@ -390,5 +378,77 @@ class FirebaseCloudStoreService {
                 listener.remove()
             }
         }
+    }
+    
+    // MARK: - Delete user's data
+    func deleteAllMessages(userId: String, channelId: String) async throws {
+        let channelRef = db.collection(FirebaseCloudStoreCollection.channels.rawValue).document(channelId)
+        let messageQuery = channelRef.collection(FirebaseCloudStoreCollection.messages.rawValue).whereField("senderId", isEqualTo: userId)
+        
+        let querySnapshot = try await messageQuery.getDocuments()
+        let batch = db.batch()
+        
+        for message in querySnapshot.documents {
+            
+            // Check if the message contains attachments (photos, videos, or files)
+            let data = try message.data(as: Message.self)
+            
+            if !data.files.isEmpty {
+                for file in data.files {
+                    guard let fileName = file.storageUniqueName else {
+                        print("File has no unique name. Failed to delete the file.")
+                        return
+                    }
+                    
+                    let fileRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.files, fileName: fileName)
+                    FirebaseStorageService.shared.deleteFile(reference: fileRef) { error in
+                        print("Failed to delete the file. Error: \(error?.localizedDescription ?? "Unknown error")")
+                    }
+                }
+            }
+            
+            if !data.photoUrls.isEmpty {
+                for photoUrl in data.photoUrls {
+                    //Extract path from the url
+                    guard let url = URL(string: photoUrl) else {
+                        print("Failed to delete photo attachment. Invalid URL")
+                        return
+                    }
+                    guard let decoded  = url.lastPathComponent.removingPercentEncoding else {
+                        print("Failed to extract photo name from url's last component")
+                        return
+                    }
+                    let fileName = (decoded as NSString).lastPathComponent
+                    
+                    let photoUrlRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.images, fileName: fileName)
+                    FirebaseStorageService.shared.deleteFile(reference: photoUrlRef) { error in
+                        print("Failed to delete the photo. Error: \(error?.localizedDescription ?? "Unknown error")")
+                    }
+                }
+            }
+            
+            if !data.videoUrls.isEmpty {
+                for videoUrl in data.videoUrls {
+                    //Extract path from the url
+                    guard let url = URL(string: videoUrl) else {
+                        print("Failed to delete video attachment. Invalid URL")
+                        return
+                    }
+                    guard let decoded  = url.lastPathComponent.removingPercentEncoding else {
+                        print("Failed to extract video name from url's last component")
+                        return
+                    }
+                    let fileName = (decoded as NSString).lastPathComponent
+                    
+                    let videoUrlRef = FirebaseStorageService.shared.createChildReference(folder: FirebaseStorageFolder.images, fileName: fileName)
+                    FirebaseStorageService.shared.deleteFile(reference: videoUrlRef) { error in
+                        print("Failed to delete the video. Error: \(error?.localizedDescription ?? "Unknown error")")
+                    }
+                }
+            }
+            
+            batch.deleteDocument(message.reference)
+        }
+        try await batch.commit()
     }
 }

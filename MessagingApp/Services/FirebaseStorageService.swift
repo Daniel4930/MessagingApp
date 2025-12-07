@@ -8,28 +8,6 @@
 import Foundation
 import FirebaseStorage
 
-enum FirebaseStorageFolder {
-    case images
-    case videos
-    case files
-    case icons
-}
-
-enum FirebaseStorageUploadError: Error {
-    case uploadFailed(String)
-    case getDownloadUrlFailed(String)
-    case noDownloadUrl
-}
-
-enum FirebaseDownloadFileError: Error {
-    case downloadError(String)
-    case noUrlError
-}
-
-struct Config: Decodable {
-    let STORAGE_BUCKET: String
-}
-
 class FirebaseStorageService {
     static let shared = FirebaseStorageService()
     static var bucketName: String {
